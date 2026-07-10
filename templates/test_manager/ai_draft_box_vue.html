@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}AI草稿箱 - EasyTesting{% endblock %}
+{% block header %}{% endblock %}
+
+{% block page_header %}{% endblock %}
+
+{% block content %}
+<div id="app"></div>
+{% endblock %}
+
+{% block extra_css %}
+{% if not use_vite_dev %}
+<link rel="stylesheet" href="{% static 'scene-orchestrator/assets/element-plus.css' %}?v={{ asset_version }}">
+<link rel="stylesheet" href="{% static 'scene-orchestrator/assets/draftBox.css' %}?v={{ asset_version }}">
+{% endif %}
+<style>
+#app { display: flex; flex-direction: column; flex: 1; min-height: calc(100vh - 120px); }
+</style>
+<script>window.__CURRENT_USER_ID__ = {{ current_user_id }};</script>
+{% endblock %}
+
+{% block extra_js %}
+{% if use_vite_dev %}
+<script type="module" src="{{ vite_dev_server }}/static/scene-orchestrator/@vite/client"></script>
+<script type="module" src="{{ vite_dev_server }}/static/scene-orchestrator/src/draft-box/main.js"></script>
+{% else %}
+<script type="module" src="{% static 'scene-orchestrator/assets/draftBox.js' %}?v={{ asset_version }}"></script>
+{% endif %}
+{% endblock %}

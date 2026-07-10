@@ -1,0 +1,258 @@
+[
+  {
+    "name": "必填参数校验",
+    "description": "针对必填参数的完整性校验，确保缺失必填参数时接口返回明确错误",
+    "category": "param_validate",
+    "priority": "high",
+    "rule_content": "逐一移除每个标记为必填的参数，发送请求，预期返回 400 状态码，响应体包含明确错误信息指明缺少哪个参数\n对于有默认值的参数，不传时应验证接口是否使用默认值正确响应\n同时移除所有必填参数，验证接口是否返回参数缺失错误而非 500",
+    "is_enabled": true
+  },
+  {
+    "name": "参数类型校验",
+    "description": "验证参数类型不匹配时的错误处理",
+    "category": "param_validate",
+    "priority": "high",
+    "rule_content": "对整型参数传入字符串、对字符串参数传入超长文本、对布尔参数传入非布尔值\n对数组类型参数传入普通字符串、对对象类型参数传入数组\n预期返回 400 状态码，响应包含类型错误提示",
+    "is_enabled": true
+  },
+  {
+    "name": "参数格式校验",
+    "description": "验证特定格式参数的校验规则",
+    "category": "param_validate",
+    "priority": "medium",
+    "rule_content": "如果参数有 format/pattern 约束（如邮箱、手机号、日期、URL），传入不符合格式的值\n例如：邮箱缺少@符号、手机号位数不对、日期格式错误（2020-13-32 无效日期）\n预期返回 400 状态码，响应提示格式错误",
+    "is_enabled": true
+  },
+  {
+    "name": "枚举参数校验",
+    "description": "验证枚举类型参数的合法值校验",
+    "category": "param_validate",
+    "priority": "medium",
+    "rule_content": "如果参数有枚举值限定（如状态字段只允许 on/off），传入不在枚举范围内的值\n预期返回 400 状态码，响应提示取值不在允许范围内\n同时测试传入空字符串和 null 值的情况",
+    "is_enabled": true
+  },
+  {
+    "name": "参数长度/范围校验",
+    "description": "验证参数长度和数值范围限制",
+    "category": "param_validate",
+    "priority": "medium",
+    "rule_content": "对字符串参数传入超出最大长度的值、传入空字符串\n对数值参数传入超出最大值、低于最小值的数值\n对数组参数传入超出最大元素数量的数组\n预期返回 400 状态码，响应包含长度/范围错误提示",
+    "is_enabled": true
+  },
+  {
+    "name": "多余参数处理",
+    "description": "验证接口对未知参数的处理行为",
+    "category": "param_validate",
+    "priority": "low",
+    "rule_content": "在请求中添加接口未定义的额外参数，观察接口行为\n如果接口忽略多余参数且正常处理，验证响应正确性\n如果接口拒绝多余参数，验证返回 400 并有明确提示",
+    "is_enabled": true
+  },
+  {
+    "name": "正常业务流程",
+    "description": "验证接口在正常输入下的核心业务功能",
+    "category": "biz_logic",
+    "priority": "high",
+    "rule_content": "使用完全合法的请求参数和请求体发送请求，验证返回 200/201 状态码\n验证响应体结构与 response_schema 完全一致，所有字段类型正确、必返回字段不缺\n如果接口是创建资源（POST），创建后通过 GET 验证资源确实被创建\n如果接口是更新资源（PUT/PATCH），更新后通过 GET 验证字段确实被更新\n如果接口是删除资源（DELETE），删除后通过 GET 验证资源确实不存在",
+    "is_enabled": true
+  },
+  {
+    "name": "数据边界场景",
+    "description": "验证业务数据的边界情况",
+    "category": "biz_logic",
+    "priority": "high",
+    "rule_content": "操作不存在的资源（如 GET/DELETE/PUT 一个不存在的 ID），预期返回 404\n创建同名/重复资源，预期返回 409 或 400 并提示冲突\n对只读资源执行写操作，预期返回 403 或 405\n操作已被删除的资源，预期返回 404 或 410\n传入其他用户/租户的资源 ID，预期返回 403 或 404（取决于是否暴露存在性）",
+    "is_enabled": true
+  },
+  {
+    "name": "幂等性验证",
+    "description": "验证接口的幂等性行为",
+    "category": "biz_logic",
+    "priority": "medium",
+    "rule_content": "对同一请求连续发送两次（如连续创建相同数据两次），验证第二次的行为\n如果是幂等接口，第二次应返回与第一次一致的结果或 200 提示已存在\n如果是非幂等接口，第二次应返回 409 冲突或创建了两份独立数据（需确认是否符合业务预期）",
+    "is_enabled": true
+  },
+  {
+    "name": "关联数据校验",
+    "description": "验证接口对外键/关联数据的校验",
+    "category": "biz_logic",
+    "priority": "medium",
+    "rule_content": "如果请求参数中包含外键或关联字段（如 user_id, order_id），传入不存在的关联 ID\n预期返回 400 或 404，响应提示关联数据不存在\n如果关联数据有状态要求（如订单必须已支付才能发货），传入不符合状态要求的关联 ID，验证返回业务错误",
+    "is_enabled": true
+  },
+  {
+    "name": "状态流转校验",
+    "description": "验证资源状态机的合法流转",
+    "category": "biz_logic",
+    "priority": "medium",
+    "rule_content": "如果接口涉及状态变更，测试所有合法状态流转路径，预期成功\n测试非法状态流转（跳状态、回退到非法前序状态），预期返回 400 或 422\n从终态再次变更状态，预期返回错误",
+    "is_enabled": true
+  },
+  {
+    "name": "认证缺失测试",
+    "description": "验证接口的认证拦截",
+    "category": "error_handle",
+    "priority": "high",
+    "rule_content": "不携带任何认证信息（Token/Cookie/Signature）发送请求，预期返回 401\n携带已过期的认证信息发送请求，预期返回 401\n携带被删除/禁用的用户认证信息发送请求，预期返回 401 或 403\n携带格式错误的认证信息（如 Bearer 拼写错误），预期返回 401",
+    "is_enabled": true
+  },
+  {
+    "name": "权限不足测试",
+    "description": "验证接口的权限控制",
+    "category": "error_handle",
+    "priority": "high",
+    "rule_content": "使用低权限角色（如普通用户）执行管理员操作，预期返回 403\n使用未授权访问其他用户私有资源的认证信息请求，预期返回 403\n如果没有权限分级，至少验证未登录用户无法访问需要登录的接口",
+    "is_enabled": true
+  },
+  {
+    "name": "请求体格式异常",
+    "description": "验证请求体格式错误时的处理",
+    "category": "error_handle",
+    "priority": "high",
+    "rule_content": "发送格式错误的 JSON（如缺少闭合括号、多余逗号、键名未加引号），预期返回 400\nContent-Type 设为非预期类型（如接口要求 JSON 但传 form-data），预期返回 400 或 415\n请求体为空或为 null，预期返回 400\n请求体只包含部分字段（缺少必要字段），预期返回 400 并指明缺少的字段",
+    "is_enabled": true
+  },
+  {
+    "name": "资源不存在测试",
+    "description": "验证资源不存在时的错误处理",
+    "category": "error_handle",
+    "priority": "medium",
+    "rule_content": "使用不存在的资源 ID（如 uuid 全0或自增ID使用极大值如99999999）请求 GET/PUT/DELETE\n预期返回 404，响应体包含资源不存在的提示信息\n使用负数 ID 或零值 ID 请求，预期返回 404 或 400",
+    "is_enabled": true
+  },
+  {
+    "name": "请求方法错误",
+    "description": "验证 HTTP 方法的限制",
+    "category": "error_handle",
+    "priority": "low",
+    "rule_content": "用错误的 HTTP 方法请求接口（如对只支持 GET 的接口发送 POST，对只支持 POST 的接口发送 GET）\n预期返回 405，响应头包含 Allow 字段列出允许的方法\n如果接口路径同时存在 GET 和 POST，确认两者行为各自正确",
+    "is_enabled": true
+  },
+  {
+    "name": "并发冲突测试",
+    "description": "验证并发场景下的数据一致性",
+    "category": "error_handle",
+    "priority": "low",
+    "rule_content": "考虑对同一资源的并发修改场景：如果接口支持乐观锁（如 version 字段或 ETag），传入过期的版本号，预期返回 409 冲突\n如果参数中有唯一约束字段，模拟并发创建相同数据的情况（通过描述两个相同请求），提醒人工测试并发",
+    "is_enabled": true
+  },
+  {
+    "name": "边界值-字符串",
+    "description": "验证字符串参数的边界行为",
+    "category": "boundary",
+    "priority": "medium",
+    "rule_content": "传入空字符串 '' 作为参数值，验证接口行为（可能 400 也可能是合法值）\n传入仅含空格的字符串 '   '，验证是否被 trim 或拒绝\n传入超长字符串（如 10000 个字符），验证是否有长度限制\n传入含特殊字符的字符串（\\n \\t \\0 < > & \" '），验证是否被正确转义或拒绝\n传入 unicode 字符（中文、emoji、从右到左字符），验证处理正确",
+    "is_enabled": true
+  },
+  {
+    "name": "边界值-数值",
+    "description": "验证数值参数的边界行为",
+    "category": "boundary",
+    "priority": "medium",
+    "rule_content": "传入 0、负数、极大值（如 2147483647）、极小值（如 -2147483648）\n对浮点数参数传入科学计数法（如 1.5e10）、过高精度小数（1.9999999999999999）\n如果参数有明确范围（如 1~100），测试边界：0、1、100、101 四个值\n预期：边界内（1、100）成功，边界外（0、101）返回 400",
+    "is_enabled": true
+  },
+  {
+    "name": "边界值-数组",
+    "description": "验证数组参数的数量边界",
+    "category": "boundary",
+    "priority": "medium",
+    "rule_content": "传入空数组 []，验证接口行为\n传入仅含一个元素的数组\n传入非常大的数组（如 1000 个元素），验证是否有限制或性能问题\n传入含重复元素的数组，验证去重还是全部接受\n传入含 null 元素的数组 [null, null]，验证处理方式",
+    "is_enabled": true
+  },
+  {
+    "name": "边界值-请求体大小",
+    "description": "验证请求体大小的限制",
+    "category": "boundary",
+    "priority": "low",
+    "rule_content": "构造一个接近上限的合法请求体（如 1MB JSON），验证正常处理\n如果文档明确了大小限制，构造超出限制的请求体，预期返回 413",
+    "is_enabled": true
+  },
+  {
+    "name": "SQL注入防护",
+    "description": "验证接口对SQL注入的防护",
+    "category": "security",
+    "priority": "high",
+    "rule_content": "在字符串参数和请求体字段中传入SQL注入测试值：' OR '1'='1、'; DROP TABLE users; --、1' AND '1'='1\n在数值参数中传入 SQL 语句片段\n预期：接口返回 400 参数校验失败，或正常处理但不对数据库造成破坏，响应不暴露数据库错误信息",
+    "is_enabled": true
+  },
+  {
+    "name": "XSS防护",
+    "description": "验证接口对跨站脚本攻击的防护",
+    "category": "security",
+    "priority": "high",
+    "rule_content": "在字符串参数和请求体字段中传入XSS测试值：<script>alert(1)</script>、<img src=x onerror=alert(1)>、<svg/onload=alert(1)>\n预期：接口不应因为非法的 HTML/JS 片段而崩溃，返回 400 或正常处理\n响应体中不应回显未经转义的攻击脚本",
+    "is_enabled": true
+  },
+  {
+    "name": "敏感信息泄露检查",
+    "description": "验证接口响应不暴露敏感信息",
+    "category": "security",
+    "priority": "medium",
+    "rule_content": "检查错误响应中是否泄露了内部实现细节（如数据库表名、堆栈跟踪、服务器路径、框架版本号）\n预期：错误响应只包含对用户友好的提示信息，不含内部敏感信息\n验证响应头中是否包含不必要的服务端信息（如 X-Powered-By、Server 版本号）",
+    "is_enabled": true
+  },
+  {
+    "name": "水平/垂直越权",
+    "description": "验证接口是否存在越权漏洞",
+    "category": "security",
+    "priority": "high",
+    "rule_content": "水平越权：用户A尝试操作用户B的资源（通过修改资源ID参数），预期返回 403 或 404\n垂直越权：普通用户尝试执行管理员操作（如果有角色区分），预期返回 403\n如果请求体或参数中包含用户ID/角色字段，尝试修改该字段值，验证服务端是否以 Token 身份为准而非请求参数",
+    "is_enabled": true
+  },
+  {
+    "name": "路径遍历测试",
+    "description": "验证接口对路径遍历攻击的防护",
+    "category": "security",
+    "priority": "low",
+    "rule_content": "在路径参数或文件相关参数中传入路径遍历值：../../etc/passwd、..\\..\\windows\\system32\n预期：接口返回 400 或正确处理但不访问预期外的文件路径",
+    "is_enabled": true
+  },
+  {
+    "name": "响应时间基准",
+    "description": "记录正常请求的响应时间作为基准",
+    "category": "performance",
+    "priority": "low",
+    "rule_content": "在用例描述/备注中记录正常请求的预期响应时间上限（如 500ms）\n如果该接口涉及复杂查询或大量数据处理，设置更宽松的时间上限\n建议在 validation_rules 中添加对响应时间的断言（如果测试框架支持）",
+    "is_enabled": true
+  },
+  {
+    "name": "大数据量返回",
+    "description": "验证大数据量场景下的分页和性能",
+    "category": "performance",
+    "priority": "low",
+    "rule_content": "如果接口支持分页，传入极端分页参数（page=99999, page_size=1000 或 page_size=0）\n验证 page_size 过大时接口是否有上限限制\n传入 page_size=0 或负数，验证接口是否返回默认分页或 400 错误",
+    "is_enabled": true
+  },
+  {
+    "name": "响应结构验证",
+    "description": "验证正常响应结构符合规范",
+    "category": "other",
+    "priority": "medium",
+    "rule_content": "检查正常响应是否与 response_schema 定义完全一致：字段名、字段类型、嵌套层级\n如果 response_schema 标注了必返回字段，确认所有必返回字段都存在\n检查响应 Content-Type 是否为 application/json（JSON 接口）\n检查 HTTP 状态码是否与接口文档一致",
+    "is_enabled": true
+  },
+  {
+    "name": "错误响应结构验证",
+    "description": "验证错误响应的结构一致性",
+    "category": "other",
+    "priority": "medium",
+    "rule_content": "无论是参数错误、认证错误还是业务错误，预期错误响应结构一致（如统一包含 code、message 字段）\n错误响应的 Content-Type 应为 application/json\n所有 error_code 中定义的错误场景，都应能构造出对应的测试用例",
+    "is_enabled": true
+  },
+  {
+    "name": "错误码覆盖",
+    "description": "确保测试覆盖接口文档中定义的所有错误码",
+    "category": "other",
+    "priority": "medium",
+    "rule_content": "检查接口文档中定义的 error_code 列表，为每个错误码构造至少一个触发场景\n例如：文档定义了 AUTH_EXPIRED、TOKEN_MISSING、PARAM_INVALID 三个错误码，需分别构造能触发这三个错误码的用例\n如果某错误码无法通过普通测试触发（如 INTERNAL_ERROR），可在备注中说明需要异常环境",
+    "is_enabled": true
+  },
+  {
+    "name": "组合参数测试",
+    "description": "验证多个参数组合时的交互影响",
+    "category": "other",
+    "priority": "low",
+    "rule_content": "如果接口有互斥参数（二者只能传其一），同时传入两个，预期返回 400\n如果接口有依赖参数（传 A 时必须传 B），传入 A 但不传 B，预期返回 400\n如果参数有条件必填（特定场景下必填），测试该场景下不传的情况",
+    "is_enabled": true
+  }
+]

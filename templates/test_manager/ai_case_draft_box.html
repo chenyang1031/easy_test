@@ -1,0 +1,312 @@
+{% extends 'base.html' %}
+
+{% block title %}AI草稿�?- EasyTesting{% endblock %}
+{% block header %}AI草稿箱{% endblock %}
+
+{% block content %}
+<div id="ai-draft-alert"></div>
+<div class="row">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>草稿组列�?/span>
+                <button class="btn btn-sm btn-outline-secondary" id="refresh-groups-btn" title="刷新">
+                    <i class="bi bi-arrow-clockwise"></i>
+                </button>
+            </div>
+            <div class="card-body">
+                <div id="draft-groups-list" class="list-group list-group-flush">
+                    <div class="text-center text-muted py-4" id="groups-loading">
+                        <div class="spinner-border spinner-border-sm" role="status"></div>
+                        <span class="ms-2">加载�?..</span>
+                    </div>
+                    <div class="text-center text-muted py-4 d-none" id="groups-empty">
+                        <i class="bi bi-inbox fs-1"></i>
+                        <p class="mb-0 mt-2">暂无草稿�?/p>
+                        <small>AI 生成的测试用例草稿将显示在这�?/small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span id="drafts-panel-title">草稿详情</span>
+                <div class="btn-group d-none" id="drafts-actions">
+                    <button class="btn btn-sm btn-primary" id="import-selected-btn" disabled>
+                        <i class="bi bi-download"></i> 导入选中
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div id="drafts-placeholder" class="text-center text-muted py-5">
+                    <i class="bi bi-box-seam fs-1"></i>
+                    <p class="mb-0 mt-2">请从左侧选择一个草稿组</p>
+                </div>
+                <div id="drafts-content" class="d-none">
+                    <div class="mb-3">
+                        <input type="checkbox" id="select-all-drafts" class="form-check-input me-2">
+                        <label for="select-all-drafts" class="form-check-label">全选可导入的草�?/label>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th style="width:40px"></th>
+                                    <th>用例名称</th>
+                                    <th>Method</th>
+                                    <th>URL</th>
+                                    <th>优先�?/th>
+                                    <th>状�?/th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="drafts-table-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div id="drafts-loading" class="text-center text-muted py-4 d-none">
+                    <div class="spinner-border spinner-border-sm" role="status"></div>
+                    <span class="ms-2">加载草稿�?..</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+    const currentUserId = {{ current_user_id|default:0 }};
+    let selectedGroupId = null;
+    let draftsData = [];
+    let selectedDraftIds = new Set();
+
+    function csrfToken() {
+        const el = document.querySelector('input[name="csrfmiddlewaretoken"]');
+        if (el) return el.value;
+        // 正确�?cookie 中读�?csrftoken
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, 10) === ('csrftoken' + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(10));
+                    break;
+                }
+            }
+        }
+        return cookieValue || '';
+    }
+
+    function notify(msg, level) {
+        const el = document.getElementById('ai-draft-alert');
+        if (el) el.innerHTML = `<div class="alert alert-${level || 'info'}">${msg}</div>`;
+    }
+
+    function escapeHtml(raw) {
+        return String(raw || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function statusBadge(status) {
+        const map = {
+            'pending': '<span class="badge bg-secondary">待导�?/span>',
+            'imported': '<span class="badge bg-success">已导�?/span>',
+            'failed': '<span class="badge bg-danger">导入失败</span>'
+        };
+        return map[String(status || '').toLowerCase()] || escapeHtml(status);
+    }
+
+    function groupStatusBadge(status) {
+        const map = {
+            'pending': '<span class="badge bg-secondary">待导�?/span>',
+            'partial': '<span class="badge bg-warning text-dark">部分导入</span>',
+            'imported': '<span class="badge bg-success">全部导入</span>'
+        };
+        return map[String(status || '').toLowerCase()] || escapeHtml(status);
+    }
+
+    async function fetchGroups() {
+        const listEl = document.getElementById('draft-groups-list');
+        const loadingEl = document.getElementById('groups-loading');
+        const emptyEl = document.getElementById('groups-empty');
+        listEl.innerHTML = '';
+        loadingEl.classList.remove('d-none');
+        emptyEl.classList.add('d-none');
+
+        try {
+            const resp = await fetch('/api/v1/ai/draft-box/');
+            const groups = await resp.json();
+            loadingEl.classList.add('d-none');
+
+            if (!Array.isArray(groups) || groups.length === 0) {
+                emptyEl.classList.remove('d-none');
+                return;
+            }
+
+            groups.forEach(g => {
+                const item = document.createElement('a');
+                item.href = '#';
+                item.className = 'list-group-item list-group-item-action' + (selectedGroupId === g.id ? ' active' : '');
+                item.dataset.groupId = g.id;
+                const count = g.draft_count != null ? g.draft_count : (g.drafts ? g.drafts.length : 0);
+                item.innerHTML = `
+                    <div class="d-flex justify-content-between">
+                        <strong>${escapeHtml(g.name || '草稿�?' + g.id)}</strong>
+                        ${groupStatusBadge(g.status)}
+                    </div>
+                    <small class="text-muted">${escapeHtml(g.project_name || '')} · ${count} 条草�?/small>
+                `;
+                listEl.appendChild(item);
+            });
+
+            listEl.querySelectorAll('[data-group-id]').forEach(el => {
+                el.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    selectGroup(Number(el.dataset.groupId));
+                });
+            });
+        } catch (err) {
+            loadingEl.classList.add('d-none');
+            notify('加载草稿组失�? ' + (err.message || '未知错误'), 'danger');
+        }
+    }
+
+    async function fetchDrafts(groupId) {
+        selectedGroupId = groupId;
+        document.getElementById('drafts-placeholder').classList.add('d-none');
+        document.getElementById('drafts-content').classList.add('d-none');
+        document.getElementById('drafts-loading').classList.remove('d-none');
+        document.getElementById('drafts-actions').classList.add('d-none');
+
+        const listEl = document.getElementById('draft-groups-list');
+        listEl.querySelectorAll('.list-group-item').forEach(el => {
+            el.classList.toggle('active', Number(el.dataset.groupId) === groupId);
+        });
+
+        try {
+            const resp = await fetch('/api/v1/ai/draft-box/drafts/?draft_group_id=' + groupId);
+            const drafts = await resp.json();
+            draftsData = Array.isArray(drafts) ? drafts : [];
+            renderDrafts(draftsData);
+        } catch (err) {
+            notify('加载草稿失败: ' + (err.message || '未知错误'), 'danger');
+            draftsData = [];
+            renderDrafts([]);
+        } finally {
+            document.getElementById('drafts-loading').classList.add('d-none');
+        }
+    }
+
+    function selectGroup(groupId) {
+        fetchDrafts(groupId);
+    }
+
+    function renderDrafts(drafts) {
+        const tbody = document.getElementById('drafts-table-body');
+        const contentEl = document.getElementById('drafts-content');
+        const actionsEl = document.getElementById('drafts-actions');
+
+        if (!drafts.length) {
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">该组暂无草稿</td></tr>';
+        } else {
+            const rows = drafts.map(d => {
+                const canSelect = d.can_select !== false && d.import_status !== 'imported';
+                return `<tr data-draft-id="${d.id}">
+                    <td>${canSelect ? `<input type="checkbox" class="form-check-input draft-checkbox" data-id="${d.id}">` : ''}</td>
+                    <td>${escapeHtml(d.case_name || '-')}</td>
+                    <td><span class="badge bg-secondary">${escapeHtml(d.request_method || '-')}</span></td>
+                    <td><small class="text-break">${escapeHtml((d.request_url || '').substring(0, 60))}${(d.request_url || '').length > 60 ? '...' : ''}</small></td>
+                    <td>${escapeHtml(d.priority || 'P2')}</td>
+                    <td>${statusBadge(d.import_status)}</td>
+                    <td>${d.imported_case_id ? `<a href="/test-cases/${d.imported_case_id}/" class="btn btn-sm btn-outline-primary">查看用例</a>` : '-'}</td>
+                </tr>`;
+            }).join('');
+            tbody.innerHTML = rows;
+        }
+
+        contentEl.classList.remove('d-none');
+        actionsEl.classList.remove('d-none');
+        selectedDraftIds.clear();
+        const selectAll = document.getElementById('select-all-drafts');
+        if (selectAll) selectAll.checked = false;
+        updateImportButton();
+
+        document.querySelectorAll('.draft-checkbox').forEach(cb => {
+            cb.addEventListener('change', () => {
+                const id = Number(cb.dataset.id);
+                if (cb.checked) selectedDraftIds.add(id);
+                else selectedDraftIds.delete(id);
+                updateImportButton();
+            });
+        });
+    }
+
+    function updateImportButton() {
+        const btn = document.getElementById('import-selected-btn');
+        btn.disabled = selectedDraftIds.size === 0;
+    }
+
+    async function importSelected() {
+        if (!selectedGroupId || selectedDraftIds.size === 0) {
+            notify('请先选择要导入的草稿', 'warning');
+            return;
+        }
+        const btn = document.getElementById('import-selected-btn');
+        btn.disabled = true;
+
+        try {
+            const resp = await fetch('/api/v1/ai/import-test-cases/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken()
+                },
+                body: JSON.stringify({
+                    draft_group_id: selectedGroupId,
+                    draft_ids: Array.from(selectedDraftIds),
+                    user_id: currentUserId
+                })
+            });
+            const data = await resp.json();
+
+            if (!resp.ok) {
+                const msg = data.detail || (typeof data === 'object' ? JSON.stringify(data) : '导入失败');
+                notify(msg, 'danger');
+                return;
+            }
+
+            notify(`导入完成：成�?${data.success_count} 条，失败 ${data.failure_count} 条`, data.failure_count > 0 ? 'warning' : 'success');
+            fetchDrafts(selectedGroupId);
+            fetchGroups();
+        } catch (err) {
+            notify('导入失败: ' + (err.message || '未知错误'), 'danger');
+        } finally {
+            btn.disabled = false;
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        fetchGroups();
+        document.getElementById('refresh-groups-btn').addEventListener('click', () => {
+            fetchGroups();
+            if (selectedGroupId) fetchDrafts(selectedGroupId);
+        });
+        document.getElementById('import-selected-btn').addEventListener('click', importSelected);
+        document.getElementById('select-all-drafts').addEventListener('change', function() {
+            const checked = this.checked;
+            document.querySelectorAll('.draft-checkbox').forEach(cb => {
+                cb.checked = checked;
+                const id = Number(cb.dataset.id);
+                if (checked) selectedDraftIds.add(id);
+                else selectedDraftIds.delete(id);
+            });
+            updateImportButton();
+        });
+    });
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,523 @@
+{% extends 'base.html' %}
+
+{% block title %}AI提示词管�?- EasyTesting{% endblock %}
+{% block header %}AI提示词模板管理{% endblock %}
+
+{% block content %}
+<div id="prompt-alert"></div>
+
+<div class="row mb-3">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-chat-left-text me-2"></i>提示词模�?/span>
+                <div class="btn-group">
+                    <button class="btn btn-sm btn-success" id="create-prompt-btn">
+                        <i class="bi bi-plus-lg"></i> 新建模板
+                    </button>
+                    <button class="btn btn-sm btn-outline-primary" id="import-json-btn">
+                        <i class="bi bi-upload"></i> 导入JSON
+                    </button>
+                    <button class="btn btn-sm btn-outline-primary" id="export-json-btn">
+                        <i class="bi bi-download"></i> 导出JSON
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary" id="refresh-prompt-btn" title="刷新">
+                        <i class="bi bi-arrow-clockwise"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- 筛选栏 -->
+                <div class="row mb-3 g-2">
+                    <div class="col-md-3">
+                        <input type="text" class="form-control form-control-sm" id="filter-keyword" placeholder="搜索模板名称/描述...">
+                    </div>
+                    <div class="col-md-2">
+                        <select class="form-select form-select-sm" id="filter-enabled">
+                            <option value="">全部状�?/option>
+                            <option value="true">已启�?/option>
+                            <option value="false">已禁�?/option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <button class="btn btn-sm btn-primary w-100" id="filter-btn"><i class="bi bi-search"></i> 筛�?/button>
+                    </div>
+                </div>
+
+                <!-- 加载�?-->
+                <div id="prompt-loading" class="text-center text-muted py-4">
+                    <div class="spinner-border spinner-border-sm" role="status"></div>
+                    <span class="ms-2">加载�?..</span>
+                </div>
+
+                <!-- 空状�?-->
+                <div id="prompt-empty" class="text-center text-muted py-5 d-none">
+                    <i class="bi bi-chat-left-text fs-1"></i>
+                    <p class="mb-0 mt-2">暂无提示词模�?/p>
+                    <small>点击「新建模板」添加第一个模板，或「导入JSON」批量导�?/small>
+                </div>
+
+                <!-- 模板表格 -->
+                <div id="prompt-table-wrap" class="d-none">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead>
+                                <tr>
+                                    <th>模板名称</th>
+                                    <th>描述</th>
+                                    <th>变量</th>
+                                    <th>默认</th>
+                                    <th>状�?/th>
+                                    <th>更新时间</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="prompt-table-body"></tbody>
+                        </table>
+                    </div>
+
+                    <!-- 分页 -->
+                    <nav id="prompt-pagination" class="d-none">
+                        <ul class="pagination pagination-sm justify-content-center">
+                            <li class="page-item" id="prompt-prev">
+                                <a class="page-link" href="#">上一�?/a>
+                            </li>
+                            <li class="page-item disabled">
+                                <span class="page-link" id="prompt-page-info">1/1</span>
+                            </li>
+                            <li class="page-item" id="prompt-next">
+                                <a class="page-link" href="#">下一�?/a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 模板编辑模态框 -->
+<div class="modal fade" id="prompt-modal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="prompt-modal-title">新建提示词模�?/h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="prompt-form">
+                    {% csrf_token %}
+                    <input type="hidden" id="prompt-id">
+                    <div class="mb-3">
+                        <label class="form-label">模板名称 <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="prompt-name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">描述</label>
+                        <textarea class="form-control" id="prompt-description" rows="2"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">模板内容 <span class="text-danger">*</span></label>
+                        <textarea class="form-control" id="prompt-template-text" rows="12" required
+                                  placeholder="基于以下接口信息和测试规则，生成测试用例�?
+【接口信息�?请求方法：{method}
+请求URL：{url}
+请求头：{headers}
+请求体结构：{body_schema}
+
+【测试规则�?{rules}
+
+【生成要求�?1. 每个用例包含：name, request_method, request_url, request_headers, request_body, expected_status_code, validation_rules
+2. 覆盖所有规则类�?3. 返回JSON数组"></textarea>
+                        <div class="form-text">
+                            支持变量占位符：{method}, {url}, {headers}, {body_schema}, {rules}
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="prompt-is-default">
+                                <label class="form-check-label" for="prompt-is-default">
+                                    设为默认模板
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="prompt-is-enabled" checked>
+                                <label class="form-check-label" for="prompt-is-enabled">
+                                    启用
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" id="save-prompt-btn">保存</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 导入JSON模态框 -->
+<div class="modal fade" id="import-json-modal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">导入JSON</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">JSON内容（数组格式）</label>
+                    <textarea class="form-control" id="import-json-content" rows="10"
+                              placeholder='[{"name": "模板1", "description": "...", "template_text": "...", "is_enabled": true}, ...]'></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" id="confirm-import-json-btn">导入</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script>
+let currentPage = 1;
+const pageSize = 10;
+let totalPages = 1;
+
+// 加载提示词模板列�?function loadPrompts(page = 1) {
+    const keyword = $('#filter-keyword').val();
+    const isEnabled = $('#filter-enabled').val();
+    
+    $('#prompt-loading').removeClass('d-none');
+    $('#prompt-empty').addClass('d-none');
+    $('#prompt-table-wrap').addClass('d-none');
+    
+    let url = `/api/v1/ai/prompt-templates/?page=${page}&page_size=${pageSize}`;
+    if (keyword) url += `&keyword=${encodeURIComponent(keyword)}`;
+    if (isEnabled !== '') url += `&is_enabled=${isEnabled}`;
+    
+    $.ajax({
+        url: url,
+        type: 'GET',
+        success: function(response) {
+            $('#prompt-loading').addClass('d-none');
+            
+            const results = response.results || response;
+            const count = response.count || results.length;
+            
+            if (results.length === 0) {
+                $('#prompt-empty').removeClass('d-none');
+                return;
+            }
+            
+            $('#prompt-table-wrap').removeClass('d-none');
+            
+            // 渲染表格
+            let html = '';
+            results.forEach(item => {
+                const variables = item.template_variables || [];
+                html += `
+                    <tr>
+                        <td><strong>${escapeHtml(item.name)}</strong></td>
+                        <td>${escapeHtml(item.description || '-')}</td>
+                        <td><small class="text-muted">${escapeHtml(variables.join(', '))}</small></td>
+                        <td>${item.is_default ? '<span class="badge bg-success">默认</span>' : ''}</td>
+                        <td>${item.is_enabled ? '<span class="badge bg-success">已启�?/span>' : '<span class="badge bg-secondary">已禁�?/span>'}</td>
+                        <td>${formatDateTime(item.updated_at)}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary" onclick="editPrompt(${item.id})">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            ${item.is_default ? '' : `<button class="btn btn-sm btn-outline-success" onclick="setDefault(${item.id})">
+                                <i class="bi bi-star"></i>
+                            </button>`}
+                            <button class="btn btn-sm btn-outline-danger" onclick="deletePrompt(${item.id}, '${escapeHtml(item.name)}')">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+            $('#prompt-table-body').html(html);
+            
+            // 更新分页
+            if (response.count !== undefined) {
+                totalPages = Math.ceil(count / pageSize);
+                currentPage = page;
+                updatePagination();
+            }
+        },
+        error: function(xhr) {
+            $('#prompt-loading').addClass('d-none');
+            showAlert('danger', '加载失败�? + (xhr.responseJSON?.detail || '未知错误'));
+        }
+    });
+}
+
+// 更新分页
+function updatePagination() {
+    if (totalPages > 1) {
+        $('#prompt-pagination').removeClass('d-none');
+        $('#prompt-prev').toggleClass('disabled', currentPage <= 1);
+        $('#prompt-next').toggleClass('disabled', currentPage >= totalPages);
+        $('#prompt-page-info').text(`${currentPage}/${totalPages}`);
+    } else {
+        $('#prompt-pagination').addClass('d-none');
+    }
+}
+
+// 显示提示
+function showAlert(type, message) {
+    const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+    $('#prompt-alert').html(`
+        <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+            ${escapeHtml(message)}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `);
+    setTimeout(() => $('.alert').alert('close'), 5000);
+}
+
+// 转义HTML
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// 格式化日期时�?function formatDateTime(dateStr) {
+    if (!dateStr) return '-';
+    const d = new Date(dateStr);
+    return d.toLocaleString('zh-CN');
+}
+
+// 创建模板
+function createPrompt() {
+    $('#prompt-modal-title').text('新建提示词模�?);
+    $('#prompt-form')[0].reset();
+    $('#prompt-id').val('');
+    $('#prompt-is-enabled').prop('checked', true);
+    $('#prompt-modal').modal('show');
+}
+
+// 编辑模板
+function editPrompt(id) {
+    $.ajax({
+        url: `/api/v1/ai/prompt-templates/${id}/`,
+        type: 'GET',
+        success: function(data) {
+            $('#prompt-modal-title').text('编辑提示词模�?);
+            $('#prompt-id').val(data.id);
+            $('#prompt-name').val(data.name);
+            $('#prompt-description').val(data.description);
+            $('#prompt-template-text').val(data.template_text);
+            $('#prompt-is-default').prop('checked', data.is_default);
+            $('#prompt-is-enabled').prop('checked', data.is_enabled);
+            $('#prompt-modal').modal('show');
+        },
+        error: function(xhr) {
+            showAlert('danger', '加载失败�? + (xhr.responseJSON?.detail || '未知错误'));
+        }
+    });
+}
+
+// 保存模板
+function savePrompt() {
+    const id = $('#prompt-id').val();
+    const data = {
+        name: $('#prompt-name').val().trim(),
+        description: $('#prompt-description').val().trim(),
+        template_text: $('#prompt-template-text').val().trim(),
+        is_default: $('#prompt-is-default').prop('checked'),
+        is_enabled: $('#prompt-is-enabled').prop('checked'),
+    };
+    
+    if (!data.name) {
+        showAlert('danger', '模板名称不能为空');
+        return;
+    }
+    if (!data.template_text) {
+        showAlert('danger', '模板内容不能为空');
+        return;
+    }
+    
+    const url = id ? `/api/v1/ai/prompt-templates/${id}/` : '/api/v1/ai/prompt-templates/';
+    const method = id ? 'PUT' : 'POST';
+    
+    $.ajax({
+        url: url,
+        type: method,
+        contentType: 'application/json',
+        data: JSON.stringify(data),
+        headers: {
+            'X-CSRFToken': csrfToken()
+        },
+        success: function() {
+            $('#prompt-modal').modal('hide');
+            showAlert('success', id ? '更新成功' : '创建成功');
+            loadPrompts(currentPage);
+        },
+        error: function(xhr) {
+            const errors = xhr.responseJSON;
+            let msg = '保存失败�?;
+            if (errors) {
+                msg += Object.values(errors).flat().join('; ');
+            } else {
+                msg += '未知错误';
+            }
+            showAlert('danger', msg);
+        }
+    });
+}
+
+// 设置默认模板
+function setDefault(id) {
+    if (!confirm('确定要将此模板设为默认模板吗�?)) return;
+    
+    $.ajax({
+        url: '/api/v1/ai/prompt-templates/set-default/',
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({template_id: id}),
+        headers: {
+            'X-CSRFToken': csrfToken()
+        },
+        success: function() {
+            showAlert('success', '设置成功');
+            loadPrompts(currentPage);
+        },
+        error: function(xhr) {
+            showAlert('danger', '设置失败�? + (xhr.responseJSON?.detail || '未知错误'));
+        }
+    });
+}
+
+// 删除模板
+function deletePrompt(id, name) {
+    if (!confirm(`确定要删除模板�?{name}」吗？`)) return;
+    
+    $.ajax({
+        url: `/api/v1/ai/prompt-templates/${id}/`,
+        type: 'DELETE',
+        headers: {
+            'X-CSRFToken': csrfToken()
+        },
+        success: function() {
+            showAlert('success', '删除成功');
+            loadPrompts(currentPage);
+        },
+        error: function(xhr) {
+            showAlert('danger', '删除失败�? + (xhr.responseJSON?.detail || '未知错误'));
+        }
+    });
+}
+
+// CSRF Token
+function csrfToken() {
+    const el = document.querySelector('input[name="csrfmiddlewaretoken"]');
+    if (el) return el.value;
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, 10) === ('csrftoken' + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(10));
+                break;
+            }
+        }
+    }
+    return cookieValue || '';
+}
+
+// 导入JSON
+function importJson() {
+    const content = $('#import-json-content').val().trim();
+    if (!content) {
+        showAlert('danger', '请输入JSON内容');
+        return;
+    }
+    
+    let data;
+    try {
+        data = JSON.parse(content);
+    } catch (e) {
+        showAlert('danger', 'JSON格式错误�? + e.message);
+        return;
+    }
+    
+    if (!Array.isArray(data)) {
+        showAlert('danger', 'JSON必须是数组格�?);
+        return;
+    }
+    
+    $.ajax({
+        url: '/api/v1/ai/prompt-templates/import-json/',
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify(data),
+        headers: {
+            'X-CSRFToken': csrfToken()
+        },
+        success: function(response) {
+            $('#import-json-modal').modal('hide');
+            showAlert('success', `导入完成：创�?{response.created}条，更新${response.updated}条`);
+            if (response.errors && response.errors.length > 0) {
+                console.warn('导入错误�?, response.errors);
+            }
+            loadPrompts(1);
+        },
+        error: function(xhr) {
+            showAlert('danger', '导入失败�? + (xhr.responseJSON?.detail || '未知错误'));
+        }
+    });
+}
+
+// 导出JSON
+function exportJson() {
+    window.location.href = '/api/v1/ai/prompt-templates/export-json/';
+}
+
+// 初始�?$(function() {
+    loadPrompts(1);
+    
+    $('#create-prompt-btn').click(createPrompt);
+    $('#save-prompt-btn').click(savePrompt);
+    $('#filter-btn').click(() => loadPrompts(1));
+    $('#refresh-prompt-btn').click(() => loadPrompts(currentPage));
+    $('#import-json-btn').click(() => {
+        $('#import-json-content').val('');
+        $('#import-json-modal').modal('show');
+    });
+    $('#confirm-import-json-btn').click(importJson);
+    $('#export-json-btn').click(exportJson);
+    
+    // 回车搜索
+    $('#filter-keyword').keypress(function(e) {
+        if (e.which === 13) {
+            loadPrompts(1);
+        }
+    });
+    
+    // 分页
+    $('#prompt-prev').click(function() {
+        if (!$(this).hasClass('disabled')) {
+            loadPrompts(currentPage - 1);
+        }
+    });
+    $('#prompt-next').click(function() {
+        if (!$(this).hasClass('disabled')) {
+            loadPrompts(currentPage + 1);
+        }
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}性能测试 - EasyTesting{% endblock %}
+{% block header %}性能测试{% endblock %}
+
+{% block content %}
+<div class="scene-orchestrator-wrap">
+<div class="card scene-orchestrator-card">
+    <div class="card-body p-0 scene-orchestrator-card-body">
+        <div id="app" class="scene-orchestrator-app"></div>
+    </div>
+</div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+{% if not use_vite_dev %}
+<link rel="stylesheet" href="{% static 'scene-orchestrator/assets/element-plus.css' %}?v={{ asset_version }}">
+<link rel="stylesheet" href="{% static 'scene-orchestrator/assets/main.css' %}?v={{ asset_version }}">
+{% endif %}
+<style>
+/* 与测试场景编排保持一致：使容器与主内容区域高度一致，避免底部双层滚动 */
+.scene-orchestrator-wrap {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: calc(100vh - 180px);
+    overflow: hidden;
+}
+.scene-orchestrator-card {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    margin-bottom: 0;
+}
+.scene-orchestrator-card:hover {
+    transform: none;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+.scene-orchestrator-card-body {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+}
+.scene-orchestrator-app {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // 独立入口：进入页面时直接定位到性能测试路由，与测试场景编排解耦
+  if (!location.hash || location.hash === '#/' || location.hash === '#') {
+    location.hash = '#/performance';
+  }
+</script>
+{% if use_vite_dev %}
+<script type="module" src="{{ vite_dev_server }}/@vite/client"></script>
+<script type="module" src="{{ vite_dev_server }}/src/main.js"></script>
+{% else %}
+<script type="module" src="{% static 'scene-orchestrator/assets/main.js' %}?v={{ asset_version }}"></script>
+{% endif %}
+{% endblock %}

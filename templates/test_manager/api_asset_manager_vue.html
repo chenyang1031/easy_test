@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}API资产管理 - EasyTesting{% endblock %}
+{% block header %}API资产管理{% endblock %}
+
+{% block content %}
+<script>window.__CURRENT_USER_ID__ = {{ current_user_id|default:0 }};</script>
+<div id="app"></div>
+{% endblock %}
+
+{% block extra_css %}
+{% if not use_vite_dev %}
+<link rel="stylesheet" href="{% static 'scene-orchestrator/assets/element-plus.css' %}?v={{ asset_version }}">
+<link rel="stylesheet" href="{% static 'scene-orchestrator/assets/apiAssetManager.css' %}?v={{ asset_version }}">
+{% endif %}
+<style>
+/* 使 Vue 容器与主内容区域高度一致 */
+#app {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: calc(100vh - 120px);
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+{% if use_vite_dev %}
+<script type="module" src="{{ vite_dev_server }}/static/scene-orchestrator/@vite/client"></script>
+<script type="module" src="{{ vite_dev_server }}/static/scene-orchestrator/src/api-asset-manager/main.js"></script>
+{% else %}
+<script type="module" src="{% static 'scene-orchestrator/assets/apiAssetManager.js' %}?v={{ asset_version }}"></script>
+{% endif %}
+{% endblock %}

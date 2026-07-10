@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}测试管理 - EasyTesting{% endblock %}
+{% block header %}{% endblock %}
+
+{% block page_header %}{% endblock %}
+
+{% block content %}
+<script>window.__CURRENT_USER_ID__ = {{ current_user_id|default:0 }};</script>
+<div id="app"></div>
+{% endblock %}
+
+{% block extra_css %}
+{% if not use_vite_dev %}
+<link rel="stylesheet" href="{% static 'scene-orchestrator/assets/element-plus.css' %}?v={{ asset_version }}">
+<link rel="stylesheet" href="{% static 'scene-orchestrator/assets/testManager.css' %}?v={{ asset_version }}">
+{% endif %}
+<style>
+#app { display:flex; flex-direction:column; flex:1; min-height:calc(100vh - 120px); }
+/* 移除base.html的card/row边距影响 */
+.tm-content .el-table { font-size:13px; }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+{% if use_vite_dev %}
+<script type="module" src="{{ vite_dev_server }}/static/scene-orchestrator/@vite/client"></script>
+<script type="module" src="{{ vite_dev_server }}/static/scene-orchestrator/src/test-manager/main.js"></script>
+{% else %}
+<script type="module" src="{% static 'scene-orchestrator/assets/testManager.js' %}?v={{ asset_version }}"></script>
+{% endif %}
+{% endblock %}

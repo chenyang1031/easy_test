@@ -1,0 +1,117 @@
+{% extends 'base.html' %}
+
+{% block title %}参数配置 - EasyTesting{% endblock %}
+
+{% block header %}参数配置{% endblock %}
+
+{% block header_buttons %}
+<button type="button" class="btn btn-outline-primary" id="btnTestAi" title="测试 AI 接口连通性" data-csrf="{{ csrf_token }}">
+    <i class="bi bi-broadcast"></i> 测试 AI 接口
+</button>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>参数键</th>
+                        <th>参数值</th>
+                        <th>说明</th>
+                        <th>分类</th>
+                        <th>更新时间</th>
+                        <th class="text-end">操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for config in configs %}
+                        <tr>
+                            <td>
+                                <span class="fw-medium text-decoration-none text-dark font-monospace">
+                                    {{ config.key }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="text-truncate d-inline-block" style="max-width: 200px;" title="{{ config.value }}">
+                                    {{ config.value|truncatechars:50 }}
+                                </span>
+                            </td>
+                            <td>{{ config.description|default:"-" }}</td>
+                            <td><span class="badge bg-secondary">{{ config.category|default:"general" }}</span></td>
+                            <td>{{ config.updated_at|date:"Y-m-d H:i" }}</td>
+                            <td class="text-end">
+                                <a href="{% url 'parameter_config_edit' config.pk %}" class="btn btn-sm btn-outline-secondary">
+                                    <i class="bi bi-pencil"></i> 编辑
+                                </a>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center py-5">
+                                <div class="py-5">
+                                    <i class="bi bi-sliders display-4 text-muted mb-3"></i>
+                                    <h5>暂无参数配置</h5>
+                                    <p class="text-muted">系统将自动初始化 AI 相关参数配置</p>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="card mt-4">
+    <div class="card-header">
+        <i class="bi bi-info-circle"></i> 参数配置说明
+    </div>
+    <div class="card-body">
+        <h5>AI 相关参数</h5>
+        <p class="text-muted">用于配置 AI 生成测试用例的接口地址、认证信息等，支持自定义 AI 服务对接。</p>
+        <ul>
+            <li><strong>AI_API_BASE_URL</strong> - AI 服务基础地址</li>
+            <li><strong>AI_API_GENERATE_MULTI_CASES_PATH</strong> - 生成多用例接口路径</li>
+            <li><strong>AI_API_AUTH_TOKEN</strong> - 接口认证 Token（可选）</li>
+        </ul>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const btnTestAi = document.getElementById('btnTestAi');
+    if (btnTestAi) {
+        btnTestAi.addEventListener('click', function() {
+            btnTestAi.disabled = true;
+            btnTestAi.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> 测试中...';
+            fetch('{% url "parameter_config_test_ai" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': btnTestAi.getAttribute('data-csrf') || '',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({})
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    alert('AI 接口测试成功');
+                } else {
+                    alert('AI 接口测试失败: ' + (data.message || '未知错误'));
+                }
+            })
+            .catch(err => {
+                alert('请求失败: ' + err.message);
+            })
+            .finally(function() {
+                btnTestAi.disabled = false;
+                btnTestAi.innerHTML = '<i class="bi bi-broadcast"></i> 测试 AI 接口';
+            });
+        });
+    }
+});
+</script>
+{% endblock %}

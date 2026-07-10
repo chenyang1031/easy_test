@@ -1,0 +1,525 @@
+{% extends 'base.html' %}
+
+{% block title %}AI规则管理 - EasyTesting{% endblock %}
+{% block header %}AI规则管理{% endblock %}
+
+{% block content %}
+<div id="rule-alert"></div>
+
+<div class="row mb-3">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-rulers me-2"></i>测试用例生成规则</span>
+                <div class="btn-group">
+                    <button class="btn btn-sm btn-success" id="create-rule-btn">
+                        <i class="bi bi-plus-lg"></i> 新建规则
+                    </button>
+                    <button class="btn btn-sm btn-outline-primary" id="import-json-btn">
+                        <i class="bi bi-upload"></i> 导入JSON
+                    </button>
+                    <button class="btn btn-sm btn-outline-primary" id="export-json-btn">
+                        <i class="bi bi-download"></i> 导出JSON
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary" id="refresh-rules-btn" title="刷新">
+                        <i class="bi bi-arrow-clockwise"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- 筛选栏 -->
+                <div class="row mb-3 g-2">
+                    <div class="col-md-3">
+                        <select class="form-select form-select-sm" id="filter-category">
+                            <option value="">全部分类</option>
+                            <option value="param_validate">参数校验</option>
+                            <option value="biz_logic">业务逻辑</option>
+                            <option value="error_handle">异常处理</option>
+                            <option value="boundary">边界�?/option>
+                            <option value="security">安全</option>
+                            <option value="performance">性能</option>
+                            <option value="other">其他</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <select class="form-select form-select-sm" id="filter-priority">
+                            <option value="">全部优先�?/option>
+                            <option value="high">�?/option>
+                            <option value="medium">�?/option>
+                            <option value="low">�?/option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <select class="form-select form-select-sm" id="filter-enabled">
+                            <option value="">全部状�?/option>
+                            <option value="true">已启�?/option>
+                            <option value="false">已禁�?/option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <input type="text" class="form-control form-control-sm" id="filter-keyword" placeholder="搜索规则名称/描述...">
+                    </div>
+                    <div class="col-md-2">
+                        <button class="btn btn-sm btn-primary w-100" id="filter-btn"><i class="bi bi-search"></i> 筛�?/button>
+                    </div>
+                </div>
+
+                <!-- 加载�?-->
+                <div id="rules-loading" class="text-center text-muted py-4">
+                    <div class="spinner-border spinner-border-sm" role="status"></div>
+                    <span class="ms-2">加载�?..</span>
+                </div>
+
+                <!-- 空状�?-->
+                <div id="rules-empty" class="text-center text-muted py-5 d-none">
+                    <i class="bi bi-file-text fs-1"></i>
+                    <p class="mb-0 mt-2">暂无规则</p>
+                    <small>点击「新建规则」添加第一条规则，或「导入JSON」批量导�?/small>
+                </div>
+
+                <!-- 规则表格 -->
+                <div id="rules-table-wrap" class="d-none">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead>
+                                <tr>
+                                    <th style="width:30px">
+                                        <input type="checkbox" class="form-check-input" id="select-all-rules">
+                                    </th>
+                                    <th>规则名称</th>
+                                    <th>分类</th>
+                                    <th>优先�?/th>
+                                    <th>规则条数</th>
+                                    <th>状�?/th>
+                                    <th>更新时间</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="rules-table-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 新建/编辑规则弹窗 -->
+<div class="modal fade" id="ruleModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="ruleModalTitle">新建规则</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="rule-form">
+                    {% csrf_token %}
+                    <input type="hidden" id="rule-id">
+                    <div class="row mb-3">
+                        <div class="col-md-8">
+                            <label class="form-label">规则名称 <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="rule-name" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">优先�?/label>
+                            <select class="form-select" id="rule-priority">
+                                <option value="medium">�?/option>
+                                <option value="high">�?/option>
+                                <option value="low">�?/option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">分类</label>
+                            <select class="form-select" id="rule-category">
+                                <option value="param_validate">参数校验</option>
+                                <option value="biz_logic">业务逻辑</option>
+                                <option value="error_handle">异常处理</option>
+                                <option value="boundary">边界�?/option>
+                                <option value="security">安全</option>
+                                <option value="performance">性能</option>
+                                <option value="other">其他</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">状�?/label>
+                            <div class="form-check form-switch mt-2">
+                                <input class="form-check-input" type="checkbox" id="rule-enabled" checked>
+                                <label class="form-check-label" for="rule-enabled">启用</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">规则描述</label>
+                        <textarea class="form-control" id="rule-description" rows="2"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">规则内容 <span class="text-danger">*</span>
+                            <small class="text-muted">（每行一条规则）</small>
+                        </label>
+                        <textarea class="form-control" id="rule-content" rows="10" required
+                            placeholder="示例�?#10;请求参数不能为空&#10;参数类型必须为数�?#10;长度不能超过100个字�?></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" id="save-rule-btn">保存</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 导入JSON弹窗 -->
+<div class="modal fade" id="importModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">导入规则（JSON�?/h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">规则数据（JSON数组格式�?/label>
+                    <textarea class="form-control font-monospace" id="import-json-text" rows="15"
+                        placeholder='[
+    {
+        "name": "参数校验-必填参数检�?,
+        "description": "检查接口必填参�?,
+        "category": "param_validate",
+        "priority": "high",
+        "rule_content": "必填参数不能为空\n参数格式校验",
+        "is_enabled": true
+    }
+]'></textarea>
+                </div>
+                <div id="import-result" class="d-none"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-success" id="confirm-import-btn"><i class="bi bi-upload"></i> 开始导�?/button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+    let rulesData = [];
+
+    function csrfToken() {
+        const el = document.querySelector('input[name="csrfmiddlewaretoken"]');
+        if (el) return el.value;
+        // 正确�?cookie 中读�?csrftoken
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, 10) === ('csrftoken' + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(10));
+                    break;
+                }
+            }
+        }
+        return cookieValue || '';
+    }
+
+    function notify(msg, level) {
+        const el = document.getElementById('rule-alert');
+        if (el) el.innerHTML = `<div class="alert alert-${level || 'info'} alert-dismissible fade show">${msg}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>`;
+    }
+
+    function escapeHtml(raw) {
+        return String(raw || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function categoryBadge(cat) {
+        const map = {
+            'param_validate': '<span class="badge bg-primary">参数校验</span>',
+            'biz_logic': '<span class="badge bg-info text-dark">业务逻辑</span>',
+            'error_handle': '<span class="badge bg-warning text-dark">异常处理</span>',
+            'boundary': '<span class="badge bg-secondary">边界�?/span>',
+            'security': '<span class="badge bg-danger">安全</span>',
+            'performance': '<span class="badge bg-dark">性能</span>',
+            'other': '<span class="badge bg-light text-dark">其他</span>',
+        };
+        return map[cat] || escapeHtml(cat);
+    }
+
+    function priorityBadge(pri) {
+        const map = {
+            'high': '<span class="badge bg-danger">�?/span>',
+            'medium': '<span class="badge bg-warning text-dark">�?/span>',
+            'low': '<span class="badge bg-success">�?/span>',
+        };
+        return map[pri] || escapeHtml(pri);
+    }
+
+    function enabledBadge(val) {
+        return val ? '<span class="badge bg-success">启用</span>' : '<span class="badge bg-secondary">禁用</span>';
+    }
+
+    function getFilterParams() {
+        const params = new URLSearchParams();
+        const cat = document.getElementById('filter-category').value;
+        const pri = document.getElementById('filter-priority').value;
+        const en = document.getElementById('filter-enabled').value;
+        const kw = document.getElementById('filter-keyword').value.trim();
+        if (cat) params.set('category', cat);
+        if (pri) params.set('priority', pri);
+        if (en) params.set('is_enabled', en);
+        if (kw) params.set('keyword', kw);
+        params.set('page_size', '100');
+        return params.toString();
+    }
+
+    async function fetchRules() {
+        const loadingEl = document.getElementById('rules-loading');
+        const emptyEl = document.getElementById('rules-empty');
+        const tableWrap = document.getElementById('rules-table-wrap');
+        loadingEl.classList.remove('d-none');
+        emptyEl.classList.add('d-none');
+        tableWrap.classList.add('d-none');
+
+        try {
+            const resp = await fetch('/api/v1/ai/rules/?' + getFilterParams());
+            const data = await resp.json();
+            loadingEl.classList.add('d-none');
+
+            if (data.results && data.results.length > 0) {
+                rulesData = data.results;
+                renderRules(data.results);
+                tableWrap.classList.remove('d-none');
+            } else if (Array.isArray(data)) {
+                rulesData = data;
+                renderRules(data);
+                if (data.length > 0) tableWrap.classList.remove('d-none');
+                else emptyEl.classList.remove('d-none');
+            } else {
+                rulesData = [];
+                emptyEl.classList.remove('d-none');
+            }
+        } catch (err) {
+            loadingEl.classList.add('d-none');
+            notify('加载规则失败: ' + (err.message || '未知错误'), 'danger');
+        }
+    }
+
+    function renderRules(rules) {
+        const tbody = document.getElementById('rules-table-body');
+        if (!rules.length) {
+            tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted">暂无匹配的规�?/td></tr>';
+            return;
+        }
+        tbody.innerHTML = rules.map(r => {
+            const lineCount = (r.rule_lines || []).length;
+            return `<tr data-rule-id="${r.id}">
+                <td><input type="checkbox" class="form-check-input rule-checkbox" data-id="${r.id}"></td>
+                <td><strong>${escapeHtml(r.name)}</strong>${r.description ? '<br><small class="text-muted">' + escapeHtml(r.description.substring(0, 50)) + (r.description.length > 50 ? '...' : '') + '</small>' : ''}</td>
+                <td>${categoryBadge(r.category)}</td>
+                <td>${priorityBadge(r.priority)}</td>
+                <td><span class="badge bg-secondary">${lineCount} �?/span></td>
+                <td>${enabledBadge(r.is_enabled)}</td>
+                <td><small>${r.updated_at ? new Date(r.updated_at).toLocaleString() : '-'}</small></td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary edit-rule-btn" data-id="${r.id}"><i class="bi bi-pencil"></i></button>
+                    <button class="btn btn-sm btn-outline-danger delete-rule-btn" data-id="${r.id}"><i class="bi bi-trash"></i></button>
+                </td>
+            </tr>`;
+        }).join('');
+
+        // 编辑
+        tbody.querySelectorAll('.edit-rule-btn').forEach(btn => {
+            btn.addEventListener('click', () => openEditModal(Number(btn.dataset.id)));
+        });
+        // 删除
+        tbody.querySelectorAll('.delete-rule-btn').forEach(btn => {
+            btn.addEventListener('click', () => deleteRule(Number(btn.dataset.id)));
+        });
+        // 全�?        document.getElementById('select-all-rules').addEventListener('change', function() {
+            document.querySelectorAll('.rule-checkbox').forEach(cb => cb.checked = this.checked);
+        });
+    }
+
+    function openCreateModal() {
+        document.getElementById('ruleModalTitle').textContent = '新建规则';
+        document.getElementById('rule-id').value = '';
+        document.getElementById('rule-name').value = '';
+        document.getElementById('rule-description').value = '';
+        document.getElementById('rule-category').value = 'param_validate';
+        document.getElementById('rule-priority').value = 'medium';
+        document.getElementById('rule-content').value = '';
+        document.getElementById('rule-enabled').checked = true;
+        const modal = new bootstrap.Modal(document.getElementById('ruleModal'));
+        modal.show();
+    }
+
+    async function openEditModal(ruleId) {
+        try {
+            const resp = await fetch('/api/v1/ai/rules/' + ruleId + '/');
+            const r = await resp.json();
+            if (!resp.ok) { notify('获取规则详情失败', 'danger'); return; }
+
+            document.getElementById('ruleModalTitle').textContent = '编辑规则';
+            document.getElementById('rule-id').value = r.id;
+            document.getElementById('rule-name').value = r.name || '';
+            document.getElementById('rule-description').value = r.description || '';
+            document.getElementById('rule-category').value = r.category || 'param_validate';
+            document.getElementById('rule-priority').value = r.priority || 'medium';
+            document.getElementById('rule-content').value = r.rule_content || '';
+            document.getElementById('rule-enabled').checked = r.is_enabled !== false;
+            const modal = new bootstrap.Modal(document.getElementById('ruleModal'));
+            modal.show();
+        } catch (err) {
+            notify('加载规则详情失败: ' + (err.message || '未知错误'), 'danger');
+        }
+    }
+
+    async function saveRule() {
+        const ruleId = document.getElementById('rule-id').value;
+        const name = document.getElementById('rule-name').value.trim();
+        if (!name) { notify('规则名称不能为空', 'warning'); return; }
+        const data = {
+            name: name,
+            description: document.getElementById('rule-description').value.trim(),
+            category: document.getElementById('rule-category').value,
+            priority: document.getElementById('rule-priority').value,
+            rule_content: document.getElementById('rule-content').value,
+            is_enabled: document.getElementById('rule-enabled').checked,
+        };
+        try {
+            const isNew = !ruleId;
+            const url = isNew ? '/api/v1/ai/rules/' : '/api/v1/ai/rules/' + ruleId + '/';
+            const method = isNew ? 'POST' : 'PUT';
+            const resp = await fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken(),
+                },
+                body: JSON.stringify(data),
+            });
+            if (!resp.ok) {
+                const errData = await resp.json();
+                const msg = errData.detail || Object.values(errData).flat().join(', ') || '保存失败';
+                notify(msg, 'danger');
+                return;
+            }
+            bootstrap.Modal.getInstance(document.getElementById('ruleModal')).hide();
+            notify(isNew ? '规则创建成功' : '规则更新成功', 'success');
+            fetchRules();
+        } catch (err) {
+            notify('保存失败: ' + (err.message || '未知错误'), 'danger');
+        }
+    }
+
+    async function deleteRule(ruleId) {
+        if (!confirm('确定要删除该规则吗？')) return;
+        try {
+            const resp = await fetch('/api/v1/ai/rules/' + ruleId + '/', {
+                method: 'DELETE',
+                headers: { 'X-CSRFToken': csrfToken() },
+            });
+            if (!resp.ok) {
+                notify('删除失败', 'danger');
+                return;
+            }
+            notify('删除成功', 'success');
+            fetchRules();
+        } catch (err) {
+            notify('删除失败: ' + (err.message || '未知错误'), 'danger');
+        }
+    }
+
+    function openImportModal() {
+        document.getElementById('import-json-text').value = '';
+        document.getElementById('import-result').classList.add('d-none');
+        const modal = new bootstrap.Modal(document.getElementById('importModal'));
+        modal.show();
+    }
+
+    async function confirmImport() {
+        const raw = document.getElementById('import-json-text').value.trim();
+        if (!raw) { notify('请输入JSON数据', 'warning'); return; }
+        let data;
+        try { data = JSON.parse(raw); } catch (e) {
+            notify('JSON格式错误: ' + e.message, 'danger');
+            return;
+        }
+        if (!Array.isArray(data)) { notify('JSON必须是数组格�?, 'danger'); return; }
+
+        const btn = document.getElementById('confirm-import-btn');
+        btn.disabled = true;
+        try {
+            const resp = await fetch('/api/v1/ai/rules/import-json/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken(),
+                },
+                body: JSON.stringify(data),
+            });
+            const result = await resp.json();
+            const resultEl = document.getElementById('import-result');
+            resultEl.classList.remove('d-none');
+            if (resp.ok) {
+                let html = `<div class="alert alert-success">导入完成：创�?${result.created} 条，更新 ${result.updated} �?/div>`;
+                if (result.errors && result.errors.length > 0) {
+                    html += '<div class="alert alert-warning"><strong>部分导入失败�?/strong><ul>';
+                    result.errors.forEach(e => {
+                        html += '<li>�? + (e.index + 1) + '�? ' + (e.error || e.errors || '未知错误') + '</li>';
+                    });
+                    html += '</ul></div>';
+                }
+                resultEl.innerHTML = html;
+                fetchRules();
+            } else {
+                resultEl.innerHTML = `<div class="alert alert-danger">导入失败: ${result.detail || JSON.stringify(result)}</div>`;
+            }
+        } catch (err) {
+            notify('导入失败: ' + (err.message || '未知错误'), 'danger');
+        } finally {
+            btn.disabled = false;
+        }
+    }
+
+    async function exportJson() {
+        try {
+            const resp = await fetch('/api/v1/ai/rules/export-json/?' + getFilterParams());
+            const data = await resp.json();
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'ai_test_rules_' + new Date().toISOString().slice(0, 10) + '.json';
+            a.click();
+            URL.revokeObjectURL(url);
+            notify('导出成功，共 ' + data.length + ' 条规�?, 'success');
+        } catch (err) {
+            notify('导出失败: ' + (err.message || '未知错误'), 'danger');
+        }
+    }
+
+    // 事件绑定
+    document.addEventListener('DOMContentLoaded', () => {
+        fetchRules();
+        document.getElementById('refresh-rules-btn').addEventListener('click', fetchRules);
+        document.getElementById('create-rule-btn').addEventListener('click', openCreateModal);
+        document.getElementById('import-json-btn').addEventListener('click', openImportModal);
+        document.getElementById('export-json-btn').addEventListener('click', exportJson);
+        document.getElementById('save-rule-btn').addEventListener('click', saveRule);
+        document.getElementById('confirm-import-btn').addEventListener('click', confirmImport);
+        document.getElementById('filter-btn').addEventListener('click', fetchRules);
+        // 回车搜索
+        document.getElementById('filter-keyword').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') fetchRules();
+        });
+    });
+})();
+</script>
+{% endblock %}

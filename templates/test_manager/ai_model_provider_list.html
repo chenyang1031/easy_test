@@ -1,0 +1,342 @@
+{% extends 'base.html' %}
+
+{% block title %}AI大模型管�?- EasyTesting{% endblock %}
+{% block header %}AI大模型管理{% endblock %}
+
+{% block content %}
+<div id="model-alert"></div>
+
+<div class="row mb-3">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-cpu me-2"></i>AI大模型供应商</span>
+                <button class="btn btn-sm btn-success" id="create-btn">
+                    <i class="bi bi-plus-lg"></i> 新增供应�?                </button>
+            </div>
+            <div class="card-body">
+                <!-- 加载�?-->
+                <div id="loading" class="text-center text-muted py-4">
+                    <div class="spinner-border spinner-border-sm" role="status"></div>
+                    <span class="ms-2">加载�?..</span>
+                </div>
+                <!-- 空状�?-->
+                <div id="empty" class="text-center text-muted py-5 d-none">
+                    <i class="bi bi-cpu fs-1"></i>
+                    <p class="mb-0 mt-2">暂未配置AI大模型供应商</p>
+                    <small>点击「新增供应商」添加供应商配置</small>
+                </div>
+                <!-- 表格 -->
+                <div id="table-wrap" class="d-none">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead>
+                                <tr>
+                                    <th>供应�?/th>
+                                    <th>类型</th>
+                                    <th>模型</th>
+                                    <th>API地址</th>
+                                    <th>温度</th>
+                                    <th>状�?/th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="table-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 编辑弹窗 -->
+<div class="modal fade" id="editModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalTitle">新增供应�?/h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="edit-form">
+                    {% csrf_token %}
+                    <input type="hidden" id="provider-id">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">供应商名�?<span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="field-name" placeholder="如：智谱AI" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">供应商类�?/label>
+                            <select class="form-select" id="field-provider-type">
+                                <option value="openai">OpenAI 兼容</option>
+                                <option value="zhipu">智谱 AI</option>
+                                <option value="deepseek">DeepSeek</option>
+                                <option value="custom">自定�?/option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">API 基础地址 <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="field-base-url" placeholder="https://open.bigmodel.cn/api/paas/v4" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">API 路径</label>
+                            <input type="text" class="form-control" id="field-api-path" placeholder="/chat/completions">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">模型名称 <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="field-model-name" placeholder="glm-4-plus" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">API Key</label>
+                        <input type="text" class="form-control" id="field-api-key" placeholder="Bearer Token">
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">温度 (0-2)</label>
+                            <input type="number" class="form-control" id="field-temperature" step="0.1" min="0" max="2" value="0.7">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">最�?Token</label>
+                            <input type="number" class="form-control" id="field-max-tokens" value="4096">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">系统提示�?/label>
+                        <textarea class="form-control" id="field-system-prompt" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">提示词模�?<span class="text-danger">*</span>
+                            <small class="text-muted">支持变量：{method} {url} {headers} {body_schema} {rules_text} {casetype_desc}</small>
+                        </label>
+                        <textarea class="form-control font-monospace" id="field-prompt-template" rows="10" required></textarea>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label">响应解析路径</label>
+                            <input type="text" class="form-control" id="field-response-path" placeholder="choices.0.message.content">
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-check mt-4">
+                                <input class="form-check-input" type="checkbox" id="field-enabled" checked>
+                                <label class="form-check-label">启用</label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-check mt-4">
+                                <input class="form-check-input" type="checkbox" id="field-default">
+                                <label class="form-check-label">设为默认</label>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-outline-success" id="test-btn">测试连接</button>
+                <button type="button" class="btn btn-primary" id="save-btn">保存</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function csrfToken() {
+    const el = document.querySelector('input[name="csrfmiddlewaretoken"]');
+    if (el) return el.value;
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, 10) === 'csrftoken=') {
+                cookieValue = decodeURIComponent(cookie.substring(10));
+                break;
+            }
+        }
+    }
+    return cookieValue || '';
+}
+
+function notify(msg, level) {
+    const el = document.getElementById('model-alert');
+    el.innerHTML = `<div class="alert alert-${level||'info'} alert-dismissible fade show">${msg}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>`;
+    setTimeout(() => { const a = el.querySelector('.alert'); if (a) a.remove(); }, 5000);
+}
+
+const TYPE_NAMES = { openai: 'OpenAI 兼容', zhipu: '智谱 AI', deepseek: 'DeepSeek', custom: '自定�? };
+
+async function fetchProviders() {
+    document.getElementById('loading').classList.remove('d-none');
+    document.getElementById('empty').classList.add('d-none');
+    document.getElementById('table-wrap').classList.add('d-none');
+    try {
+        const resp = await fetch('/api/v1/ai/model-providers/?page_size=100');
+        const data = await resp.json();
+        const list = data.results || data;
+        document.getElementById('loading').classList.add('d-none');
+        if (!list.length) {
+            document.getElementById('empty').classList.remove('d-none');
+            return;
+        }
+        document.getElementById('table-wrap').classList.remove('d-none');
+        const tbody = document.getElementById('table-body');
+        tbody.innerHTML = list.map(r => `
+            <tr>
+                <td><strong>${esc(r.name)}</strong>${r.is_default?' <span class="badge bg-success">默认</span>':''}</td>
+                <td><span class="badge bg-info text-dark">${TYPE_NAMES[r.provider_type]||r.provider_type}</span></td>
+                <td><code>${esc(r.model_name)}</code></td>
+                <td><small>${esc(r.base_url)}${esc(r.api_path)}</small></td>
+                <td>${r.temperature}</td>
+                <td>${r.is_enabled?'<span class="badge bg-success">启用</span>':'<span class="badge bg-secondary">禁用</span>'}</td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary edit-btn" data-id="${r.id}"><i class="bi bi-pencil"></i></button>
+                    ${r.is_default?'':`<button class="btn btn-sm btn-outline-success set-default-btn" data-id="${r.id}"><i class="bi bi-star"></i></button>`}
+                    <button class="btn btn-sm btn-outline-danger delete-btn" data-id="${r.id}"><i class="bi bi-trash"></i></button>
+                </td>
+            </tr>`).join('');
+        tbody.querySelectorAll('.edit-btn').forEach(b => b.onclick = () => openEdit(Number(b.dataset.id)));
+        tbody.querySelectorAll('.set-default-btn').forEach(b => b.onclick = () => setDefault(Number(b.dataset.id)));
+        tbody.querySelectorAll('.delete-btn').forEach(b => b.onclick = () => delProvider(Number(b.dataset.id)));
+    } catch (e) {
+        document.getElementById('loading').classList.add('d-none');
+        notify('加载失败�?+e.message, 'danger');
+    }
+}
+
+function esc(s) { const d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
+
+function openCreate() {
+    document.getElementById('modalTitle').textContent='新增供应�?;
+    document.getElementById('provider-id').value='';
+    ['field-name','field-api-key','field-api-path','field-system-prompt'].forEach(id => document.getElementById(id).value='');
+    document.getElementById('field-base-url').value='';
+    document.getElementById('field-model-name').value='';
+    document.getElementById('field-provider-type').value='openai';
+    document.getElementById('field-temperature').value='0.7';
+    document.getElementById('field-max-tokens').value='4096';
+    document.getElementById('field-response-path').value='choices.0.message.content';
+    document.getElementById('field-prompt-template').value=document.getElementById('field-prompt-template').defaultValue || '';
+    document.getElementById('field-enabled').checked=true;
+    document.getElementById('field-default').checked=false;
+    new bootstrap.Modal(document.getElementById('editModal')).show();
+}
+
+async function openEdit(id) {
+    try {
+        const resp = await fetch('/api/v1/ai/model-providers/'+id+'/');
+        const r = await resp.json();
+        document.getElementById('modalTitle').textContent='编辑供应�?;
+        document.getElementById('provider-id').value=r.id;
+        document.getElementById('field-name').value=r.name||'';
+        document.getElementById('field-provider-type').value=r.provider_type||'openai';
+        document.getElementById('field-base-url').value=r.base_url||'';
+        document.getElementById('field-api-path').value=r.api_path||'';
+        document.getElementById('field-api-key').value=r.api_key||'';
+        document.getElementById('field-model-name').value=r.model_name||'';
+        document.getElementById('field-temperature').value=r.temperature||0.7;
+        document.getElementById('field-max-tokens').value=r.max_tokens||4096;
+        document.getElementById('field-system-prompt').value=r.system_prompt||'';
+        document.getElementById('field-prompt-template').value=r.prompt_template||'';
+        document.getElementById('field-response-path').value=r.response_cases_path||'';
+        document.getElementById('field-enabled').checked=r.is_enabled!==false;
+        document.getElementById('field-default').checked=r.is_default||false;
+        new bootstrap.Modal(document.getElementById('editModal')).show();
+    } catch (e) { notify('加载失败�?+e.message, 'danger'); }
+}
+
+async function saveProvider() {
+    const id = document.getElementById('provider-id').value;
+    const data = {
+        name: document.getElementById('field-name').value.trim(),
+        provider_type: document.getElementById('field-provider-type').value,
+        base_url: document.getElementById('field-base-url').value.trim(),
+        api_path: document.getElementById('field-api-path').value.trim(),
+        api_key: document.getElementById('field-api-key').value.trim(),
+        model_name: document.getElementById('field-model-name').value.trim(),
+        temperature: parseFloat(document.getElementById('field-temperature').value)||0.7,
+        max_tokens: parseInt(document.getElementById('field-max-tokens').value)||4096,
+        system_prompt: document.getElementById('field-system-prompt').value.trim(),
+        prompt_template: document.getElementById('field-prompt-template').value.trim(),
+        response_cases_path: document.getElementById('field-response-path').value.trim(),
+        is_enabled: document.getElementById('field-enabled').checked,
+        is_default: document.getElementById('field-default').checked,
+    };
+    if (!data.name) { notify('名称不能为空','warning'); return; }
+    if (!data.base_url) { notify('API地址不能为空','warning'); return; }
+    if (!data.model_name) { notify('模型名称不能为空','warning'); return; }
+    try {
+        const url = id ? '/api/v1/ai/model-providers/'+id+'/' : '/api/v1/ai/model-providers/';
+        const method = id ? 'PUT' : 'POST';
+        const resp = await fetch(url, {
+            method, headers: {'Content-Type':'application/json','X-CSRFToken':csrfToken()},
+            body: JSON.stringify(data)
+        });
+        if (!resp.ok) { const e=await resp.json().catch(()=>({})); notify('保存失败�?+(e.detail||Object.values(e).flat().join(', ')),'danger'); return; }
+        bootstrap.Modal.getInstance(document.getElementById('editModal')).hide();
+        notify(id?'更新成功':'创建成功','success');
+        fetchProviders();
+    } catch (e) { notify('保存失败�?+e.message,'danger'); }
+}
+
+async function setDefault(id) {
+    if (!confirm('确定设为默认供应商？')) return;
+    try {
+        await fetch('/api/v1/ai/model-providers/set-default/', {
+            method:'POST', headers:{'Content-Type':'application/json','X-CSRFToken':csrfToken()},
+            body: JSON.stringify({provider_id:id})
+        });
+        notify('设置成功','success');
+        fetchProviders();
+    } catch (e) { notify('设置失败�?+e.message,'danger'); }
+}
+
+async function delProvider(id) {
+    if (!confirm('确定删除该供应商�?)) return;
+    try {
+        await fetch('/api/v1/ai/model-providers/'+id+'/', {method:'DELETE',headers:{'X-CSRFToken':csrfToken()}});
+        notify('删除成功','success');
+        fetchProviders();
+    } catch (e) { notify('删除失败�?+e.message,'danger'); }
+}
+
+async function testConnection() {
+    const btn = document.getElementById('test-btn');
+    btn.disabled=true; btn.innerHTML='<span class="spinner-border spinner-border-sm"></span> 测试�?..';
+    try {
+        const resp = await fetch('/api/v1/ai/model-providers/0/test/', {
+            method:'POST', headers:{'X-CSRFToken':csrfToken()}
+        });
+        const r = await resp.json();
+        notify(r.success?r.message:('失败�?+r.message), r.success?'success':'warning');
+    } catch (e) { notify('测试失败�?+e.message,'danger'); }
+    finally { btn.disabled=false; btn.innerHTML='测试连接'; }
+}
+
+// 初始�?document.addEventListener('DOMContentLoaded', () => {
+    // 设置 prompt 模板默认�?    document.getElementById('field-prompt-template').defaultValue =
+        '请根据以下接口信息和测试规则，生成{casetype_desc}类型的测试用例。\n\n'+
+        '【接口信息】\n'+
+        '请求方法：{method}\n'+
+        '请求URL：{url}\n'+
+        '请求头：{headers}\n'+
+        '请求体结构：{body_schema}\n\n'+
+        '【测试规则】\n'+
+        '{rules_text}\n\n'+
+        '【生成要求】\n'+
+        '1. 每个用例包含：name, request_method, request_url, request_headers, request_body, expected_status_code, validation_rules\n'+
+        '2. 覆盖所有规则类别\n'+
+        '3. 以纯 JSON 数组格式返回，不要包含任�?markdown 标记或其他文�?;
+    fetchProviders();
+    document.getElementById('create-btn').onclick = openCreate;
+    document.getElementById('save-btn').onclick = saveProvider;
+    document.getElementById('test-btn').onclick = testConnection;
+});
+</script>
+{% endblock %}

@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}AI提示词管理 - EasyTesting{% endblock %}
+{% block header %}{% endblock %}
+
+{% block page_header %}{% endblock %}
+
+{% block content %}
+<div id="app"></div>
+{% endblock %}
+
+{% block extra_css %}
+{% if not use_vite_dev %}
+<link rel="stylesheet" href="{% static 'scene-orchestrator/assets/element-plus.css' %}?v={{ asset_version }}">
+<link rel="stylesheet" href="{% static 'scene-orchestrator/assets/promptTemplateManager.css' %}?v={{ asset_version }}">
+{% endif %}
+<style>
+#app {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: calc(100vh - 120px);
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+{% if use_vite_dev %}
+<script type="module" src="{{ vite_dev_server }}/static/scene-orchestrator/@vite/client"></script>
+<script type="module" src="{{ vite_dev_server }}/static/scene-orchestrator/src/prompt-template-manager/main.js"></script>
+{% else %}
+<script type="module" src="{% static 'scene-orchestrator/assets/promptTemplateManager.js' %}?v={{ asset_version }}"></script>
+{% endif %}
+{% endblock %}

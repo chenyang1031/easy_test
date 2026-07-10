@@ -1,0 +1,200 @@
+/* Custom CSS for EasyTesting — 主题补充样式 */
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideInUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.fade-in {
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+.slide-in-up {
+  animation: slideInUp 0.5s ease-in-out;
+}
+
+/* Card Enhancements — 基础样式由 base.html 统一管理，此处只保留补充特效 */
+.card-hover-primary:hover {
+  border-left: 4px solid var(--primary-color);
+}
+
+.card-hover-success:hover {
+  border-left: 4px solid var(--success-color);
+}
+
+/* Status Indicators */
+.status-indicator {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 5px;
+}
+
+.status-indicator.success { background-color: var(--status-pass); }
+.status-indicator.danger { background-color: var(--status-fail); }
+.status-indicator.warning { background-color: var(--status-running); }
+.status-indicator.info { background-color: var(--info-color); }
+
+/* Custom Buttons */
+.btn-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: box-shadow 0.2s;
+}
+
+.btn-icon:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+/* Table Enhancements — 已由 base.html 统一管理，此处保留 .table-modern 特殊表格 */
+.table-modern {
+  border-collapse: separate;
+  border-spacing: 0 8px;
+}
+
+.table-modern tbody tr {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  border-radius: 8px;
+  background-color: var(--bg-card);
+}
+
+.table-modern tbody td {
+  padding: 15px;
+  vertical-align: middle;
+}
+
+.table-modern tbody td:first-child {
+  border-top-left-radius: 8px;
+  border-bottom-left-radius: 8px;
+}
+
+.table-modern tbody td:last-child {
+  border-top-right-radius: 8px;
+  border-bottom-right-radius: 8px;
+}
+
+/* Empty State */
+.empty-state {
+  padding: 40px 20px;
+  text-align: center;
+}
+
+.empty-state-icon {
+  font-size: 48px;
+  color: var(--text-secondary);
+  margin-bottom: 20px;
+}
+
+.empty-state-title {
+  font-size: 20px;
+  font-weight: 500;
+  margin-bottom: 10px;
+  color: var(--text-primary);
+}
+
+.empty-state-description {
+  color: var(--text-secondary);
+  margin-bottom: 20px;
+}
+
+/* Custom Badges — outline 风格 */
+.badge-outline-success {
+  color: var(--status-pass);
+  background-color: rgba(16, 185, 129, 0.1);
+  border: 1px solid var(--status-pass);
+}
+
+.badge-outline-danger {
+  color: var(--status-fail);
+  background-color: rgba(239, 68, 68, 0.1);
+  border: 1px solid var(--status-fail);
+}
+
+.badge-outline-primary {
+  color: var(--primary-color);
+  background-color: rgba(30, 64, 175, 0.1);
+  border: 1px solid var(--primary-color);
+}
+
+/* Method Badges */
+.method-badge {
+  padding: 5px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.method-get {
+  background-color: rgba(16, 185, 129, 0.1);
+  color: var(--status-pass);
+}
+
+.method-post {
+  background-color: rgba(30, 64, 175, 0.1);
+  color: var(--primary-color);
+}
+
+.method-put {
+  background-color: rgba(245, 158, 11, 0.1);
+  color: var(--status-running);
+}
+
+.method-delete {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: var(--status-fail);
+}
+
+/* Custom Form Controls — 下划线风格 */
+.form-control-modern {
+  border: none;
+  border-bottom: 2px solid var(--border-color);
+  border-radius: 0;
+  padding: 0.75rem 0;
+  transition: all 0.3s;
+}
+
+.form-control-modern:focus {
+  box-shadow: none;
+  border-color: var(--primary-color);
+}
+
+.form-control-modern-label {
+  position: absolute;
+  top: 0;
+  left: 0;
+  font-size: 12px;
+  color: var(--text-secondary);
+  transition: all 0.3s;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #999;
+}

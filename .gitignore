@@ -1,0 +1,111 @@
+# ========== Python / Django ==========
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg
+*.egg-info/
+.eggs/
+dist/
+build/
+*.manifest
+*.spec
+pip-log.txt
+pip-delete-this-directory.txt
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.tox/
+.nox/
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+*.cover
+.hypothesis/
+
+# 虚拟环境（项目使用 venv/、backend_venv 等）
+venv/
+.venv/
+env/
+ENV/
+backend_venv/
+
+# Django
+*.log
+logs/
+db.sqlite3
+db.sqlite3-journal
+/media/
+/staticfiles/
+/static_collected/
+
+# Celery Beat 调度文件
+celerybeat-schedule.*
+celerybeat.pid
+
+# 本地敏感配置覆盖（见 EasyTesting/settings.py 末尾 import）
+EasyTesting/settings_local.py
+
+# ========== 前端（Vue + Vite，frontend/scene-orchestrator）==========
+frontend/scene-orchestrator/node_modules/
+frontend/scene-orchestrator/dist/
+frontend/scene-orchestrator/.vite/
+frontend/scene-orchestrator/.eslintcache
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Vite 构建产物输出到 static/scene-orchestrator（与 vite.config.js 一致）
+# 当前仓库已保留前端源码，因此忽略可重复构建的静态产物目录。
+static/scene-orchestrator/
+
+# ========== 环境变量与密钥（勿提交）==========
+.env
+.env.*
+!.env.example
+
+# ========== IDE / 编辑器 ==========
+.idea/
+*.iml
+.vscode/
+*.swp
+*.swo
+*~
+.workbuddy/
+.claude/
+.claudeignore
+
+# ========== 操作系统 ==========
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# ========== 临时 / 导出 / 调试文件 ==========
+*.har
+mock_logs.log
+json_long.txt
+optimize_result.txt
+
+# ========== 本地测试脚本（非项目正式代码）==========
+mock_server.py
+_brute_common_secrets.js
+_pyc_reader.py
+pre_request_sign_es5.js
+test.py
+test_date_now.py
+
+# ========== 接口导出（Apifox / HAR 等）==========
+*.apifox.json
+
+# ========== 杂项 ==========
+*.bak
+*.dat
+*.dir
+*.ipynb_checkpoints/
+
+# Jupyter（若仍使用 .ipynb）
+*.ipynb
+
+#（保留其他临时导出及本地脚本规则）

@@ -1,0 +1,157 @@
+{# 场景执行 HTML 报告：版式、折叠块与「测试运行」报告（generate_test_run_report）对齐 #}
+<div class="test-report scene-execution-report">
+    <h1>{{ scene.name }} - 场景执行报告</h1>
+    <div class="report-meta">
+        <p><strong>项目:</strong> {{ project_name }}</p>
+        <p><strong>场景:</strong> {{ scene.name }}</p>
+        {% if scene.description %}
+        <p><strong>场景说明:</strong> {{ scene.description }}</p>
+        {% endif %}
+        <p><strong>环境:</strong> {{ environment.name }}</p>
+        <p><strong>状态:</strong> <span class="status-{{ execution.status }}">{{ execution.status }}</span></p>
+        <p><strong>运行模式:</strong> {{ run_mode_display }}</p>
+        <p><strong>执行 ID:</strong> {{ execution.id }}</p>
+        <p><strong>开始时间:</strong> {{ execution.started_at }}</p>
+        <p><strong>结束时间:</strong> {% if execution.finished_at %}{{ execution.finished_at }}{% else %}—{% endif %}</p>
+        <p><strong>持续时间:</strong> {{ duration_sec }} 秒</p>
+        <p><strong>节点汇总:</strong> 共 {{ execution.total_nodes }}，成功 {{ execution.passed_nodes }}，失败 {{ execution.failed_nodes }}，跳过 {{ execution.skipped_nodes }}</p>
+        {% if execution.error_message %}
+        <p><strong>执行错误:</strong> {{ execution.error_message }}</p>
+        {% endif %}
+    </div>
+
+    <h2>节点执行结果</h2>
+
+    {% for node in node_details %}
+    <div class="test-result">
+        <h3>{{ node.name }}</h3>
+        <p><strong>状态:</strong> <span class="status-{{ node.status_lower }}">{{ node.status }}</span></p>
+        <p><strong>节点 ID:</strong> {{ node.node_id }}{% if node.node_key %} <span class="text-muted">({{ node.node_key }})</span>{% endif %}</p>
+        <p><strong>请求方法:</strong> {{ node.request_method }}</p>
+        <p><strong>请求 URL:</strong> {{ node.request_url }}</p>
+        <p><strong>响应状态码:</strong> {{ node.response_status_code }}</p>
+        <p><strong>响应时间:</strong> {% if node.response_time_ms == "—" %}—{% else %}{{ node.response_time_ms }} 毫秒{% endif %}</p>
+
+        {% if node.pre_request_script_input_pre %}
+        <div class="collapsible">
+            <h4>前置脚本请求快照</h4>
+            <pre>{{ node.pre_request_script_input_pre }}</pre>
+        </div>
+        {% endif %}
+        {% if node.script_logs_pre %}
+        <div class="collapsible">
+            <h4>前置脚本日志</h4>
+            <pre>{{ node.script_logs_pre }}</pre>
+        </div>
+        {% endif %}
+
+        <div class="collapsible">
+            <h4>请求头</h4>
+            <pre>{{ node.request_headers_pre }}</pre>
+        </div>
+        <div class="collapsible">
+            <h4>请求参数</h4>
+            <pre>{{ node.request_params_pre }}</pre>
+        </div>
+        <div class="collapsible">
+            <h4>请求体</h4>
+            <pre>{{ node.request_body_pre }}</pre>
+        </div>
+        <div class="collapsible">
+            <h4>响应头</h4>
+            <pre>{{ node.response_headers_pre }}</pre>
+        </div>
+        <div class="collapsible">
+            <h4>响应体</h4>
+            <pre>{{ node.response_body_pre }}</pre>
+        </div>
+        <div class="collapsible">
+            <h4>断言结果</h4>
+            <pre>{{ node.assert_results_pre }}</pre>
+        </div>
+
+        {% if node.error_message %}
+        <div class="error-message">
+            <h4>错误信息</h4>
+            <pre>{{ node.error_message }}</pre>
+        </div>
+        {% endif %}
+    </div>
+    {% empty %}
+    <div class="alert alert-secondary">暂无节点执行结果</div>
+    {% endfor %}
+</div>
+<style>
+    .test-report {
+        font-family: Arial, sans-serif;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+    .report-meta {
+        background-color: #f5f5f5;
+        padding: 15px;
+        border-radius: 5px;
+        margin-bottom: 20px;
+    }
+    .test-result {
+        background-color: #f9f9f9;
+        padding: 15px;
+        border-radius: 5px;
+        margin-bottom: 15px;
+        border-left: 5px solid #ddd;
+    }
+    .collapsible {
+        margin-top: 10px;
+    }
+    .collapsible h4 {
+        cursor: pointer;
+        background-color: #eee;
+        padding: 8px;
+        border-radius: 3px;
+    }
+    .collapsible pre {
+        background-color: #f5f5f5;
+        padding: 10px;
+        border-radius: 3px;
+        overflow-x: auto;
+        white-space: pre-wrap;
+    }
+    .error-message {
+        background-color: #ffeeee;
+        padding: 10px;
+        border-radius: 3px;
+        margin-top: 10px;
+    }
+    .error-message h4 {
+        color: red;
+    }
+    .status-pass, .status-success, .status-completed, .status-passed {
+        color: green;
+        font-weight: bold;
+    }
+    .status-fail, .status-failure, .status-error, .status-failed {
+        color: red;
+        font-weight: bold;
+    }
+    .status-skipped {
+        color: #666;
+        font-weight: bold;
+    }
+    .status-running {
+        color: #0d6efd;
+        font-weight: bold;
+    }
+</style>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const collapsibles = document.querySelectorAll('.collapsible h4');
+        collapsibles.forEach(function(collapsible) {
+            collapsible.addEventListener('click', function() {
+                this.nextElementSibling.style.display =
+                    this.nextElementSibling.style.display === 'none' ? 'block' : 'none';
+            });
+            collapsible.nextElementSibling.style.display = 'none';
+        });
+    });
+</script>

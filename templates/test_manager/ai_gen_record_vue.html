@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}AI生成记录 - EasyTesting{% endblock %}
+{% block header %}AI生成记录{% endblock %}
+
+{% block content %}
+{% csrf_token %}
+<div id="app"></div>
+{% endblock %}
+
+{% block extra_css %}
+{% if not use_vite_dev %}
+<link rel="stylesheet" href="{% static 'scene-orchestrator/assets/element-plus.css' %}?v={{ asset_version }}">
+<link rel="stylesheet" href="{% static 'scene-orchestrator/assets/aiGenRecord.css' %}?v={{ asset_version }}">
+{% endif %}
+<style>
+#app { display:flex; flex-direction:column; flex:1; min-height:calc(100vh - 120px); }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+{% if use_vite_dev %}
+<script type="module" src="{{ vite_dev_server }}/static/scene-orchestrator/@vite/client"></script>
+<script type="module" src="{{ vite_dev_server }}/static/scene-orchestrator/src/ai-gen-record/main.js"></script>
+{% else %}
+<script type="module" src="{% static 'scene-orchestrator/assets/aiGenRecord.js' %}?v={{ asset_version }}"></script>
+{% endif %}
+{% endblock %}
