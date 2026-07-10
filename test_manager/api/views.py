@@ -49,6 +49,9 @@ class ProjectViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         return Project.objects.select_related("created_by").all().order_by('-created_at')
 
+    def perform_create(self, serializer):
+        serializer.save(created_by=self.request.user)
+
 
 class EnvironmentViewSet(viewsets.ModelViewSet):
     queryset = Environment.objects.select_related("project").all()

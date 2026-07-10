@@ -103,7 +103,7 @@ export const apiAssetApi = {
     return request('/api/v1/api-assets/batch-delete/', { method: 'POST', body: JSON.stringify({ ids }) })
   },
   batchMoveGroup: (ids, groupId) => {
-    return request('/api/v1/api-assets/batch-move/', { method: 'POST', body: JSON.stringify({ ids, group_id: groupId }) })
+    return request('/api/v1/api-assets/batch-move-group/', { method: 'POST', body: JSON.stringify({ ids, group_id: groupId }) })
   },
   batchUpdateStatus: (ids, status) => {
     return request('/api/v1/api-assets/batch-status/', { method: 'POST', body: JSON.stringify({ ids, status }) })
