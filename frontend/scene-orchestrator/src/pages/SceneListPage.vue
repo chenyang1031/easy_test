@@ -362,6 +362,14 @@
       @success="onReplayImportSuccess"
     />
 
+    <!-- 场景编排导出/导入弹窗 -->
+    <SceneImportExportDialog
+      v-model="sceneExportImportVisible"
+      :default-platform-project-id="selectedPlatformProjectId"
+      :selected-scene-ids="selectedIds"
+      @success="onSceneImportSuccess"
+    />
+
     <!-- 执行日志抽屉 -->
     <el-drawer
       v-model="logDrawerVisible"
@@ -444,6 +452,7 @@ import { useRoute, useRouter } from "vue-router";
 import { ElMessage, ElMessageBox } from "element-plus";
 import ExecutionLogPanel from "../components/ExecutionLogPanel.vue";
 import ReplayImportDialog from "../components/ReplayImportDialog.vue";
+import SceneImportExportDialog from "../components/SceneImportExportDialog.vue";
 import {
   copyScene,
   createScene,
@@ -972,6 +981,10 @@ function onReplayImportSuccess(data) {
   }
 }
 
+function onSceneImportSuccess() {
+  queryScenes();
+}
+
 async function handleMoreCommand(cmd, item) {
   if (cmd === "copy") {
     await copyScene(item.id, `${item.name}-副本`);
@@ -1402,4 +1415,8 @@ onActivated(() => {
   isolation: isolate;
 }
 </style>
+
+}
+</style>
+
 

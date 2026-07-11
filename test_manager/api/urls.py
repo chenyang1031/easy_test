@@ -26,6 +26,7 @@ from .scene_views import (
 )
 from .performance_views import PerformanceTestTaskViewSet
 from .replay_import_views import ReplayImportViewSet
+from .scene_import_export_views import SceneImportExportViewSet
 from .mock_data_views import MockDataViewSet
 from .document_gen_views import DocumentGenRecordViewSet
 from .dashboard_views import DashboardStatsView
@@ -118,6 +119,21 @@ urlpatterns = [
         'v1/test-scenes/replay-import/confirm',
         ReplayImportViewSet.as_view({'post': 'confirm'}),
         name='replay_import_confirm',
+    ),
+    path(
+        'v1/test-scenes/export-scenes/',
+        SceneImportExportViewSet.as_view({'post': 'export_scenes'}),
+        name='scene_export',
+    ),
+    path(
+        'v1/test-scenes/import-scenes/preview',
+        SceneImportExportViewSet.as_view({'post': 'preview_import'}),
+        name='scene_import_preview',
+    ),
+    path(
+        'v1/test-scenes/import-scenes/confirm',
+        SceneImportExportViewSet.as_view({'post': 'confirm_import'}),
+        name='scene_import_confirm',
     ),
     path(
         'v1/scene-executions/<int:execution_id>/generate-report/',

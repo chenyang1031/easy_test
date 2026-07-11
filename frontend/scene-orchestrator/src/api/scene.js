@@ -208,3 +208,37 @@ export function replayImportPreview(file, projectId, groupId = null) {
 export function replayImportConfirm(payload) {
   return http.post("/api/v1/test-scenes/replay-import/confirm", payload, { timeoutMs: 60000 });
 }
+
+/**
+ * 场景编排导出
+ * @param {number} projectId - API 项目 ID
+ * @param {number[]} [sceneIds] - 可选，指定导出的场景 ID 列表
+ * @param {string} [format] - 导出格式：json 或 yaml
+ */
+export function exportScenes(projectId, sceneIds = null, format = "json") {
+  return http.post("/api/v1/test-scenes/export-scenes/", {
+    project_id: projectId,
+    scene_ids: sceneIds,
+    format,
+  });
+}
+
+/**
+ * 场景编排导入 - 预览
+ * @param {File} file - 导出的 JSON/YAML 文件
+ * @param {number} projectId - 目标平台项目 ID
+ */
+export function sceneImportPreview(file, projectId) {
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("project_id", String(projectId));
+  return http.post("/api/v1/test-scenes/import-scenes/preview", formData, { timeoutMs: 60000 });
+}
+
+/**
+ * 场景编排导入 - 确认
+ * @param {object} payload - { project_id, data, default_conflict_strategy }
+ */
+export function sceneImportConfirm(payload) {
+  return http.post("/api/v1/test-scenes/import-scenes/confirm", payload, { timeoutMs: 60000 });
+}
