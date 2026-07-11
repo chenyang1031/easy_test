@@ -105,9 +105,22 @@ class TestCaseSerializer(serializers.ModelSerializer):
 
 class TestSuiteCaseSerializer(serializers.ModelSerializer):
     test_case_name = serializers.CharField(source='test_case.name', read_only=True)
+    test_case_details = serializers.SerializerMethodField()
     request_method = serializers.SerializerMethodField()
     request_url = serializers.SerializerMethodField()
     environment_name = serializers.CharField(source='environment.name', read_only=True, allow_null=True)
+
+    def get_test_case_details(self, obj):
+        if not obj.test_case:
+            return None
+        tc = obj.test_case
+        return {
+            'id': tc.id,
+            'name': tc.name,
+            'request_method': tc.request_method,
+            'request_url': tc.request_url,
+            'description': tc.description,
+        }
 
     def get_request_method(self, obj):
         return obj.test_case.request_method if obj.test_case else None
@@ -119,6 +132,7 @@ class TestSuiteCaseSerializer(serializers.ModelSerializer):
         model = TestSuiteCase
         fields = [
             'id', 'test_suite', 'test_case', 'test_case_name',
+            'test_case_details',
             'request_method', 'request_url',
             'environment', 'environment_name', 'order',
         ]
@@ -128,12 +142,32 @@ class TestSuiteSerializer(serializers.ModelSerializer):
     project_name = serializers.CharField(source='project.name', read_only=True)
     group_name = serializers.CharField(source='group.name', read_only=True, allow_null=True)
     created_by_name = serializers.CharField(source='created_by.username', read_only=True)
+    test_case_count = serializers.SerializerMethodField()
+    test_suite_cases = serializers.SerializerMethodField()
+
+    def get_test_case_count(self, obj):
+        # 优先使用 annotate 预计算的值（列表接口），避免 N+1 查询
+        if hasattr(obj, 'test_case_count'):
+            return obj.test_case_count
+        return obj.testsuitecase_set.count()
+
+    def get_test_suite_cases(self, obj):
+        # 仅在详情接口返回完整用例列表，避免列表接口数据过大
+        view = self.context.get('view')
+        if view and getattr(view, 'action', None) != 'retrieve':
+            return None
+        qs = obj.testsuitecase_set.select_related(
+            "test_case", "environment"
+        ).order_by("order", "id")
+        return TestSuiteCaseSerializer(qs, many=True).data
+
     class Meta:
         model = TestSuite
         fields = [
             'id', 'name', 'project', 'project_name', 'group', 'group_name',
             'description',
             'created_at', 'updated_at', 'created_by_name',
+            'test_case_count', 'test_suite_cases',
         ]
         read_only_fields = ['created_at', 'updated_at']
 

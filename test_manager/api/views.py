@@ -195,6 +195,8 @@ class TestSuiteViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         project_id = self.request.query_params.get('project', None)
         qs = TestSuite.objects.select_related("project", "group", "created_by")
+        if self.action != 'retrieve':
+            qs = qs.annotate(test_case_count=Count("test_cases", distinct=True))
         if project_id:
             return qs.filter(project_id=project_id).order_by('-created_at')
         return qs.all().order_by('-created_at')
