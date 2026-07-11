@@ -83,6 +83,32 @@ router.register(r'reports', TestReportViewSet, basename='report')
 
 urlpatterns = [
     # API v1 版本前缀
+    # 自定义路由必须在 router.urls 之前，避免被 <pk> 通配符截获
+    path(
+        'v1/test-scenes/export-scenes/',
+        SceneImportExportViewSet.as_view({'post': 'export_scenes'}),
+        name='scene_export',
+    ),
+    path(
+        'v1/test-scenes/import-scenes/preview',
+        SceneImportExportViewSet.as_view({'post': 'preview_import'}),
+        name='scene_import_preview',
+    ),
+    path(
+        'v1/test-scenes/import-scenes/confirm',
+        SceneImportExportViewSet.as_view({'post': 'confirm_import'}),
+        name='scene_import_confirm',
+    ),
+    path(
+        'v1/test-scenes/replay-import/preview',
+        ReplayImportViewSet.as_view({'post': 'preview'}),
+        name='replay_import_preview',
+    ),
+    path(
+        'v1/test-scenes/replay-import/confirm',
+        ReplayImportViewSet.as_view({'post': 'confirm'}),
+        name='replay_import_confirm',
+    ),
     path('v1/', include(router.urls)),
     path('v1/', include('test_manager.report.api_urls')),
     path(
@@ -109,31 +135,6 @@ urlpatterns = [
         'v1/api-assets/export',
         ApiImportExportViewSet.as_view({'post': 'export_assets'}),
         name='api_asset_export',
-    ),
-    path(
-        'v1/test-scenes/replay-import/preview',
-        ReplayImportViewSet.as_view({'post': 'preview'}),
-        name='replay_import_preview',
-    ),
-    path(
-        'v1/test-scenes/replay-import/confirm',
-        ReplayImportViewSet.as_view({'post': 'confirm'}),
-        name='replay_import_confirm',
-    ),
-    path(
-        'v1/test-scenes/export-scenes/',
-        SceneImportExportViewSet.as_view({'post': 'export_scenes'}),
-        name='scene_export',
-    ),
-    path(
-        'v1/test-scenes/import-scenes/preview',
-        SceneImportExportViewSet.as_view({'post': 'preview_import'}),
-        name='scene_import_preview',
-    ),
-    path(
-        'v1/test-scenes/import-scenes/confirm',
-        SceneImportExportViewSet.as_view({'post': 'confirm_import'}),
-        name='scene_import_confirm',
     ),
     path(
         'v1/scene-executions/<int:execution_id>/generate-report/',

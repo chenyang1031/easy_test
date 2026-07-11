@@ -82,6 +82,9 @@ static/scene-orchestrator/
 Thumbs.db
 Desktop.ini
 
+# Windows 保留设备名（某些工具会意外创建）
+nul
+
 # ========== 临时 / 导出 / 调试文件 ==========
 *.har
 mock_logs.log

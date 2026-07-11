@@ -1,0 +1,217 @@
+
+> scene-orchestrator-frontend@1.0.0 build
+> vite build
+
+[36mvite v5.4.21 [32mbuilding for production...[36m[39m
+transforming...
+node_modules/@vueuse/core/dist/index.js (3362:0): A comment
+
+"/* #__PURE__ */"
+
+in "node_modules/@vueuse/core/dist/index.js" contains an annotation that Rollup cannot interpret due to the position of the comment. The comment will be removed to avoid issues.
+node_modules/@vueuse/core/dist/index.js (5780:22): A comment
+
+"/* #__PURE__ */"
+
+in "node_modules/@vueuse/core/dist/index.js" contains an annotation that Rollup cannot interpret due to the position of the comment. The comment will be removed to avoid issues.
+[32m✓[39m 2481 modules transformed.
+rendering chunks...
+computing gzip size...
+[2m../../static/scene-orchestrator/[22m[32msrc/ai-gen-record/index.html                  [39m[1m[2m  1.18 kB[22m[1m[22m[2m │ gzip:   0.45 kB[22m
+[2m../../static/scene-orchestrator/[22m[32msrc/draft-box/index.html                      [39m[1m[2m  1.27 kB[22m[1m[22m[2m │ gzip:   0.45 kB[22m
+[2m../../static/scene-orchestrator/[22m[32msrc/rule-manager/index.html                   [39m[1m[2m  1.27 kB[22m[1m[22m[2m │ gzip:   0.45 kB[22m
+[2m../../static/scene-orchestrator/[22m[32msrc/document-import/index.html                [39m[1m[2m  1.28 kB[22m[1m[22m[2m │ gzip:   0.46 kB[22m
+[2m../../static/scene-orchestrator/[22m[32msrc/dashboard/index.html                      [39m[1m[2m  1.28 kB[22m[1m[22m[2m │ gzip:   0.45 kB[22m
+[2m../../static/scene-orchestrator/[22m[32msrc/model-provider-manager/index.html         [39m[1m[2m  1.28 kB[22m[1m[22m[2m │ gzip:   0.46 kB[22m
+[2m../../static/scene-orchestrator/[22m[32msrc/prompt-template-manager/index.html        [39m[1m[2m  1.28 kB[22m[1m[22m[2m │ gzip:   0.47 kB[22m
+[2m../../static/scene-orchestrator/[22m[32msrc/mock-data/index.html                      [39m[1m[2m  1.79 kB[22m[1m[22m[2m │ gzip:   0.51 kB[22m
+[2m../../static/scene-orchestrator/[22m[32msrc/api-asset-manager/index.html              [39m[1m[2m  2.15 kB[22m[1m[22m[2m │ gzip:   0.54 kB[22m
+[2m../../static/scene-orchestrator/[22m[32mindex.html                                    [39m[1m[2m  4.32 kB[22m[1m[22m[2m │ gzip:   0.77 kB[22m
+[2m../../static/scene-orchestrator/[22m[32msrc/test-manager/index.html                   [39m[1m[2m  5.55 kB[22m[1m[22m[2m │ gzip:   0.89 kB[22m
+[2m../../static/scene-orchestrator/[22m[35massets/environmentDetail.css                  [39m[1m[2m  0.04 kB[22m[1m[22m[2m │ gzip:   0.06 kB[22m
+[2m../../static/scene-orchestrator/[22m[35massets/environmentList.css                    [39m[1m[2m  0.09 kB[22m[1m[22m[2m │ gzip:   0.10 kB[22m
+[2m../../static/scene-orchestrator/[22m[35massets/apiAssetManager.css                    [39m[1m[2m  0.22 kB[22m[1m[22m[2m │ gzip:   0.13 kB[22m
+[2m../../static/scene-orchestrator/[22m[35massets/AvatarName.css                         [39m[1m[2m  0.26 kB[22m[1m[22m[2m │ gzip:   0.18 kB[22m
+[2m../../static/scene-orchestrator/[22m[35massets/PasswordResetRequestPage.css           [39m[1m[2m  0.40 kB[22m[1m[22m[2m │ gzip:   0.26 kB[22m
+[2m../../static/scene-orchestrator/[22m[35massets/mockData.css                           [39m[1m[2m  0.41 kB[22m[1m[22m[2m │ gzip:   0.23 kB[22m
+[2m../../static/scene-orchestrator/[22m[35massets/testManager.css                        [39m[1m[2m  0.42 kB[22m[1m[22m[2m │ gzip:   0.23 kB[22m
+[2m../../static/scene-orchestrator/[22m[35massets/AIGenerateModal.css                    [39m[1m[2m  0.49 kB[22m[1m[22m[2m │ gzip:   0.29 kB[22m
+[2m../../static/scene-orchestrator/[22m[35massets/apiAssetApifoxEnv.css                  [39m[1m[2m  0.54 kB[22m[1m[22m[2m │ gzip:   0.29 kB[22m
+[2m../../static/scene-orchestrator/[22m[35massets/PerformanceReport.css                  [39m[1m[2m  0.69 kB[22m[1m[22m[2m │ gzip:   0.35 kB[22m
+[2m../../static/scene-orchestrator/[22m[35massets/ScheduledTaskForm.css                  [39m[1m[2m  0.79 kB[22m[1m[22m[2m │ gzip:   0.35 kB[22m
+[2m../../static/scene-orchestrator/[22m[35massets/ReportFormPage.css                     [39m[1m[2m  0.86 kB[22m[1m[22m[2m │ gzip:   0.42 kB[22m
+[2m../../static/scene-orchestrator/[22m[35massets/environmentForm.css                    [39m[1m[2m  0.88 kB[22m[1m[22m[2m │ gzip:   0.31 kB[22m
+[2m../../static/scene-orchestrator/[22m[35massets/ParameterConfigList.css                [39m[1m[2m  0.95 kB[22m[1m[22m[2m │ gzip:   0.45 kB[22m
+[2m../../static/scene-orchestrator/[22m[35massets/PasswordChangePage.css                 [39m[1m[2m  1.01 kB[22m[1m[22m[2m │ gzip:   0.42 kB[22m
+[2m../../static/scene-orchestrator/[22m[35massets/EmailConfigList.css                    [39m[1m[2m  1.04 kB[22m[1m[22m[2m │ gzip:   0.45 kB[22m
+[2m../../static/scene-orchestrator/[22m[35massets/TestSuiteForm.css                      [39m[1m[2m  1.05 kB[22m[1m[22m[2m │ gzip:   0.42 kB[22m
+[2m../../static/scene-orchestrator/[22m[35massets/ProfilePage.css                        [39m[1m[2m  1.08 kB[22m[1m[22m[2m │ gzip:   0.44 kB[22m
+[2m../../static/scene-orchestrator/[22m[35massets/EmailConfigForm.css                    [39m[1m[2m  1.10 kB[22m[1m[22m[2m │ gzip:   0.44 kB[22m
+[2m../../static/scene-orchestrator/[22m[35massets/PerformanceTaskEditor.css              [39m[1m[2m  1.25 kB[22m[1m[22m[2m │ gzip:   0.52 kB[22m
+[2m../../static/scene-orchestrator/[22m[35massets/TestRunReportForm.css                  [39m[1m[2m  1.28 kB[22m[1m[22m[2m │ gzip:   0.48 kB[22m
+[2m../../static/scene-orchestrator/[22m[35massets/SceneExecutionReportForm.css           [39m[1m[2m  1.28 kB[22m[1m[22m[2m │ gzip:   0.48 kB[22m
+[2m../../static/scene-orchestrator/[22m[35massets/TestRunList.css                        [39m[1m[2m  1.33 kB[22m[1m[22m[2m │ gzip:   0.52 kB[22m
+[2m../../static/scene-orchestrator/[22m[35massets/TestSuiteRun.css                       [39m[1m[2m  1.34 kB[22m[1m[22m[2m │ gzip:   0.46 kB[22m
+[2m../../static/scene-orchestrator/[22m[35massets/ProjectFormPage.css                    [39m[1m[2m  1.34 kB[22m[1m[22m[2m │ gzip:   0.48 kB[22m
+[2m../../static/scene-orchestrator/[22m[35massets/SceneExecutionList.css                 [39m[1m[2m  1.37 kB[22m[1m[22m[2m │ gzip:   0.53 kB[22m
+[2m../../static/scene-orchestrator/[22m[35massets/SceneExecutionPage.css                 [39m[1m[2m  1.38 kB[22m[1m[22m[2m │ gzip:   0.53 kB[22m
+[2m../../static/scene-orchestrator/[22m[35massets/ReportListPage.css                     [39m[1m[2m  1.52 kB[22m[1m[22m[2m │ gzip:   0.54 kB[22m
+[2m../../static/scene-orchestrator/[22m[35massets/EnvironmentListPage.css                [39m[1m[2m  1.73 kB[22m[1m[22m[2m │ gzip:   0.65 kB[22m
+[2m../../static/scene-orchestrator/[22m[35massets/PerformanceConsole.css                 [39m[1m[2m  1.74 kB[22m[1m[22m[2m │ gzip:   0.60 kB[22m
+[2m../../static/scene-orchestrator/[22m[35massets/ScheduledTaskList.css                  [39m[1m[2m  1.83 kB[22m[1m[22m[2m │ gzip:   0.60 kB[22m
+[2m../../static/scene-orchestrator/[22m[35massets/RegisterPage.css                       [39m[1m[2m  1.85 kB[22m[1m[22m[2m │ gzip:   0.66 kB[22m
+[2m../../static/scene-orchestrator/[22m[35massets/ProjectListPage.css                    [39m[1m[2m  1.86 kB[22m[1m[22m[2m │ gzip:   0.66 kB[22m
+[2m../../static/scene-orchestrator/[22m[35massets/MockDataList.css                       [39m[1m[2m  1.89 kB[22m[1m[22m[2m │ gzip:   0.66 kB[22m
+[2m../../static/scene-orchestrator/[22m[35massets/EnvironmentFormPage.css                [39m[1m[2m  1.99 kB[22m[1m[22m[2m │ gzip:   0.69 kB[22m
+[2m../../static/scene-orchestrator/[22m[35massets/MockDataForm.css                       [39m[1m[2m  2.15 kB[22m[1m[22m[2m │ gzip:   0.74 kB[22m
+[2m../../static/scene-orchestrator/[22m[35massets/TestCaseRun.css                        [39m[1m[2m  2.19 kB[22m[1m[22m[2m │ gzip:   0.65 kB[22m
+[2m../../static/scene-orchestrator/[22m[35massets/App6.css                               [39m[1m[2m  2.23 kB[22m[1m[22m[2m │ gzip:   0.79 kB[22m
+[2m../../static/scene-orchestrator/[22m[35massets/TaskMonitor.css                        [39m[1m[2m  2.33 kB[22m[1m[22m[2m │ gzip:   0.71 kB[22m
+[2m../../static/scene-orchestrator/[22m[35massets/App2.css                               [39m[1m[2m  2.43 kB[22m[1m[22m[2m │ gzip:   0.93 kB[22m
+[2m../../static/scene-orchestrator/[22m[35massets/TestCaseGroupList.css                  [39m[1m[2m  2.49 kB[22m[1m[22m[2m │ gzip:   0.75 kB[22m
+[2m../../static/scene-orchestrator/[22m[35massets/TestSuiteGroupList.css                 [39m[1m[2m  2.49 kB[22m[1m[22m[2m │ gzip:   0.75 kB[22m
+[2m../../static/scene-orchestrator/[22m[35massets/TaskExecutionLogList.css               [39m[1m[2m  2.59 kB[22m[1m[22m[2m │ gzip:   0.79 kB[22m
+[2m../../static/scene-orchestrator/[22m[35massets/PerformanceTaskList.css                [39m[1m[2m  2.60 kB[22m[1m[22m[2m │ gzip:   0.80 kB[22m
+[2m../../static/scene-orchestrator/[22m[35massets/ScheduledTaskDetail.css                [39m[1m[2m  2.63 kB[22m[1m[22m[2m │ gzip:   0.73 kB[22m
+[2m../../static/scene-orchestrator/[22m[35massets/App7.css                               [39m[1m[2m  2.65 kB[22m[1m[22m[2m │ gzip:   0.88 kB[22m
+[2m../../static/scene-orchestrator/[22m[35massets/EnvironmentDetailPage.css              [39m[1m[2m  2.77 kB[22m[1m[22m[2m │ gzip:   0.87 kB[22m
+[2m../../static/scene-orchestrator/[22m[35massets/TestSuiteDetail.css                    [39m[1m[2m  2.78 kB[22m[1m[22m[2m │ gzip:   0.76 kB[22m
+[2m../../static/scene-orchestrator/[22m[35massets/App3.css                               [39m[1m[2m  2.99 kB[22m[1m[22m[2m │ gzip:   0.98 kB[22m
+[2m../../static/scene-orchestrator/[22m[35massets/TestCaseList.css                       [39m[1m[2m  3.01 kB[22m[1m[22m[2m │ gzip:   0.91 kB[22m
+[2m../../static/scene-orchestrator/[22m[35massets/TestCaseDetail.css                     [39m[1m[2m  3.38 kB[22m[1m[22m[2m │ gzip:   0.91 kB[22m
+[2m../../static/scene-orchestrator/[22m[35massets/AssetFormPage.css                      [39m[1m[2m  3.39 kB[22m[1m[22m[2m │ gzip:   1.01 kB[22m
+[2m../../static/scene-orchestrator/[22m[35massets/App8.css                               [39m[1m[2m  3.43 kB[22m[1m[22m[2m │ gzip:   1.05 kB[22m
+[2m../../static/scene-orchestrator/[22m[35massets/TestSuiteList.css                      [39m[1m[2m  3.72 kB[22m[1m[22m[2m │ gzip:   1.04 kB[22m
+[2m../../static/scene-orchestrator/[22m[35massets/TaskExecutionLogDetail.css             [39m[1m[2m  3.74 kB[22m[1m[22m[2m │ gzip:   1.08 kB[22m
+[2m../../static/scene-orchestrator/[22m[35massets/App4.css                               [39m[1m[2m  4.02 kB[22m[1m[22m[2m │ gzip:   1.12 kB[22m
+[2m../../static/scene-orchestrator/[22m[35massets/app-shell.css                          [39m[1m[2m  4.21 kB[22m[1m[22m[2m │ gzip:   1.19 kB[22m
+[2m../../static/scene-orchestrator/[22m[35massets/AssetList.css                          [39m[1m[2m  4.43 kB[22m[1m[22m[2m │ gzip:   1.21 kB[22m
+[2m../../static/scene-orchestrator/[22m[35massets/App5.css                               [39m[1m[2m  4.83 kB[22m[1m[22m[2m │ gzip:   1.32 kB[22m
+[2m../../static/scene-orchestrator/[22m[35massets/ReportDetailPage.css                   [39m[1m[2m  5.17 kB[22m[1m[22m[2m │ gzip:   1.10 kB[22m
+[2m../../static/scene-orchestrator/[22m[35massets/LoginPage.css                          [39m[1m[2m  5.41 kB[22m[1m[22m[2m │ gzip:   1.55 kB[22m
+[2m../../static/scene-orchestrator/[22m[35massets/TestCaseForm.css                       [39m[1m[2m  5.56 kB[22m[1m[22m[2m │ gzip:   1.29 kB[22m
+[2m../../static/scene-orchestrator/[22m[35massets/codemirror.css                         [39m[1m[2m  6.01 kB[22m[1m[22m[2m │ gzip:   1.57 kB[22m
+[2m../../static/scene-orchestrator/[22m[35massets/ProjectDetailPage.css                  [39m[1m[2m  6.31 kB[22m[1m[22m[2m │ gzip:   1.47 kB[22m
+[2m../../static/scene-orchestrator/[22m[35massets/ExecutionLogPanel.css                  [39m[1m[2m  6.54 kB[22m[1m[22m[2m │ gzip:   1.51 kB[22m
+[2m../../static/scene-orchestrator/[22m[35massets/App.css                                [39m[1m[2m  6.56 kB[22m[1m[22m[2m │ gzip:   1.68 kB[22m
+[2m../../static/scene-orchestrator/[22m[35massets/TestRunDetail.css                      [39m[1m[2m  6.60 kB[22m[1m[22m[2m │ gzip:   1.48 kB[22m
+[2m../../static/scene-orchestrator/[22m[35massets/SceneDesignerPage.css                  [39m[1m[2m  7.09 kB[22m[1m[22m[2m │ gzip:   1.86 kB[22m
+[2m../../static/scene-orchestrator/[22m[35massets/SceneExecutionDetail.css               [39m[1m[2m  7.10 kB[22m[1m[22m[2m │ gzip:   1.59 kB[22m
+[2m../../static/scene-orchestrator/[22m[35massets/SceneListPage.css                      [39m[1m[2m  7.41 kB[22m[1m[22m[2m │ gzip:   1.80 kB[22m
+[2m../../static/scene-orchestrator/[22m[35massets/main.css                               [39m[1m[2m 12.39 kB[22m[1m[22m[2m │ gzip:   3.24 kB[22m
+[2m../../static/scene-orchestrator/[22m[35massets/AuthLayout.css                         [39m[1m[2m 14.35 kB[22m[1m[22m[2m │ gzip:   3.15 kB[22m
+[2m../../static/scene-orchestrator/[22m[35massets/element-plus.css                       [39m[1m[2m357.50 kB[22m[1m[22m[2m │ gzip:  47.82 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/_plugin-vue_export-helper-DlAUqK2U.js  [39m[1m[2m  0.09 kB[22m[1m[22m[2m │ gzip:   0.10 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/sidebar.js                             [39m[1m[2m  0.25 kB[22m[1m[22m[2m │ gzip:   0.26 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/useFormat-qrfLIRwR.js                  [39m[1m[2m  0.28 kB[22m[1m[22m[2m │ gzip:   0.21 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/documentImport.js                      [39m[1m[2m  0.34 kB[22m[1m[22m[2m │ gzip:   0.25 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/draftBox.js                            [39m[1m[2m  0.34 kB[22m[1m[22m[2m │ gzip:   0.25 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/modelProviderManager.js                [39m[1m[2m  0.34 kB[22m[1m[22m[2m │ gzip:   0.24 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/promptTemplateManager.js               [39m[1m[2m  0.34 kB[22m[1m[22m[2m │ gzip:   0.25 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/ruleManager.js                         [39m[1m[2m  0.34 kB[22m[1m[22m[2m │ gzip:   0.25 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/EmptyState-CEuvqRQT.js                 [39m[1m[2m  0.34 kB[22m[1m[22m[2m │ gzip:   0.28 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/dashboard.js                           [39m[1m[2m  0.35 kB[22m[1m[22m[2m │ gzip:   0.26 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/useCsrf-CBhYuwOV.js                    [39m[1m[2m  0.36 kB[22m[1m[22m[2m │ gzip:   0.25 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/aiGenRecord.js                         [39m[1m[2m  0.37 kB[22m[1m[22m[2m │ gzip:   0.27 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/project-cwfTtxRH.js                    [39m[1m[2m  0.40 kB[22m[1m[22m[2m │ gzip:   0.27 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/uiMessage-B4uqxMeX.js                  [39m[1m[2m  0.41 kB[22m[1m[22m[2m │ gzip:   0.29 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/RequestMethodBadge-B_BBT9Xt.js         [39m[1m[2m  0.44 kB[22m[1m[22m[2m │ gzip:   0.34 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/AvatarName-C3BRBdS_.js                 [39m[1m[2m  0.46 kB[22m[1m[22m[2m │ gzip:   0.34 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/apiAsset-BNQm_AI2.js                   [39m[1m[2m  0.48 kB[22m[1m[22m[2m │ gzip:   0.26 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/report-C4ySbqI8.js                     [39m[1m[2m  0.65 kB[22m[1m[22m[2m │ gzip:   0.35 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/emailConfig-ClXllkl0.js                [39m[1m[2m  0.70 kB[22m[1m[22m[2m │ gzip:   0.36 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/modulepreload-polyfill-B5Qt9EMX.js     [39m[1m[2m  0.71 kB[22m[1m[22m[2m │ gzip:   0.40 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/StatusBadge-5l4kwh35.js                [39m[1m[2m  0.71 kB[22m[1m[22m[2m │ gzip:   0.47 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/index-CzIXlYLL.js                      [39m[1m[2m  0.79 kB[22m[1m[22m[2m │ gzip:   0.49 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/index-BmoG1zwi.js                      [39m[1m[2m  0.81 kB[22m[1m[22m[2m │ gzip:   0.49 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/index-DxctCpR-.js                      [39m[1m[2m  0.83 kB[22m[1m[22m[2m │ gzip:   0.49 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/PasswordResetRequestPage-CQOBFaZy.js   [39m[1m[2m  0.86 kB[22m[1m[22m[2m │ gzip:   0.66 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/testCaseGroup-BZybDlB5.js              [39m[1m[2m  0.89 kB[22m[1m[22m[2m │ gzip:   0.43 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/testSuiteGroup-Dzb4gzZv.js             [39m[1m[2m  0.89 kB[22m[1m[22m[2m │ gzip:   0.43 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/testCase-CQL8qYRx.js                   [39m[1m[2m  0.91 kB[22m[1m[22m[2m │ gzip:   0.45 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/testSuite-D66FZVRJ.js                  [39m[1m[2m  0.97 kB[22m[1m[22m[2m │ gzip:   0.43 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/mockData.js                            [39m[1m[2m  0.98 kB[22m[1m[22m[2m │ gzip:   0.59 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/apiAssetManager.js                     [39m[1m[2m  0.99 kB[22m[1m[22m[2m │ gzip:   0.59 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/scheduledTask-Db5jcDsL.js              [39m[1m[2m  1.02 kB[22m[1m[22m[2m │ gzip:   0.43 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/preload-helper-B_E25CdE.js             [39m[1m[2m  1.04 kB[22m[1m[22m[2m │ gzip:   0.63 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/scheduledTask-lHK3G5Y2.js              [39m[1m[2m  1.13 kB[22m[1m[22m[2m │ gzip:   0.52 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/environmentPayload-ClN-ATuY.js         [39m[1m[2m  1.49 kB[22m[1m[22m[2m │ gzip:   0.62 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/testRun-B_GvHCAR.js                    [39m[1m[2m  1.87 kB[22m[1m[22m[2m │ gzip:   0.76 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/http-1C1CY54x.js                       [39m[1m[2m  1.91 kB[22m[1m[22m[2m │ gzip:   1.06 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/GroupFormDialog-DFlwZJUZ.js            [39m[1m[2m  2.47 kB[22m[1m[22m[2m │ gzip:   1.32 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/AuthLayout-BV3Kyo_U.js                 [39m[1m[2m  2.51 kB[22m[1m[22m[2m │ gzip:   0.83 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/PasswordChangePage-BU0Ws5SV.js         [39m[1m[2m  2.78 kB[22m[1m[22m[2m │ gzip:   1.32 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/testManager.js                         [39m[1m[2m  2.80 kB[22m[1m[22m[2m │ gzip:   1.15 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/performanceUtils-C_2ZEClQ.js           [39m[1m[2m  3.02 kB[22m[1m[22m[2m │ gzip:   1.37 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/environmentList.js                     [39m[1m[2m  3.15 kB[22m[1m[22m[2m │ gzip:   1.52 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/ProjectFormPage-lt1iRAmO.js            [39m[1m[2m  3.24 kB[22m[1m[22m[2m │ gzip:   1.75 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/SceneExecutionPage-reTcW1ZT.js         [39m[1m[2m  3.46 kB[22m[1m[22m[2m │ gzip:   1.78 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/index-DzxmKfl1.js                      [39m[1m[2m  3.62 kB[22m[1m[22m[2m │ gzip:   0.91 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/ProfilePage-rJESjpwr.js                [39m[1m[2m  3.64 kB[22m[1m[22m[2m │ gzip:   1.55 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/LoginPage-BIX-k6Jc.js                  [39m[1m[2m  3.69 kB[22m[1m[22m[2m │ gzip:   1.85 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/scene-CmavKHBK.js                      [39m[1m[2m  3.70 kB[22m[1m[22m[2m │ gzip:   1.25 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/main.js                                [39m[1m[2m  3.71 kB[22m[1m[22m[2m │ gzip:   1.55 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/TestSuiteForm-DaAqioiT.js              [39m[1m[2m  3.74 kB[22m[1m[22m[2m │ gzip:   1.80 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/TestSuiteRun-8caszSa1.js               [39m[1m[2m  3.93 kB[22m[1m[22m[2m │ gzip:   1.88 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/RegisterPage-Cmot6DDP.js               [39m[1m[2m  4.14 kB[22m[1m[22m[2m │ gzip:   1.99 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/ParameterConfigList-DK5Wxpt0.js        [39m[1m[2m  5.09 kB[22m[1m[22m[2m │ gzip:   2.28 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/TestRunList-B6lcIT60.js                [39m[1m[2m  5.33 kB[22m[1m[22m[2m │ gzip:   2.40 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/ReportFormPage-NL7c_94c.js             [39m[1m[2m  5.37 kB[22m[1m[22m[2m │ gzip:   2.22 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/ProjectListPage-CcqtHihO.js            [39m[1m[2m  5.38 kB[22m[1m[22m[2m │ gzip:   2.43 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/TestCaseRun-LO0u3Iry.js                [39m[1m[2m  5.61 kB[22m[1m[22m[2m │ gzip:   2.40 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/SceneExecutionList-OuyCsBms.js         [39m[1m[2m  5.65 kB[22m[1m[22m[2m │ gzip:   2.58 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/EmailConfigList-Bpp-G2sn.js            [39m[1m[2m  5.79 kB[22m[1m[22m[2m │ gzip:   2.44 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/TestCaseGroupList-DoFzYdD6.js          [39m[1m[2m  6.30 kB[22m[1m[22m[2m │ gzip:   2.89 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/TestSuiteGroupList-BX_qUUj9.js         [39m[1m[2m  6.30 kB[22m[1m[22m[2m │ gzip:   2.89 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/EnvironmentListPage-B42WqpxV.js        [39m[1m[2m  6.42 kB[22m[1m[22m[2m │ gzip:   2.80 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/ReportListPage-BvRzHKTa.js             [39m[1m[2m  6.80 kB[22m[1m[22m[2m │ gzip:   2.88 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/MockDataList-BYaLwYID.js               [39m[1m[2m  7.01 kB[22m[1m[22m[2m │ gzip:   3.03 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/EmailConfigForm-CqF5qeJT.js            [39m[1m[2m  7.22 kB[22m[1m[22m[2m │ gzip:   2.50 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/SceneExecutionReportForm-C5ks5G9I.js   [39m[1m[2m  7.27 kB[22m[1m[22m[2m │ gzip:   3.09 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/MockDataForm-BSfe2IvC.js               [39m[1m[2m  7.27 kB[22m[1m[22m[2m │ gzip:   2.97 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/ExecutionLogPanel-Bah6dz2m.js          [39m[1m[2m  7.74 kB[22m[1m[22m[2m │ gzip:   2.87 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/TaskMonitor-BgiJqhvT.js                [39m[1m[2m  7.74 kB[22m[1m[22m[2m │ gzip:   2.91 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/EnvironmentDetailPage-BSLbpOb-.js      [39m[1m[2m  7.89 kB[22m[1m[22m[2m │ gzip:   2.83 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/TestRunReportForm-BgUcENnW.js          [39m[1m[2m  7.95 kB[22m[1m[22m[2m │ gzip:   3.23 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/ScheduledTaskList-CR0wr9aC.js          [39m[1m[2m  8.36 kB[22m[1m[22m[2m │ gzip:   3.15 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/PerformanceTaskList-BKb14-dg.js        [39m[1m[2m  8.42 kB[22m[1m[22m[2m │ gzip:   3.36 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/apiAssetApifoxEnv.js                   [39m[1m[2m  8.73 kB[22m[1m[22m[2m │ gzip:   3.68 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/TestCaseList-DZsSOf16.js               [39m[1m[2m  8.75 kB[22m[1m[22m[2m │ gzip:   3.43 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/TestSuiteList-CfOE5DLC.js              [39m[1m[2m  9.02 kB[22m[1m[22m[2m │ gzip:   3.34 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/TestCaseDetail-CE--jT8L.js             [39m[1m[2m  9.92 kB[22m[1m[22m[2m │ gzip:   3.46 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/PerformanceConsole-D9gabPhl.js         [39m[1m[2m  9.97 kB[22m[1m[22m[2m │ gzip:   4.23 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/TaskExecutionLogList-D3ayGdFM.js       [39m[1m[2m 10.10 kB[22m[1m[22m[2m │ gzip:   3.88 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/PerformanceReport-BuXH4zGM.js          [39m[1m[2m 10.10 kB[22m[1m[22m[2m │ gzip:   4.30 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/environmentForm.js                     [39m[1m[2m 10.32 kB[22m[1m[22m[2m │ gzip:   3.78 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/EnvironmentFormPage-BQ2c3JBE.js        [39m[1m[2m 11.62 kB[22m[1m[22m[2m │ gzip:   4.12 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/TaskExecutionLogDetail-CfQbCgKB.js     [39m[1m[2m 11.68 kB[22m[1m[22m[2m │ gzip:   4.06 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/ReportDetailPage-DvkwGw9r.js           [39m[1m[2m 11.97 kB[22m[1m[22m[2m │ gzip:   4.23 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/TestSuiteDetail-6eNx-vCK.js            [39m[1m[2m 12.16 kB[22m[1m[22m[2m │ gzip:   4.32 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/ScheduledTaskDetail-BbyBsqVd.js        [39m[1m[2m 13.21 kB[22m[1m[22m[2m │ gzip:   4.45 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/App-BG9-SF17.js                        [39m[1m[2m 13.35 kB[22m[1m[22m[2m │ gzip:   5.12 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/App-Bpl3GZNQ.js                        [39m[1m[2m 13.37 kB[22m[1m[22m[2m │ gzip:   5.23 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/ScheduledTaskForm-Dw16etPP.js          [39m[1m[2m 13.58 kB[22m[1m[22m[2m │ gzip:   4.12 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/environmentDetail.js                   [39m[1m[2m 13.73 kB[22m[1m[22m[2m │ gzip:   5.34 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/ProjectDetailPage-D2AOutbe.js          [39m[1m[2m 13.89 kB[22m[1m[22m[2m │ gzip:   5.33 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/PerformanceTaskEditor-BYA6DA5_.js      [39m[1m[2m 15.27 kB[22m[1m[22m[2m │ gzip:   5.96 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/SceneExecutionDetail-Dt0L4gg8.js       [39m[1m[2m 15.39 kB[22m[1m[22m[2m │ gzip:   5.20 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/App-CxKXEJi_.js                        [39m[1m[2m 16.14 kB[22m[1m[22m[2m │ gzip:   6.13 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/AIGenerateModal-B0P6BQRc.js            [39m[1m[2m 16.30 kB[22m[1m[22m[2m │ gzip:   5.50 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/TestRunDetail-D-3SRHWu.js              [39m[1m[2m 16.56 kB[22m[1m[22m[2m │ gzip:   5.11 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/App-BslQeok7.js                        [39m[1m[2m 16.79 kB[22m[1m[22m[2m │ gzip:   6.10 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/App-PR-fTDZ6.js                        [39m[1m[2m 17.42 kB[22m[1m[22m[2m │ gzip:   6.16 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/App-DRCMWI4Z.js                        [39m[1m[2m 18.08 kB[22m[1m[22m[2m │ gzip:   6.16 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/App-BwSkRERG.js                        [39m[1m[2m 18.59 kB[22m[1m[22m[2m │ gzip:   6.86 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/AssetList-CHuwt5xY.js                  [39m[1m[2m 22.27 kB[22m[1m[22m[2m │ gzip:   7.49 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/app-shell.js                           [39m[1m[2m 23.98 kB[22m[1m[22m[2m │ gzip:   6.58 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/AssetFormPage-pjHndxeX.js              [39m[1m[2m 27.08 kB[22m[1m[22m[2m │ gzip:   9.16 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/TestCaseForm-fX0vceUD.js               [39m[1m[2m 27.51 kB[22m[1m[22m[2m │ gzip:   7.33 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/App-CXCPeWrA.js                        [39m[1m[2m 28.97 kB[22m[1m[22m[2m │ gzip:   9.20 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/SceneListPage-BmcqtGmI.js              [39m[1m[2m 39.63 kB[22m[1m[22m[2m │ gzip:  13.33 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/SceneDesignerPage-CNMn7_3E.js          [39m[1m[2m 81.61 kB[22m[1m[22m[2m │ gzip:  26.03 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/vue-vendor-DWcox7m8.js                 [39m[1m[2m165.94 kB[22m[1m[22m[2m │ gzip:  62.42 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/codemirror-NttaIZaf.js                 [39m[1m[2m192.41 kB[22m[1m[22m[2m │ gzip:  64.23 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/vendor-Db5pLQUu.js                     [39m[1m[2m367.77 kB[22m[1m[22m[2m │ gzip: 126.67 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/echarts-CdtZbwwE.js                    [39m[1m[2m821.90 kB[22m[1m[22m[2m │ gzip: 270.30 kB[22m
+[2m../../static/scene-orchestrator/[22m[36massets/element-plus-CWW0hJ4s.js               [39m[1m[2m949.01 kB[22m[1m[22m[2m │ gzip: 293.57 kB[22m
+[32m✓ built in 2m 43s[39m

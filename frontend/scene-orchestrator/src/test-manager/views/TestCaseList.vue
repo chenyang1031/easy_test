@@ -207,6 +207,7 @@ async function loadData() {
 function doSearch() { store.page = 1; loadData() }
 
 onMounted(() => {
+  if (!projectStore.projects.length) projectStore.loadProjects()
   filterProjectId.value = projectStore.currentProjectId
   if (filterProjectId.value) groupStore.loadList(filterProjectId.value)
   loadData()

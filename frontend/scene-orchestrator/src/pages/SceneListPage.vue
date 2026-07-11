@@ -144,6 +144,9 @@
         <button class="btn btn-sm btn-outline-secondary me-1" :disabled="!selectedApiProjectId" @click="replayImportVisible = true">
           回放导入
         </button>
+        <button class="btn btn-sm btn-outline-secondary me-1" :disabled="!selectedApiProjectId" @click="sceneExportImportVisible = true">
+          导出/导入
+        </button>
         <span v-if="batchRunning" class="batch-progress ms-2">
           <span class="spinner-border spinner-border-sm text-primary me-1" role="status" />
           {{ batchProgress.completed }}/{{ batchProgress.total }}
@@ -536,6 +539,7 @@ const sceneGroupOptions = computed(() => {
 });
 
 const replayImportVisible = ref(false);
+const sceneExportImportVisible = ref(false);
 
 const envListUrl = "/environments/";
 
@@ -1413,9 +1417,6 @@ onActivated(() => {
 .log-drawer-modal {
   z-index: 9999 !important;
   isolation: isolate;
-}
-</style>
-
 }
 </style>
 
