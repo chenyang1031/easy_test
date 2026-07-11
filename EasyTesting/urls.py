@@ -17,13 +17,16 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from django.contrib.auth import views as auth_views
-from django.views.generic import TemplateView
+from django.views.generic import TemplateView, RedirectView
 from test_manager import views, debug_views
 from test_manager import auth_views as custom_auth_views
 from django.conf import settings
 from django.conf.urls.static import static
 
 urlpatterns = [
+    # 根路径重定向到 SPA 入口
+    path('', RedirectView.as_view(url='/app/', permanent=False)),
+
     # 统一 SPA Shell 入口
     path('app/', TemplateView.as_view(template_name='app_shell.html'), name='app-shell'),
 
