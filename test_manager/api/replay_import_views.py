@@ -406,6 +406,7 @@ class ReplayImportViewSet(viewsets.ViewSet):
                     node_key=node_key[:80],
                     name=asset.name,
                     description=asset.interface_desc or "",
+                    method=asset.method or "",
                     request_headers=node_headers,
                     request_params=node_params,
                     request_body=node_body,

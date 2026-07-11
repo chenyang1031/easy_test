@@ -27,6 +27,8 @@ from .scene_views import (
 from .performance_views import PerformanceTestTaskViewSet
 from .replay_import_views import ReplayImportViewSet
 from .scene_import_export_views import SceneImportExportViewSet
+from .test_case_import_export_views import TestCaseImportExportViewSet
+from .test_suite_import_export_views import TestSuiteImportExportViewSet
 from .mock_data_views import MockDataViewSet
 from .document_gen_views import DocumentGenRecordViewSet
 from .dashboard_views import DashboardStatsView
@@ -108,6 +110,38 @@ urlpatterns = [
         'v1/test-scenes/replay-import/confirm',
         ReplayImportViewSet.as_view({'post': 'confirm'}),
         name='replay_import_confirm',
+    ),
+    # 测试用例导入导出
+    path(
+        'v1/test-cases/export/',
+        TestCaseImportExportViewSet.as_view({'post': 'export_test_cases'}),
+        name='test_case_export',
+    ),
+    path(
+        'v1/test-cases/import/preview',
+        TestCaseImportExportViewSet.as_view({'post': 'preview_import'}),
+        name='test_case_import_preview',
+    ),
+    path(
+        'v1/test-cases/import/confirm',
+        TestCaseImportExportViewSet.as_view({'post': 'confirm_import'}),
+        name='test_case_import_confirm',
+    ),
+    # 测试套件导入导出
+    path(
+        'v1/test-suites/export/',
+        TestSuiteImportExportViewSet.as_view({'post': 'export_test_suites'}),
+        name='test_suite_export',
+    ),
+    path(
+        'v1/test-suites/import/preview',
+        TestSuiteImportExportViewSet.as_view({'post': 'preview_import'}),
+        name='test_suite_import_preview',
+    ),
+    path(
+        'v1/test-suites/import/confirm',
+        TestSuiteImportExportViewSet.as_view({'post': 'confirm_import'}),
+        name='test_suite_import_confirm',
     ),
     path('v1/', include(router.urls)),
     path('v1/', include('test_manager.report.api_urls')),

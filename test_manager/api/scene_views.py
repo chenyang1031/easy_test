@@ -257,6 +257,7 @@ class TestSceneViewSet(viewsets.ModelViewSet):
                 node_key=f"{node.node_key}_copy",
                 name=node.name,
                 description=node.description,
+                method=node.method or node.effective_method,
                 request_headers=node.request_headers or {},
                 request_params=node.request_params or {},
                 request_body=node.request_body or {},
@@ -593,7 +594,7 @@ class TestSceneNodeViewSet(viewsets.ModelViewSet):
         allowed = {
             "id": "id",
             "name": "name",
-            "method": "api_asset__method",
+            "method": "method",
             "is_enabled": "is_enabled",
             "sort": "sort",
         }
@@ -684,6 +685,7 @@ class TestSceneNodeViewSet(viewsets.ModelViewSet):
             payload.setdefault("expected_status_code", 200)
             payload.setdefault("timeout", 30)
             payload.setdefault("on_failed", TestSceneNode.ON_FAILED_CONTINUE)
+            payload.setdefault("method", api_obj.method or "")
             max_sort = scene_obj.nodes.filter(is_deleted=False).order_by("-sort").values_list("sort", flat=True).first()
             payload.setdefault("sort", (max_sort if max_sort is not None else -1) + 1)
             payload.setdefault("is_enabled", True)
@@ -805,6 +807,7 @@ class TestSceneNodeViewSet(viewsets.ModelViewSet):
             node_key=node_key[:80],
             name=f"{node.name}-副本",
             description=node.description,
+            method=node.method or node.effective_method,
             request_headers=node.request_headers or {},
             request_params=node.request_params or {},
             request_body=node.request_body or {},

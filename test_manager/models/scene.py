@@ -59,6 +59,14 @@ class TestScene(models.Model):
 class TestSceneNode(models.Model):
     """测试场景节点表。"""
 
+    METHOD_CHOICES = [
+        ("GET", "GET"),
+        ("POST", "POST"),
+        ("PUT", "PUT"),
+        ("DELETE", "DELETE"),
+        ("PATCH", "PATCH"),
+    ]
+
     ON_FAILED_STOP = "stop"
     ON_FAILED_CONTINUE = "continue"
     ON_FAILED_CHOICES = [
@@ -85,6 +93,14 @@ class TestSceneNode(models.Model):
     node_key = models.CharField(max_length=80, verbose_name="节点标识", db_comment="节点标识")
     name = models.CharField(max_length=150, verbose_name="节点名称", db_comment="节点名称")
     description = models.TextField(blank=True, default="", verbose_name="节点描述", db_comment="节点描述")
+    method = models.CharField(
+        max_length=10,
+        choices=METHOD_CHOICES,
+        default="",
+        blank=True,
+        verbose_name="请求方法",
+        db_comment="节点自身的 HTTP 请求方法，创建时从关联 API 资产复制，允许独立修改",
+    )
     request_headers = models.JSONField(default=dict, blank=True, verbose_name="请求头覆盖", db_comment="请求头覆盖")
     request_params = models.JSONField(default=dict, blank=True, verbose_name="请求参数覆盖", db_comment="请求参数覆盖")
     request_body = models.JSONField(default=dict, blank=True, verbose_name="请求体覆盖", db_comment="请求体覆盖")
@@ -199,6 +215,15 @@ class TestSceneNode(models.Model):
 
     def __str__(self):
         return f"{self.scene_id}-{self.node_key}"
+
+    @property
+    def effective_method(self):
+        """有效请求方法：优先使用节点自身的 method，回退到关联 API 资产的 method。"""
+        if self.method:
+            return self.method
+        if self.api_asset_id and self.api_asset:
+            return self.api_asset.method
+        return ""
 
     # 兼容字段别名：用于前后端按 scene/api/headers/params/body/assertions 命名读写。
     @property

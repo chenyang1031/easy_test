@@ -856,7 +856,7 @@ watch(
       tableState.list = arr.map((node) => ({
         id: node.id,
         sort: Number(node.sort || 0),
-        method: node.api_asset_method || "API",
+        method: node.method || node.api_asset_method || "API",
         name: node.name || "",
         isEnabled: node.is_enabled !== false
       }));

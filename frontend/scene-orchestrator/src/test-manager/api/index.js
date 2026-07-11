@@ -4,15 +4,16 @@ import { useCsrf } from '../composables/useCsrf.js'
 
 const BASE = ''
 
-function getHeaders() {
-  return {
-    'Content-Type': 'application/json',
-    'X-CSRFToken': useCsrf().getToken()
+function getHeaders(body) {
+  const headers = { 'X-CSRFToken': useCsrf().getToken() }
+  if (!(body instanceof FormData)) {
+    headers['Content-Type'] = 'application/json'
   }
+  return headers
 }
 
 async function request(url, options = {}) {
-  const resp = await fetch(BASE + url, { ...options, headers: { ...getHeaders(), ...options.headers } })
+  const resp = await fetch(BASE + url, { ...options, headers: { ...getHeaders(options.body), ...options.headers } })
   if (!resp.ok) {
     const data = await resp.json().catch(() => ({}))
     const detail = typeof data === 'object' ? (data.detail || data.error || JSON.stringify(data)) : String(data)
@@ -113,6 +114,38 @@ export const testRunApi = {
 export const testResultApi = {
   list: (params = {}) => request(`/api/v1/test-results/?${new URLSearchParams(params)}`),
   get: (id) => request(`/api/v1/test-results/${id}/`),
+}
+
+// ========== 测试用例导入/导出 ==========
+export const testCaseImportExportApi = {
+  export: (projectId, caseIds = null, format = 'json') => {
+    return request('/api/v1/test-cases/export/', { method: 'POST', body: JSON.stringify({ project_id: projectId, test_case_ids: caseIds, format }) })
+  },
+  previewImport: (file, projectId) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('project_id', String(projectId))
+    return request('/api/v1/test-cases/import/preview', { method: 'POST', body: formData })
+  },
+  confirmImport: (payload) => {
+    return request('/api/v1/test-cases/import/confirm', { method: 'POST', body: JSON.stringify(payload) })
+  },
+}
+
+// ========== 测试套件导入/导出 ==========
+export const testSuiteImportExportApi = {
+  export: (projectId, suiteIds = null, format = 'json') => {
+    return request('/api/v1/test-suites/export/', { method: 'POST', body: JSON.stringify({ project_id: projectId, test_suite_ids: suiteIds, format }) })
+  },
+  previewImport: (file, projectId) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('project_id', String(projectId))
+    return request('/api/v1/test-suites/import/preview', { method: 'POST', body: formData })
+  },
+  confirmImport: (payload) => {
+    return request('/api/v1/test-suites/import/confirm', { method: 'POST', body: JSON.stringify(payload) })
+  },
 }
 
 // ========== 场景执行 ==========

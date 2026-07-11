@@ -8,6 +8,7 @@
       </div>
       <div class="page-header-right">
         <el-button @click="openGroupForm(null)"><el-icon><FolderAdd /></el-icon> 新建分组</el-button>
+        <el-button @click="importExportDialogVisible = true"><el-icon><Download /></el-icon> 导入/导出</el-button>
         <el-button type="primary" @click="$router.push('/test-cases/create')"><el-icon><Plus /></el-icon> 新增用例</el-button>
       </div>
     </div>
@@ -132,18 +133,21 @@
     </div>
 
     <GroupFormDialog v-model="groupDialogVisible" :editing="editingGroup" :project-id="filterProjectId" :groups="groupStore.flatList" type="testCase" @saved="onGroupSaved" />
+    <TestCaseImportExportDialog v-model="importExportDialogVisible" :project-id="filterProjectId" :selected-case-ids="Array.from(selectedIds)" @success="onImportSuccess" />
   </div>
 </template>
 
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { Download } from '@element-plus/icons-vue'
 import { useProjectStore } from '../stores/project.js'
 import { useTestCaseStore } from '../stores/testCase.js'
 import { useTestCaseGroupStore } from '../stores/testCaseGroup.js'
 import { formatDateTime } from '../composables/useFormat.js'
 import RequestMethodBadge from '../components/common/RequestMethodBadge.vue'
 import GroupFormDialog from '../components/group/GroupFormDialog.vue'
+import TestCaseImportExportDialog from '../components/testCase/TestCaseImportExportDialog.vue'
 
 const projectStore = useProjectStore()
 const store = useTestCaseStore()
@@ -164,6 +168,7 @@ function onFilterProjectChange(val) { filterProjectId.value = val; projectStore.
 
 const groupDialogVisible = ref(false)
 const editingGroup = ref(null)
+const importExportDialogVisible = ref(false)
 function openGroupForm(g) { editingGroup.value = g || null; groupDialogVisible.value = true }
 
 async function onGroupSaved(data) {
@@ -205,6 +210,7 @@ async function loadData() {
   await store.loadList(params)
 }
 function doSearch() { store.page = 1; loadData() }
+function onImportSuccess() { importExportDialogVisible.value = false; loadData() }
 
 onMounted(() => {
   if (!projectStore.projects.length) projectStore.loadProjects()

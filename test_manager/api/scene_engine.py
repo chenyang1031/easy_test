@@ -747,7 +747,7 @@ def _build_proxy_case(node, resolved_headers, resolved_params_url, resolved_para
     if _raw_status:
         final_status_code = int(_raw_status)
     else:
-        method = str(node.api_asset.method or "").upper()
+        method = str(node.effective_method or "").upper()
         if method == "DELETE":
             final_status_code = 204
         elif method == "POST":
@@ -762,7 +762,7 @@ def _build_proxy_case(node, resolved_headers, resolved_params_url, resolved_para
     return ProxyCase(
         id=node.id,
         name=node.name,
-        request_method=node.api_asset.method,
+        request_method=node.effective_method or "GET",
         request_url=request_url,
         request_headers=resolved_headers or {},
         request_body=body_for_request,
@@ -1065,7 +1065,7 @@ def _execute_scene_body(scene, execution, nodes, run_mode, runtime_config_overri
                     "status": "failed",
                     "reason": str(exc),
                     "request": {
-                        "method": node.api_asset.method if node.api_asset else "",
+                        "method": node.effective_method or "",
                         "url": node_effective_url,
                         "headers": raw_headers,
                         "params": raw_params_url,
@@ -1127,7 +1127,7 @@ def _execute_scene_body(scene, execution, nodes, run_mode, runtime_config_overri
                     safe_body = {}
                 pre_request_script_input_snapshot = {
                     "request_url": full_request_url,
-                    "request_method": str(node.api_asset.method or "GET").upper(),
+                    "request_method": str(node.effective_method or "GET").upper(),
                     "content_type": content_type,
                     "request_headers": copy.deepcopy(safe_headers) if isinstance(safe_headers, dict) else safe_headers,
                     "request_params": copy.deepcopy(safe_params) if isinstance(safe_params, dict) else safe_params,
@@ -1141,7 +1141,7 @@ def _execute_scene_body(scene, execution, nodes, run_mode, runtime_config_overri
                     request_body=safe_body,
                     variables={},
                     request_url=full_request_url,
-                    request_method=node.api_asset.method or "GET",
+                    request_method=node.effective_method or "GET",
                     content_type=content_type,
                     timeout_ms=script_timeout,
                 )
@@ -1203,7 +1203,7 @@ def _execute_scene_body(scene, execution, nodes, run_mode, runtime_config_overri
                     request_body=safe_body,
                     variables={},
                     request_url=full_request_url,
-                    request_method=str(node.api_asset.method or "GET").upper() if node.api_asset_id else "GET",
+                    request_method=str(node.effective_method or "GET").upper(),
                     content_type=content_type,
                     timeout_ms=effective_timeout,
                 )

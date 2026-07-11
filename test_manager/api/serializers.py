@@ -932,6 +932,7 @@ class TestSceneNodeSerializer(serializers.ModelSerializer):
         model = TestSceneNode
         fields = [
             'id', 'scene', 'api_asset', 'node_key', 'name', 'description',
+            'method',
             'request_headers', 'request_params', 'request_body',
             'param_type', 'body_type',
             'assert_rules', 'extract_rules',

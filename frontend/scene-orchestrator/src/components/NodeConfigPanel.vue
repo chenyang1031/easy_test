@@ -40,6 +40,13 @@
         <el-tab-pane label="参数配置" name="params">
           <div class="tab-content">
             <div class="mb-2">
+              <label class="form-label form-label-sm">请求方法</label>
+              <el-select v-model="localNode.method" size="small" popper-class="scene-select-popper" style="width: 100%" @change="markDirty">
+                <el-option v-for="m in ['GET','POST','PUT','DELETE','PATCH']" :key="m" :label="m" :value="m" />
+              </el-select>
+              <p v-if="node?.api_asset_method && localNode.method && localNode.method !== node.api_asset_method" class="text-info small mt-1 mb-0">资产原始方法：{{ node.api_asset_method }}</p>
+            </div>
+            <div class="mb-2">
               <div class="d-flex justify-content-between align-items-center mb-1">
                 <label class="form-label form-label-sm m-0">接口 URL</label>
                 <button class="btn btn-sm btn-outline-secondary" @click="openVariablePicker('url')">插入变量</button>

@@ -131,6 +131,7 @@ export interface TestSceneNode {
   node_key: string
   name: string
   description: string
+  method: string
   request_headers: Record<string, string>
   request_params: Record<string, string>
   request_body: Record<string, any>

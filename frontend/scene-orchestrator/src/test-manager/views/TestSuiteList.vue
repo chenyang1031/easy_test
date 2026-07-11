@@ -8,6 +8,7 @@
       </div>
       <div class="page-header-right">
         <el-button @click="openGroupForm(null)"><el-icon><FolderAdd /></el-icon> 新建分组</el-button>
+        <el-button @click="importExportDialogVisible = true"><el-icon><Download /></el-icon> 导入/导出</el-button>
         <el-button type="primary" @click="$router.push('/test-suites/create')"><el-icon><Plus /></el-icon> 新增套件</el-button>
       </div>
     </div>
@@ -167,18 +168,21 @@
     </div>
 
     <GroupFormDialog v-model="groupDialogVisible" :editing="editingGroup" :project-id="filterProjectId" :groups="groupStore.flatList" type="testSuite" @saved="onGroupSaved" />
+    <TestSuiteImportExportDialog v-model="importExportDialogVisible" :project-id="filterProjectId" @success="onImportSuccess" />
   </div>
 </template>
 
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
+import { Download } from '@element-plus/icons-vue'
 import { useProjectStore } from '../stores/project.js'
 import { useTestSuiteStore } from '../stores/testSuite.js'
 import { useTestSuiteGroupStore } from '../stores/testSuiteGroup.js'
 import { formatDateTime } from '../composables/useFormat.js'
 import AvatarName from '../components/common/AvatarName.vue'
 import GroupFormDialog from '../components/group/GroupFormDialog.vue'
+import TestSuiteImportExportDialog from '../components/testSuite/TestSuiteImportExportDialog.vue'
 
 const projectStore = useProjectStore()
 const store = useTestSuiteStore()
@@ -201,6 +205,7 @@ function onFilterProjectChange(val) {
 
 const groupDialogVisible = ref(false)
 const editingGroup = ref(null)
+const importExportDialogVisible = ref(false)
 
 function openGroupForm(g) { editingGroup.value = g || null; groupDialogVisible.value = true }
 
@@ -222,6 +227,7 @@ async function loadData() {
   await store.loadList(params)
 }
 function doSearch() { store.page = 1; loadData() }
+function onImportSuccess() { importExportDialogVisible.value = false; loadData() }
 
 onMounted(() => {
   if (!projectStore.projects.length) projectStore.loadProjects()
