@@ -185,6 +185,70 @@ class TestCaseViewSet(viewsets.ModelViewSet):
         serializer = TestResultSerializer(test_result)
         return Response(serializer.data)
 
+    @action(detail=False, methods=['post'])
+    def batch_run(self, request):
+        case_ids = request.data.get('ids', [])
+        environment_id = request.data.get('environment_id')
+
+        if not case_ids or not isinstance(case_ids, list):
+            return Response({"detail": "请提供要运行的用例ID列表"}, status=status.HTTP_400_BAD_REQUEST)
+        if not environment_id:
+            return Response({"detail": "请提供运行环境"}, status=status.HTTP_400_BAD_REQUEST)
+
+        environment = get_object_or_404(Environment, id=environment_id)
+        test_cases = list(TestCase.objects.filter(id__in=case_ids).select_related('project'))
+
+        if not test_cases:
+            return Response({"detail": "未找到匹配的测试用例"}, status=status.HTTP_404_NOT_FOUND)
+
+        # 使用第一个用例所属的项目作为批量运行项目
+        project = test_cases[0].project
+
+        # 创建一个统一的 TestRun
+        test_run = TestRun.objects.create(
+            name=f"Batch run: {len(test_cases)} cases",
+            project=project,
+            environment=environment,
+            status='running',
+            start_time=timezone.now(),
+            created_by=request.user
+        )
+
+        results = []
+        has_failure = False
+        for tc in test_cases:
+            result = execute_test_case(tc, environment)
+            if result['status'] != 'passed':
+                has_failure = True
+            test_result = TestResult.objects.create(
+                test_run=test_run,
+                test_case=tc,
+                environment=environment,
+                status=result['status'],
+                request_headers=result.get('request_headers', {}),
+                request_body=result.get('request_body'),
+                response_time=result.get('response_time'),
+                response_status_code=result.get('response_status_code'),
+                response_headers=result.get('response_headers', {}),
+                response_body=result.get('response_body'),
+                error_message=result.get('error_message', ''),
+                extracted_params=result.get('extracted_params', {}),
+                validators=result.get('validators', [])
+            )
+            results.append(TestResultSerializer(test_result).data)
+
+        test_run.status = 'failed' if has_failure else 'completed'
+        test_run.end_time = timezone.now()
+        test_run.save()
+
+        return Response({
+            'test_run': TestRunSerializer(test_run).data,
+            'results': results,
+            'total': len(results),
+            'passed': sum(1 for r in results if r['status'] == 'passed'),
+            'failed': sum(1 for r in results if r['status'] != 'passed'),
+        })
+
 
 class TestSuiteViewSet(viewsets.ModelViewSet):
     queryset = TestSuite.objects.all()
@@ -343,6 +407,76 @@ class TestSuiteViewSet(viewsets.ModelViewSet):
 
         serializer = TestRunSerializer(test_run)
         return Response(serializer.data)
+
+    @action(detail=False, methods=['post'])
+    def batch_run(self, request):
+        suite_ids = request.data.get('ids', [])
+        environment_id = request.data.get('environment_id')
+
+        if not suite_ids or not isinstance(suite_ids, list):
+            return Response({"detail": "请提供要运行的套件ID列表"}, status=status.HTTP_400_BAD_REQUEST)
+        if not environment_id:
+            return Response({"detail": "请提供运行环境"}, status=status.HTTP_400_BAD_REQUEST)
+
+        default_environment = get_object_or_404(Environment, id=environment_id)
+        test_suites = list(TestSuite.objects.filter(id__in=suite_ids).select_related('project'))
+
+        if not test_suites:
+            return Response({"detail": "未找到匹配的测试套件"}, status=status.HTTP_404_NOT_FOUND)
+
+        test_runs = []
+        for suite in test_suites:
+            # 获取每个套件下用例的环境映射（批量运行时统一使用默认环境）
+            case_environments = {}
+            suite_cases = TestSuiteCase.objects.filter(test_suite=suite)
+            for sc in suite_cases:
+                if sc.environment_id:
+                    case_environments[sc.test_case_id] = sc.environment_id
+
+            test_run = TestRun.objects.create(
+                name=f"Batch run: {suite.name}",
+                project=suite.project,
+                test_suite=suite,
+                environment=default_environment,
+                status='running',
+                start_time=timezone.now(),
+                created_by=request.user
+            )
+
+            results = execute_test_suite(suite, default_environment, case_environments)
+
+            for result in results:
+                env_id = result.get('environment_id', environment_id)
+                env = get_object_or_404(Environment, id=env_id)
+                TestResult.objects.create(
+                    test_run=test_run,
+                    test_case_id=result['test_case_id'],
+                    environment=env,
+                    status=result['status'],
+                    request_headers=result.get('request_headers', {}),
+                    request_body=result.get('request_body'),
+                    response_time=result.get('response_time'),
+                    response_status_code=result.get('response_status_code'),
+                    response_headers=result.get('response_headers', {}),
+                    response_body=result.get('response_body'),
+                    error_message=result.get('error_message', ''),
+                    extracted_params=result.get('extracted_params', {}),
+                    validators=result.get('validators', [])
+                )
+
+            failed_results = [r for r in results if r['status'] != 'passed']
+            test_run.status = 'failed' if failed_results else 'completed'
+            test_run.end_time = timezone.now()
+            test_run.save()
+
+            test_runs.append(TestRunSerializer(test_run).data)
+
+        return Response({
+            'test_runs': test_runs,
+            'total': len(test_runs),
+            'passed': sum(1 for r in test_runs if r['status'] == 'completed'),
+            'failed': sum(1 for r in test_runs if r['status'] != 'completed'),
+        })
 
 
 class TestRunViewSet(viewsets.ModelViewSet):

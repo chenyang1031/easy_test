@@ -52,6 +52,7 @@ export const testCaseApi = {
   remove: (id) => request(`/api/v1/test-cases/${id}/`, { method: 'DELETE' }),
   run: (id, data) => request(`/api/v1/test-cases/${id}/run/`, { method: 'POST', body: JSON.stringify(data) }),
   batchDelete: (ids) => request('/api/v1/test-cases/batch_delete/', { method: 'POST', body: JSON.stringify({ ids }) }),
+  batchRun: (ids, environmentId) => request('/api/v1/test-cases/batch_run/', { method: 'POST', body: JSON.stringify({ ids, environment_id: environmentId }) }),
 }
 
 // ========== 测试用例分组 ==========
@@ -83,6 +84,7 @@ export const testSuiteApi = {
   removeTestCase: (id, data) => request(`/api/v1/test-suites/${id}/remove_test_case/`, { method: 'POST', body: JSON.stringify(data) }),
   updateTestCaseEnv: (id, data) => request(`/api/v1/test-suites/${id}/update_test_case_environment/`, { method: 'POST', body: JSON.stringify(data) }),
   run: (id, data) => request(`/api/v1/test-suites/${id}/run/`, { method: 'POST', body: JSON.stringify(data) }),
+  batchRun: (ids, environmentId) => request('/api/v1/test-suites/batch_run/', { method: 'POST', body: JSON.stringify({ ids, environment_id: environmentId }) }),
   cases: (id, params = {}) => request(`/api/v1/test-suites/${id}/cases/?${new URLSearchParams(params)}`),
 }
 

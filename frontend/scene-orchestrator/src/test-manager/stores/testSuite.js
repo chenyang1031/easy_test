@@ -35,5 +35,6 @@ export const useTestSuiteStore = defineStore('testSuite', {
     async removeTestCase(id, data) { return await testSuiteApi.removeTestCase(id, data) },
     async updateTestCaseEnv(id, data) { return await testSuiteApi.updateTestCaseEnv(id, data) },
     async run(id, data) { return await testSuiteApi.run(id, data) },
+    async batchRun(ids, envId) { return await testSuiteApi.batchRun(ids, envId) },
   }
 })

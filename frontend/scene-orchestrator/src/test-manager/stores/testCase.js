@@ -38,5 +38,6 @@ export const useTestCaseStore = defineStore('testCase', {
       return data
     },
     async run(id, envId) { return await testCaseApi.run(id, { environment_id: envId }) },
+    async batchRun(ids, envId) { return await testCaseApi.batchRun(ids, envId) },
   }
 })

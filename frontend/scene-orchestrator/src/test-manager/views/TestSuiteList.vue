@@ -30,6 +30,16 @@
           <el-col :xs="24" :sm="6" :md="4">
             <el-button type="primary" @click="doSearch" class="filter-item" style="width:100%"><el-icon><Search /></el-icon> 查询</el-button>
           </el-col>
+          <el-col :xs="24" :sm="12" :md="4">
+            <el-button type="danger" :disabled="selectedIds.size === 0" @click="confirmBatchDelete" class="filter-item">
+              <el-icon><Delete /></el-icon> 批量删除 ({{ selectedIds.size }})
+            </el-button>
+          </el-col>
+          <el-col :xs="24" :sm="12" :md="4">
+            <el-button type="success" :disabled="selectedIds.size === 0" @click="openBatchRunDialog" class="filter-item">
+              <el-icon><CaretRight /></el-icon> 批量运行 ({{ selectedIds.size }})
+            </el-button>
+          </el-col>
         </el-row>
       </div>
 
@@ -93,7 +103,8 @@
 
       <!-- 表格 -->
       <template v-else>
-        <el-table :data="store.list" stripe class="data-table" @row-click="(row) => $router.push(`/test-suites/${row.id}`)">
+        <el-table :data="store.list" stripe class="data-table" @row-click="(row) => $router.push(`/test-suites/${row.id}`)" @selection-change="onSelectionChange">
+          <el-table-column type="selection" width="42" />
           <el-table-column label="名称" min-width="200" show-overflow-tooltip>
             <template #default="{row}">
               <div class="name-cell">
@@ -169,16 +180,37 @@
 
     <GroupFormDialog v-model="groupDialogVisible" :editing="editingGroup" :project-id="filterProjectId" :groups="groupStore.flatList" type="testSuite" @saved="onGroupSaved" />
     <TestSuiteImportExportDialog v-model="importExportDialogVisible" :project-id="filterProjectId" @success="onImportSuccess" />
+
+    <!-- 批量运行环境选择弹窗 -->
+    <el-dialog v-model="batchRunDialogVisible" title="批量运行套件 - 选择环境" width="440px" :close-on-click-modal="false">
+      <el-form label-position="top">
+        <el-form-item label="默认测试环境" required>
+          <el-select v-model="batchRunEnvId" placeholder="选择运行环境" style="width:100%">
+            <el-option v-for="env in batchRunEnvironments" :key="env.id" :label="`${env.name} (${env.base_url})`" :value="env.id" />
+          </el-select>
+        </el-form-item>
+        <div class="batch-run-info">
+          <el-tag type="info" effect="plain">即将运行 {{ selectedIds.size }} 个套件</el-tag>
+        </div>
+      </el-form>
+      <template #footer>
+        <el-button @click="batchRunDialogVisible = false">取消</el-button>
+        <el-button type="success" :disabled="!batchRunEnvId" :loading="batchRunning" @click="doBatchRun">
+          <el-icon><CaretRight /></el-icon> 确认运行
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { Download } from '@element-plus/icons-vue'
 import { useProjectStore } from '../stores/project.js'
 import { useTestSuiteStore } from '../stores/testSuite.js'
 import { useTestSuiteGroupStore } from '../stores/testSuiteGroup.js'
+import { environmentApi } from '../api/index.js'
 import { formatDateTime } from '../composables/useFormat.js'
 import AvatarName from '../components/common/AvatarName.vue'
 import GroupFormDialog from '../components/group/GroupFormDialog.vue'
@@ -191,6 +223,7 @@ const groupStore = useTestSuiteGroupStore()
 const search = ref('')
 const filterProjectId = ref(null)
 const currentGroupId = ref(null)
+const selectedIds = ref(new Set())
 
 const childGroups = computed(() => {
   if (!filterProjectId.value) return []
@@ -218,6 +251,57 @@ async function onGroupSaved(data) {
 }
 async function deleteGroup(id) { try { await groupStore.remove(id, filterProjectId.value); ElMessage.success('已删除') } catch (e) { ElMessage.error(e.message) } }
 async function deleteSuite(id) { try { await store.remove(id); ElMessage.success('已删除'); loadData() } catch (e) { ElMessage.error(e.message) } }
+
+function onSelectionChange(rows) {
+  selectedIds.value = new Set(rows.map(r => r.id))
+}
+
+async function confirmBatchDelete() {
+  const ids = Array.from(selectedIds.value)
+  if (ids.length === 0) { ElMessage.warning('请先选择测试套件'); return }
+  try {
+    await ElMessageBox.confirm(`确定删除选中的 ${ids.length} 个测试套件？`, '批量删除', {
+      confirmButtonText: '删除', cancelButtonText: '取消', type: 'warning'
+    })
+  } catch { return }
+  try {
+    let deletedCount = 0
+    for (const id of ids) { await store.remove(id); deletedCount++ }
+    ElMessage.success(`已删除 ${deletedCount} 个测试套件`)
+    selectedIds.value = new Set()
+    loadData()
+  } catch (e) { ElMessage.error('批量删除失败: ' + (e.message || '未知错误')) }
+}
+
+// ---- 批量运行 ----
+const batchRunDialogVisible = ref(false)
+const batchRunEnvId = ref(null)
+const batchRunEnvironments = ref([])
+const batchRunning = ref(false)
+
+async function openBatchRunDialog() {
+  if (selectedIds.value.size === 0) { ElMessage.warning('请先选择测试套件'); return }
+  batchRunEnvId.value = null
+  try {
+    const pid = filterProjectId.value || projectStore.currentProjectId
+    if (!pid) { ElMessage.warning('请先选择项目'); return }
+    const res = await environmentApi.list(pid)
+    batchRunEnvironments.value = res.results || res || []
+    batchRunDialogVisible.value = true
+  } catch (e) { ElMessage.error('加载环境失败: ' + (e.message || '未知错误')) }
+}
+
+async function doBatchRun() {
+  batchRunning.value = true
+  try {
+    const ids = Array.from(selectedIds.value)
+    const data = await store.batchRun(ids, batchRunEnvId.value)
+    ElMessage.success(`批量运行完成: 共 ${data.total} 个套件, 通过 ${data.passed} 个, 失败 ${data.failed} 个`)
+    batchRunDialogVisible.value = false
+    selectedIds.value = new Set()
+  } catch (e) { ElMessage.error('批量运行失败: ' + (e.message || '未知错误')) }
+  finally { batchRunning.value = false }
+}
 
 async function loadData() {
   const params = {}
@@ -341,4 +425,7 @@ watch(currentGroupId, () => { store.page = 1; loadData() })
   .page-title { font-size: 20px; }
   .table-actions { flex-wrap: wrap; }
 }
+
+/* ---- 批量运行 ---- */
+.batch-run-info { margin-top: 12px; }
 </style>

@@ -35,6 +35,11 @@
               <el-icon><Delete /></el-icon> 批量删除 ({{ selectedIds.size }})
             </el-button>
           </el-col>
+          <el-col :xs="24" :sm="24" :md="6">
+            <el-button type="success" :disabled="selectedIds.size === 0" @click="openBatchRunDialog" class="filter-item">
+              <el-icon><CaretRight /></el-icon> 批量运行 ({{ selectedIds.size }})
+            </el-button>
+          </el-col>
         </el-row>
       </div>
 
@@ -134,6 +139,26 @@
 
     <GroupFormDialog v-model="groupDialogVisible" :editing="editingGroup" :project-id="filterProjectId" :groups="groupStore.flatList" type="testCase" @saved="onGroupSaved" />
     <TestCaseImportExportDialog v-model="importExportDialogVisible" :project-id="filterProjectId" :selected-case-ids="Array.from(selectedIds)" @success="onImportSuccess" />
+
+    <!-- 批量运行环境选择弹窗 -->
+    <el-dialog v-model="batchRunDialogVisible" title="批量运行 - 选择环境" width="440px" :close-on-click-modal="false">
+      <el-form label-position="top">
+        <el-form-item label="测试环境" required>
+          <el-select v-model="batchRunEnvId" placeholder="选择运行环境" style="width:100%">
+            <el-option v-for="env in batchRunEnvironments" :key="env.id" :label="`${env.name} (${env.base_url})`" :value="env.id" />
+          </el-select>
+        </el-form-item>
+        <div class="batch-run-info">
+          <el-tag type="info" effect="plain">即将运行 {{ selectedIds.size }} 个用例</el-tag>
+        </div>
+      </el-form>
+      <template #footer>
+        <el-button @click="batchRunDialogVisible = false">取消</el-button>
+        <el-button type="success" :disabled="!batchRunEnvId" :loading="batchRunning" @click="doBatchRun">
+          <el-icon><CaretRight /></el-icon> 确认运行
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -144,6 +169,7 @@ import { Download } from '@element-plus/icons-vue'
 import { useProjectStore } from '../stores/project.js'
 import { useTestCaseStore } from '../stores/testCase.js'
 import { useTestCaseGroupStore } from '../stores/testCaseGroup.js'
+import { environmentApi } from '../api/index.js'
 import { formatDateTime } from '../composables/useFormat.js'
 import RequestMethodBadge from '../components/common/RequestMethodBadge.vue'
 import GroupFormDialog from '../components/group/GroupFormDialog.vue'
@@ -200,6 +226,36 @@ async function confirmBatchDelete() {
     ElMessage.success(`已删除 ${data.deleted_count} 个测试用例`)
     selectedIds.value = new Set()
   } catch (e) { ElMessage.error('批量删除失败: ' + (e.message || '未知错误')) }
+}
+
+// ---- 批量运行 ----
+const batchRunDialogVisible = ref(false)
+const batchRunEnvId = ref(null)
+const batchRunEnvironments = ref([])
+const batchRunning = ref(false)
+
+async function openBatchRunDialog() {
+  if (selectedIds.value.size === 0) { ElMessage.warning('请先选择测试用例'); return }
+  batchRunEnvId.value = null
+  try {
+    const pid = filterProjectId.value || projectStore.currentProjectId
+    if (!pid) { ElMessage.warning('请先选择项目'); return }
+    const res = await environmentApi.list(pid)
+    batchRunEnvironments.value = res.results || res || []
+    batchRunDialogVisible.value = true
+  } catch (e) { ElMessage.error('加载环境失败: ' + (e.message || '未知错误')) }
+}
+
+async function doBatchRun() {
+  batchRunning.value = true
+  try {
+    const ids = Array.from(selectedIds.value)
+    const data = await store.batchRun(ids, batchRunEnvId.value)
+    ElMessage.success(`批量运行完成: 共 ${data.total} 个, 通过 ${data.passed} 个, 失败 ${data.failed} 个`)
+    batchRunDialogVisible.value = false
+    selectedIds.value = new Set()
+  } catch (e) { ElMessage.error('批量运行失败: ' + (e.message || '未知错误')) }
+  finally { batchRunning.value = false }
 }
 
 async function loadData() {
@@ -289,4 +345,7 @@ watch(currentGroupId, () => { store.page=1; loadData() })
 
 /* ---- 分页 ---- */
 .pagination-wrap { display:flex; justify-content:flex-end; align-items:center; padding-top:16px; border-top:1px solid #ebeef5; margin-top:16px; }
+
+/* ---- 批量运行 ---- */
+.batch-run-info { margin-top:12px; }
 </style>
