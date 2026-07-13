@@ -533,6 +533,19 @@ const router = createRouter({
 })
 
 // =====================================================================
+//  全局错误处理 — chunk 加载失败时自动刷新页面
+// =====================================================================
+router.onError((error) => {
+  if (
+    error.message.includes('Failed to fetch dynamically imported module') ||
+    error.message.includes('Importing a module script failed') ||
+    error.message.includes('error loading dynamically imported')
+  ) {
+    window.location.reload()
+  }
+})
+
+// =====================================================================
 //  导航守卫 — 检查登录状态
 // =====================================================================
 const publicRoutes = ['login', 'register', 'passwordReset']

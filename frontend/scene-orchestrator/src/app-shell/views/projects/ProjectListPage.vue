@@ -138,7 +138,12 @@ async function loadData() {
 
 function doSearch() { store.page = 1; loadData() }
 
-function goCreate() { router.push('/projects/create') }
+function goCreate() {
+  router.push('/projects/create').catch((err) => {
+    console.error('导航失败:', err)
+    ElMessage.error('页面跳转失败，请刷新页面后重试')
+  })
+}
 
 async function deleteProject(id) {
   try {
