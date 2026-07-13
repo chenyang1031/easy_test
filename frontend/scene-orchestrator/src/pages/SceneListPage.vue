@@ -120,6 +120,14 @@
               </el-option>
             </el-select>
           </div>
+          <div class="filter-item">
+            <label class="filter-label filter-label--short">分类</label>
+            <el-select v-model="categoryFilter" placeholder="全部分类" size="small" class="filter-control" clearable @change="queryScenes">
+              <el-option label="全部分类" value="" />
+              <el-option label="留痕版" value="traced" />
+              <el-option label="不留痕版" value="untraced" />
+            </el-select>
+          </div>
         </div>
       </div>
       <div class="toolbar-actions">
@@ -168,6 +176,7 @@
               />
             </th>
             <th>名称</th>
+            <th>分类</th>
             <th>分组</th>
             <th>描述</th>
             <th>节点数</th>
@@ -179,7 +188,7 @@
         <tbody>
           <!-- 空状态 -->
           <tr v-if="!sceneRows.length && !loading">
-            <td colspan="8" class="empty-state-cell">
+            <td colspan="9" class="empty-state-cell">
               <div class="empty-state">
                 <p class="text-muted mb-2">暂无测试场景，点击右上角「新增场景」开始创建</p>
                 <button class="btn btn-sm btn-primary" :disabled="projects.length === 0" @click="createNewScene">
@@ -514,6 +523,7 @@ const nodePopoverNodes = ref([]);
 const nodePopoverLoading = ref(false);
 
 const groupFilter = ref("");
+const categoryFilter = ref("");
 const sceneGroups = ref([]);
 
 /** 将扁平分组列表转换为带完整路径的选项列表 */
@@ -700,6 +710,7 @@ async function reloadByProject() {
     sceneRows.value = [];
     selectedIds.value = [];
     groupFilter.value = "";
+    categoryFilter.value = "";
     sceneGroups.value = [];
     return;
   }
@@ -719,6 +730,7 @@ async function reloadByProject() {
     sceneRows.value = [];
     selectedIds.value = [];
     groupFilter.value = "";
+    categoryFilter.value = "";
     sceneGroups.value = [];
     environments.value = envData;
     return;
@@ -757,6 +769,7 @@ async function queryScenes() {
       q: keyword.value,
       is_active: activeFilter.value,
       group: groupFilter.value,
+      category: categoryFilter.value,
       page: page.value,
       page_size: pageSize.value
     };

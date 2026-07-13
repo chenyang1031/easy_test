@@ -878,6 +878,7 @@ class TestSceneSerializer(serializers.ModelSerializer):
     project_name = serializers.CharField(source='project.name', read_only=True)
     created_by_name = serializers.CharField(source='created_by.username', read_only=True)
     group_name = serializers.SerializerMethodField()
+    category_display = serializers.SerializerMethodField()
     # 注解字段 — 由 TestSceneViewSet.get_queryset 中的 annotate 提供
     node_count = serializers.SerializerMethodField()
     latest_execution_status = serializers.SerializerMethodField()
@@ -893,6 +894,7 @@ class TestSceneSerializer(serializers.ModelSerializer):
         model = TestScene
         fields = [
             'id', 'project', 'project_name', 'name', 'description',
+            'category', 'category_display',
             'variables', 'runtime_config', 'is_active', 'is_deleted',
             'group', 'group_name',
             'created_by_name', 'created_at', 'updated_at',

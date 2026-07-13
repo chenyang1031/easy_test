@@ -109,6 +109,9 @@ class TestSceneViewSet(viewsets.ModelViewSet):
         q = params.get("q")
         if q:
             queryset = queryset.filter(Q(name__icontains=q) | Q(description__icontains=q))
+        category = params.get("category")
+        if category:
+            queryset = queryset.filter(category=category)
         return queryset.order_by("-created_at", "-id")
 
     def list(self, request, *args, **kwargs):
