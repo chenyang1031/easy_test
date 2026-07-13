@@ -26,6 +26,20 @@
               <el-option v-for="p in projects" :key="p.id" :label="p.name" :value="p.id" />
             </el-select>
           </el-col>
+          <el-col :xs="24" :sm="8" :md="6">
+            <el-select
+              v-model="filterStatus"
+              placeholder="执行状态"
+              clearable
+              class="filter-item"
+              @change="onFilterChange"
+            >
+              <el-option label="执行中" value="running" />
+              <el-option label="成功" value="success" />
+              <el-option label="失败" value="failed" />
+              <el-option label="部分成功" value="partial_success" />
+            </el-select>
+          </el-col>
         </el-row>
       </div>
 
@@ -129,6 +143,7 @@ const total = ref(0)
 const page = ref(1)
 const pageSize = ref(10)
 const filterProject = ref('')
+const filterStatus = ref('')
 
 const projects = computed(() => projectStore.projects)
 
@@ -175,6 +190,7 @@ async function loadList() {
   try {
     const params = { page: page.value, page_size: pageSize.value }
     if (filterProject.value) params.project = filterProject.value
+    if (filterStatus.value) params.status = filterStatus.value
     const data = await sceneExecutionApi.list(params)
     list.value = data.results || []
     total.value = data.count || 0
