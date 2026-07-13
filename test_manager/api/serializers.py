@@ -911,6 +911,10 @@ class TestSceneSerializer(serializers.ModelSerializer):
                 return None
         return None
 
+    def get_category_display(self, obj):
+        category_map = dict(TestScene.CATEGORY_CHOICES)
+        return category_map.get(obj.category, obj.category)
+
     def get_node_count(self, obj):
         return getattr(obj, 'node_count', 0) or 0
 
@@ -1166,4 +1170,6 @@ class ParameterConfigSerializer(serializers.ModelSerializer):
     class Meta:
         model = ParameterConfig
         fields = '__all__'
+        read_only_fields = ['updated_at']
+        read_only_fields = ['updated_at']
         read_only_fields = ['updated_at']

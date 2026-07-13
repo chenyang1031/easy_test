@@ -52,6 +52,20 @@
           </el-select>
         </div>
         <div class="d-flex align-items-center gap-1">
+          <label class="text-muted small mb-0">分类</label>
+          <el-select
+            v-model="store.scene.category"
+            size="small"
+            class="scene-env-select"
+            popper-class="scene-select-popper"
+            style="min-width: 110px"
+            @change="store.markDirty()"
+          >
+            <el-option label="留痕版" value="traced" />
+            <el-option label="不留痕版" value="untraced" />
+          </el-select>
+        </div>
+        <div class="d-flex align-items-center gap-1">
           <label class="text-muted small mb-0">场景专属环境</label>
           <el-select
             v-model="sceneEnvironmentId"

@@ -160,6 +160,7 @@ export const useSceneStore = defineStore("scene", () => {
         name: scene.value.name,
         description: scene.value.description,
         group: scene.value.group,
+        category: scene.value.category,
         variables: scene.value.variables || {},
         runtime_config: scene.value.runtime_config || {},
         is_active: scene.value.is_active

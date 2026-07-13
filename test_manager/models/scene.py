@@ -10,6 +10,13 @@ from django.core.files.storage import default_storage
 class TestScene(models.Model):
     """测试场景主表。"""
 
+    CATEGORY_TRACED = "traced"
+    CATEGORY_UNTRACED = "untraced"
+    CATEGORY_CHOICES = [
+        (CATEGORY_TRACED, "留痕版"),
+        (CATEGORY_UNTRACED, "不留痕版"),
+    ]
+
     project = models.ForeignKey(
         ApiProject,
         on_delete=models.CASCADE,
@@ -27,6 +34,13 @@ class TestScene(models.Model):
         db_comment="场景分组（复用API分组）",
     )
     name = models.CharField(max_length=150, verbose_name="场景名称", db_comment="场景名称")
+    category = models.CharField(
+        max_length=20,
+        choices=CATEGORY_CHOICES,
+        default=CATEGORY_TRACED,
+        verbose_name="场景分类",
+        db_comment="场景分类：留痕版/不留痕版",
+    )
     description = models.TextField(blank=True, default="", verbose_name="场景描述", db_comment="场景描述")
     variables = models.JSONField(default=dict, blank=True, verbose_name="场景变量池", db_comment="场景变量池")
     runtime_config = models.JSONField(default=dict, blank=True, verbose_name="运行配置", db_comment="运行配置")

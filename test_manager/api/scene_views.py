@@ -243,6 +243,7 @@ class TestSceneViewSet(viewsets.ModelViewSet):
             project=scene.project,
             group=scene.group,
             name=new_name,
+            category=scene.category,
             description=scene.description,
             variables=scene.variables or {},
             runtime_config=scene.runtime_config or {},
@@ -1287,6 +1288,9 @@ class SceneDownloadedFileViewSet(viewsets.ModelViewSet):
             )
             return resp
         except Exception as exc:
+            return Response({"detail": f"文件读取失败: {exc}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
             return Response({"detail": f"文件读取失败: {exc}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 

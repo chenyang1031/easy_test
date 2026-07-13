@@ -211,6 +211,11 @@
               </el-tag>
             </td>
             <td>
+              <el-tag v-if="item.category === 'traced'" type="primary" size="small">留痕版</el-tag>
+              <el-tag v-else-if="item.category === 'untraced'" type="info" size="small">不留痕版</el-tag>
+              <span v-else class="text-muted">-</span>
+            </td>
+            <td>
               <span v-if="item.group_name" class="group-tag">
                 <i class="bi bi-folder2 me-1"></i>{{ item.group_name }}
               </span>
@@ -777,9 +782,39 @@ async function createNewScene() {
     ElMessage.warning("当前无可用项目，请先在项目管理中创建项目");
     return;
   }
+
+  // 弹窗选择场景分类
+  let selectedCategory = "traced";
+  try {
+    await ElMessageBox.confirm(
+      `<div style="margin: 12px 0;">
+        <label style="display: block; margin-bottom: 12px; cursor: pointer;">
+          <input type="radio" name="scene-category" value="traced" checked style="margin-right: 6px;"> 留痕版
+        </label>
+        <label style="display: block; cursor: pointer;">
+          <input type="radio" name="scene-category" value="untraced" style="margin-right: 6px;"> 不留痕版
+        </label>
+      </div>`,
+      "选择场景分类",
+      {
+        dangerouslyUseHTMLString: true,
+        confirmButtonText: "确认创建",
+        cancelButtonText: "取消",
+        type: "info",
+      }
+    );
+    const checked = document.querySelector('input[name="scene-category"]:checked');
+    if (checked) {
+      selectedCategory = checked.value;
+    }
+  } catch {
+    return;
+  }
+
   const scene = await createScene({
     project: Number(selectedApiProjectId.value),
     name: `新场景-${Date.now()}`,
+    category: selectedCategory,
     description: "",
     variables: {},
     runtime_config: {},
@@ -1419,5 +1454,3 @@ onActivated(() => {
   isolation: isolate;
 }
 </style>
-
-
