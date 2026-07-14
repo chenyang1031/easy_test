@@ -143,7 +143,7 @@ const total = ref(0)
 const page = ref(1)
 const pageSize = ref(10)
 const filterProject = ref('')
-const filterStatus = ref('')
+const filterStatus = ref('') // v2: 执行状态筛选
 
 const projects = computed(() => projectStore.projects)
 

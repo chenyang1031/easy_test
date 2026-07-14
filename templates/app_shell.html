@@ -181,6 +181,6 @@
   </script>
 
   {# ===== Vue SPA 入口 ===== #}
-  <script type="module" src="{% static 'scene-orchestrator/assets/app-shell.js' %}"></script>
+  <script type="module" src="{% static 'scene-orchestrator/assets/app-shell.js' %}?v={% now 'U' %}"></script>
 </body>
 </html>
