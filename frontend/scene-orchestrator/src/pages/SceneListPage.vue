@@ -128,6 +128,17 @@
               <el-option label="不留痕版" value="untraced" />
             </el-select>
           </div>
+          <div class="filter-item">
+            <label class="filter-label">执行状态</label>
+            <el-select v-model="execStatusFilter" placeholder="全部状态" size="small" class="filter-control" clearable @change="queryScenes">
+              <el-option label="全部状态" value="" />
+              <el-option label="执行中" value="running" />
+              <el-option label="成功" value="success" />
+              <el-option label="失败" value="failed" />
+              <el-option label="部分成功" value="partial_success" />
+              <el-option label="从未执行" value="never" />
+            </el-select>
+          </div>
         </div>
       </div>
       <div class="toolbar-actions">
@@ -524,6 +535,7 @@ const nodePopoverLoading = ref(false);
 
 const groupFilter = ref("");
 const categoryFilter = ref("");
+const execStatusFilter = ref("");
 const sceneGroups = ref([]);
 
 /** 将扁平分组列表转换为带完整路径的选项列表 */
@@ -711,6 +723,7 @@ async function reloadByProject() {
     selectedIds.value = [];
     groupFilter.value = "";
     categoryFilter.value = "";
+    execStatusFilter.value = "";
     sceneGroups.value = [];
     return;
   }
@@ -731,6 +744,7 @@ async function reloadByProject() {
     selectedIds.value = [];
     groupFilter.value = "";
     categoryFilter.value = "";
+    execStatusFilter.value = "";
     sceneGroups.value = [];
     environments.value = envData;
     return;
@@ -770,6 +784,7 @@ async function queryScenes() {
       is_active: activeFilter.value,
       group: groupFilter.value,
       category: categoryFilter.value,
+      latest_execution_status: execStatusFilter.value,
       page: page.value,
       page_size: pageSize.value
     };

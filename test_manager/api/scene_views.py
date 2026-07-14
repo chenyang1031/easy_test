@@ -112,6 +112,12 @@ class TestSceneViewSet(viewsets.ModelViewSet):
         category = params.get("category")
         if category:
             queryset = queryset.filter(category=category)
+        exec_status = params.get("latest_execution_status")
+        if exec_status:
+            if exec_status == "never":
+                queryset = queryset.filter(latest_execution_status__isnull=True)
+            else:
+                queryset = queryset.filter(latest_execution_status=exec_status)
         return queryset.order_by("-created_at", "-id")
 
     def list(self, request, *args, **kwargs):
