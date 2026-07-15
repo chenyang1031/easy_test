@@ -78,7 +78,8 @@
           </div>
           <div class="filter-item filter-item--search">
             <label class="filter-label filter-label--short">搜索</label>
-            <input v-model="keyword" class="form-control form-control-sm filter-control" placeholder="搜索场景名称" @input="queryScenes" />
+            <input v-model="keyword" class="form-control form-control-sm filter-control" placeholder="搜索场景名称" @keyup.enter="queryScenes" />
+            <button class="btn btn-sm btn-primary" @click="queryScenes">搜索</button>
           </div>
           <div class="filter-item">
             <label class="filter-label filter-label--short">状态</label>

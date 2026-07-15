@@ -370,12 +370,14 @@
     </el-dialog>
 
     <el-dialog v-model="addDialogVisible" title="选择API资产" width="520px" top="8vh" append-to-body>
-      <div class="mb-2">
+      <div class="mb-2 d-flex gap-2">
         <input
           v-model="assetSearchInput"
           class="form-control form-control-sm"
           placeholder="搜索接口名称..."
+          @keyup.enter="assetSearchKeyword = assetSearchInput"
         />
+        <button class="btn btn-sm btn-primary" @click="assetSearchKeyword = assetSearchInput">搜索</button>
       </div>
       <div class="asset-dialog-scroll">
         <el-tree
@@ -1535,7 +1537,6 @@ onUnmounted(() => {
   }
   store.detachBeforeUnloadGuard();
   creatingNodePromiseCache.clear();
-  clearTimeout(assetSearchTimer);
   document.removeEventListener("keydown", handleKeydown);
 });
 </script>

@@ -26,13 +26,14 @@
           type="text"
           class="search-input"
           placeholder="搜索菜单..."
-          @input="onSearchInput"
+          @keyup.enter="onSearchInput"
         />
         <button v-if="searchQuery" class="search-clear" @click="searchQuery = ''">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
             <path d="M18 6 6 18M6 6l12 12" />
           </svg>
         </button>
+        <button class="search-submit" title="搜索菜单" @click="onSearchInput">搜索</button>
       </div>
     </div>
 
@@ -648,6 +649,24 @@ onUnmounted(() => {
 }
 .search-clear:hover {
   color: var(--sidebar-text);
+}
+.search-submit {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--primary-color, #3b82f6);
+  border: none;
+  color: #fff;
+  font-size: 0.7rem;
+  padding: 3px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-left: 4px;
+  transition: opacity 0.15s;
+}
+.search-submit:hover {
+  opacity: 0.9;
 }
 
 /* ============ 导航菜单 ============ */

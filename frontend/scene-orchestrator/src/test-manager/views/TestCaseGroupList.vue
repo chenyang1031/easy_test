@@ -27,9 +27,12 @@
             </el-select>
           </el-col>
           <el-col :xs="24" :sm="16" :md="8">
-            <el-input v-model="searchQuery" placeholder="搜索分组名称..." clearable class="filter-item" @input="onSearchInput">
-              <template #prefix><el-icon><Search /></el-icon></template>
-            </el-input>
+            <div class="filter-item search-with-btn">
+              <el-input v-model="searchQuery" placeholder="搜索分组名称..." clearable @keyup.enter="onSearchInput">
+                <template #prefix><el-icon><Search /></el-icon></template>
+              </el-input>
+              <el-button type="primary" @click="onSearchInput">搜索</el-button>
+            </div>
           </el-col>
           <el-col :xs="24" :sm="24" :md="10">
             <span class="filter-hint" v-if="!filterProjectId">
@@ -230,6 +233,8 @@ onMounted(() => {
 .filter-bar { margin-bottom: 16px; }
 .filter-row { align-items: center; }
 .filter-item { width: 100%; }
+.search-with-btn { display: flex; gap: 8px; align-items: center; }
+.search-with-btn .el-input { flex: 1; }
 .filter-hint {
   font-size: 13px; color: #909399; display: flex; align-items: center; gap: 6px;
   padding: 4px 0;

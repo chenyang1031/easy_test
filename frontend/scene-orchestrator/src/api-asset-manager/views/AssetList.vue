@@ -58,9 +58,10 @@
         <div class="panel-card">
           <!-- 搜索筛选栏 -->
           <div class="asset-toolbar">
-            <el-input v-model="store.searchKeyword" placeholder="搜索接口名称、URL或关键字" size="default" clearable style="flex:1; max-width:400px" @input="debouncedSearch">
+            <el-input v-model="store.searchKeyword" placeholder="搜索接口名称、URL或关键字" size="default" clearable style="flex:1; max-width:400px" @keyup.enter="handleSearch">
               <template #prefix><el-icon><Search /></el-icon></template>
             </el-input>
+            <el-button type="primary" size="default" @click="handleSearch">搜索</el-button>
             <el-select v-model="store.filterMethod" placeholder="全部 Method" clearable size="default" style="width:140px" @change="store.fetchAssets()">
               <el-option label="GET" value="GET" />
               <el-option label="POST" value="POST" />
@@ -137,11 +138,9 @@ const showImportModal = ref(false)
 const showGroupCreateModal = ref(false)
 const showAiGenerateModal = ref(false)
 
-let searchTimer = null
-function debouncedSearch() {
+function handleSearch() {
   store.currentPage = 1
-  clearTimeout(searchTimer)
-  searchTimer = setTimeout(() => store.fetchAssets(), 400)
+  store.fetchAssets()
 }
 
 function handleExportOpenApi() {
@@ -197,11 +196,14 @@ function handleRefreshGroups() { store.fetchGroups() }
 .panel-header { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px 12px; border-bottom: 1px solid #ebeef5; font-weight: 600; font-size: 14px; }
 .panel-header-actions { display: flex; gap: 4px; }
 .panel-body { flex: 1; display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
-.group-search { padding: 10px 14px; }
+.group-search { padding: 10px 14px; display: flex; gap: 8px; align-items: center; }
+.group-search .el-input { flex: 1; }
 .group-tree-scroll { flex: 1; overflow-y: auto; padding: 0 14px 12px; }
 .panel-right { flex: 1; min-width: 0; }
 .panel-right .panel-card { padding: 20px; overflow: visible; }
 .asset-toolbar { display: flex; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; align-items: center; }
 .asset-pagination { display: flex; justify-content: flex-end; align-items: center; padding-top: 16px; border-top: 1px solid #ebeef5; margin-top: 16px; }
 .no-project-hint { flex: 1; display: flex; align-items: center; justify-content: center; }
+</style>
+</style>
 </style>
