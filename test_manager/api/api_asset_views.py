@@ -2,6 +2,7 @@ import difflib
 import json
 import os
 import re
+import shlex
 from copy import deepcopy
 from datetime import timedelta
 from math import ceil
@@ -934,6 +935,203 @@ def _parse_apifox(data):
     return items
 
 
+def _parse_curl_commands(text):
+    """
+    解析一条或多条 cURL 命令为 _normalize_item 格式的列表。
+    支持多行输入（每行一条完整的 curl 命令，可用 \\ 续行）。
+    """
+    from urllib.parse import urlparse, parse_qs
+
+    text = text.strip()
+    if not text:
+        return []
+
+    # 将续行符 \ + 换行 合并为空格，然后按 "curl" 关键字分割多条命令
+    # 先处理显式续行
+    text = re.sub(r'\\\s*\n', ' ', text)
+    # 按独立的 curl 命令分割（每段以 curl 开头）
+    raw_commands = re.split(r'\n(?=\s*curl\b)', text)
+
+    items = []
+    for raw_cmd in raw_commands:
+        raw_cmd = raw_cmd.strip()
+        if not raw_cmd:
+            continue
+        # 移除开头的 "curl " 前缀（如果有的话）
+        if raw_cmd.lower().startswith("curl "):
+            raw_cmd = raw_cmd[5:]
+        elif raw_cmd.lower() == "curl":
+            raw_cmd = ""
+
+        try:
+            tokens = shlex.split(raw_cmd, posix=True)
+        except ValueError:
+            # shlex 解析失败（如未闭合的引号），尝试简单拆分
+            tokens = raw_cmd.split()
+
+        method = None
+        url = ""
+        headers = {}
+        body_data = None
+        form_fields = {}
+        has_form = False
+        url_encoded_params = {}
+        auth_config = {}
+
+        i = 0
+        while i < len(tokens):
+            token = tokens[i]
+
+            if token in ("-X", "--request") and i + 1 < len(tokens):
+                method = tokens[i + 1].upper()
+                i += 2
+                continue
+
+            if token in ("-H", "--header") and i + 1 < len(tokens):
+                header_str = tokens[i + 1]
+                if ":" in header_str:
+                    h_key, h_val = header_str.split(":", 1)
+                    headers[h_key.strip()] = h_val.strip()
+                i += 2
+                continue
+
+            if token in ("-d", "--data", "--data-raw", "--data-binary", "--data-ascii") and i + 1 < len(tokens):
+                body_data = tokens[i + 1]
+                i += 2
+                continue
+
+            if token in ("-F", "--form") and i + 1 < len(tokens):
+                has_form = True
+                form_str = tokens[i + 1]
+                if "=" in form_str:
+                    f_key, f_val = form_str.split("=", 1)
+                    form_fields[f_key.strip()] = f_val.strip()
+                i += 2
+                continue
+
+            if token == "--data-urlencode" and i + 1 < len(tokens):
+                encode_str = tokens[i + 1]
+                if "=" in encode_str:
+                    e_key, e_val = encode_str.split("=", 1)
+                    url_encoded_params[e_key.strip()] = e_val.strip()
+                i += 2
+                continue
+
+            if token in ("-u", "--user") and i + 1 < len(tokens):
+                user_pass = tokens[i + 1]
+                auth_config = {"type": "basic", "credentials": user_pass}
+                i += 2
+                continue
+
+            # 忽略这些选项
+            if token in ("-k", "--insecure", "-L", "--location", "-v", "--verbose",
+                         "-s", "--silent", "-S", "--show-error", "-i", "--include",
+                         "--compressed", "-g", "--globoff", "--no-buffer"):
+                i += 1
+                continue
+            # 忽略带值的选项
+            if token in ("-o", "--output", "-w", "--write-out", "-e", "--referer",
+                         "-A", "--user-agent", "-b", "--cookie", "-c", "--cookie-jar",
+                         "--connect-timeout", "-m", "--max-time", "--resolve"):
+                i += 2
+                continue
+
+            # 非选项参数视为 URL
+            if not token.startswith("-") and not url:
+                url = token
+                i += 1
+                continue
+
+            i += 1
+
+        if not url:
+            continue
+
+        # 解析 URL：提取 path 和 query params
+        parsed_url = urlparse(url)
+        url_path = parsed_url.path or "/"
+        query_params = {}
+        if parsed_url.query:
+            for k, v_list in parse_qs(parsed_url.query, keep_blank_values=True).items():
+                query_params[k] = v_list[0] if len(v_list) == 1 else v_list
+
+        # 合并 --data-urlencode 参数到 query_params
+        query_params.update(url_encoded_params)
+
+        # 推断 method
+        if not method:
+            if body_data is not None or has_form:
+                method = "POST"
+            else:
+                method = "GET"
+
+        # 解析 body
+        body_format = "json"
+        request_body = {}
+        if has_form:
+            body_format = "form-data"
+            request_body = form_fields
+        elif body_data is not None:
+            content_type = ""
+            for k, v in headers.items():
+                if k.lower() == "content-type":
+                    content_type = v.lower()
+                    break
+            if "application/json" in content_type:
+                body_format = "json"
+                try:
+                    request_body = json.loads(body_data)
+                except (json.JSONDecodeError, ValueError):
+                    request_body = {"_raw": body_data}
+            elif "urlencoded" in content_type or "form" in content_type:
+                body_format = "form-data"
+                # 解析 key=value&key2=value2 格式
+                for pair in body_data.split("&"):
+                    if "=" in pair:
+                        bk, bv = pair.split("=", 1)
+                        request_body[bk] = bv
+                    else:
+                        request_body[pair] = ""
+            else:
+                # 无明确 Content-Type，尝试 JSON 解析
+                try:
+                    request_body = json.loads(body_data)
+                    body_format = "json"
+                except (json.JSONDecodeError, ValueError):
+                    # 不是 JSON，当作 form-data 的 key=value&... 处理
+                    body_format = "form-data"
+                    for pair in body_data.split("&"):
+                        if "=" in pair:
+                            bk, bv = pair.split("=", 1)
+                            request_body[bk] = bv
+                        elif pair:
+                            request_body[pair] = ""
+
+        # 生成 name
+        name = f"{method} {url_path}"
+
+        items.append(
+            _normalize_item(
+                {
+                    "name": name,
+                    "method": method,
+                    "url": url_path,
+                    "request_headers": headers,
+                    "request_params": query_params,
+                    "request_body_format": body_format,
+                    "request_body": request_body,
+                    "response_schema": {},
+                    "auth_config": auth_config,
+                    "external_id": "",
+                    "group_path": [],
+                },
+                source=ApiAsset.SOURCE_CURL,
+            )
+        )
+
+    return items
+
+
 def _resolve_apifox_environment_payload_for_confirm(request):
     """
     确认导入时解析 Apifox 环境载荷：优先使用请求体中的 apifox_environment_import（与预览一致）；
@@ -1814,6 +2012,38 @@ class ApiImportExportViewSet(viewsets.ViewSet):
 
         if not items:
             return Response({"detail": "未解析到任何接口，请检查链接内容"}, status=status.HTTP_400_BAD_REQUEST)
+
+        conflict_map = _find_conflict_assets(project_id, items)
+        for item in items:
+            method = _normalize_method(item.get("method"))
+            url_str = str(item.get("url") or "").strip()
+            existing = conflict_map.get((method, url_str))
+            if existing:
+                item["_conflict"] = {
+                    "existing_id": existing.id,
+                    "existing_name": existing.name,
+                    "existing_updated_at": existing.updated_at.isoformat() if existing.updated_at else None,
+                }
+            else:
+                item["_conflict"] = None
+
+        return Response({"count": len(items), "items": items, "conflict_count": len(conflict_map)})
+
+    @action(detail=False, methods=["post"], url_path="preview-curl")
+    def preview_curl(self, request):
+        """cURL 导入：解析用户粘贴的 curl 命令文本。"""
+        curl_text = request.data.get("curl_text")
+        project_id = request.data.get("project_id")
+        if not curl_text or not curl_text.strip():
+            return Response({"detail": "curl 命令不能为空"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            items = _parse_curl_commands(curl_text)
+        except Exception as e:
+            return Response({"detail": f"解析 curl 命令失败: {e}"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not items:
+            return Response({"detail": "未解析到任何有效的请求"}, status=status.HTTP_400_BAD_REQUEST)
 
         conflict_map = _find_conflict_assets(project_id, items)
         for item in items:

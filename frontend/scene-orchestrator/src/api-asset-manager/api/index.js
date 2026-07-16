@@ -122,6 +122,12 @@ export const apiAssetApi = {
       body: JSON.stringify({ url, project_id: projectId })
     })
   },
+  previewImportCurl: (curlText, projectId) => {
+    return request('/api/v1/api-assets/import/preview-curl', {
+      method: 'POST',
+      body: JSON.stringify({ curl_text: curlText, project_id: projectId })
+    })
+  },
   confirmImport: (data) => {
     return request('/api/v1/api-assets/import/confirm', { method: 'POST', body: JSON.stringify(data) })
   },

@@ -43,7 +43,8 @@
           </div>
           <div class="panel-body">
             <div class="group-search">
-              <el-input v-model="store.groupSearchKeyword" placeholder="搜索分组名称" size="small" clearable />
+              <el-input v-model="groupSearchInput" placeholder="搜索分组名称" size="small" clearable @keyup.enter="store.groupSearchKeyword = groupSearchInput" @clear="groupSearchInput = ''; store.groupSearchKeyword = ''" />
+              <el-button size="small" type="primary" @click="store.groupSearchKeyword = groupSearchInput">搜索</el-button>
             </div>
             <ApiProjectStats />
             <div class="group-tree-scroll">
@@ -204,6 +205,4 @@ function handleRefreshGroups() { store.fetchGroups() }
 .asset-toolbar { display: flex; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; align-items: center; }
 .asset-pagination { display: flex; justify-content: flex-end; align-items: center; padding-top: 16px; border-top: 1px solid #ebeef5; margin-top: 16px; }
 .no-project-hint { flex: 1; display: flex; align-items: center; justify-content: center; }
-</style>
-</style>
 </style>

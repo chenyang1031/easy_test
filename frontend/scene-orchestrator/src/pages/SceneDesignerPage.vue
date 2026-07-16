@@ -460,7 +460,6 @@ const nodeTableRef = ref(null);
 let sortableInstance = null;
 const assetSearchInput = ref("");
 const assetSearchKeyword = ref("");
-let assetSearchTimer = null;
 const lastExecutionNodeResults = ref({});
 const debugtalkFunctions = ref([]);
 const apiDiffDialogVisible = ref(false);
@@ -887,12 +886,6 @@ watch(
   { immediate: true, deep: true }
 );
 
-watch(assetSearchInput, (val) => {
-  clearTimeout(assetSearchTimer);
-  assetSearchTimer = setTimeout(() => {
-    assetSearchKeyword.value = val;
-  }, 300);
-});
 function buildNodePayload(node) {
   try {
     const apiAssetId =

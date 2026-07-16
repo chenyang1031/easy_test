@@ -576,12 +576,24 @@ def _execute_with_requests(test_case, environment, variables=None):
 
                     # 将 multipart_fields 加入请求
                     if multipart_fields:
+                        # 记录 multipart 字段详情，便于排查文件上传问题
+                        for field_name, field_val in multipart_fields.items():
+                            if isinstance(field_val, tuple) and len(field_val) >= 2:
+                                fname = field_val[0] if field_val[0] else "(no filename)"
+                                fsize = None
+                                if hasattr(field_val[1], 'seek') and hasattr(field_val[1], 'tell'):
+                                    pos = field_val[1].tell()
+                                    field_val[1].seek(0, 2)
+                                    fsize = field_val[1].tell()
+                                    field_val[1].seek(pos)
+                                logger.info(f"Multipart file field: name={field_name}, filename={fname}, size={fsize} bytes")
+                            else:
+                                logger.debug(f"Multipart text field: name={field_name}, value={str(field_val)[:100]}")
                         encoder = MultipartEncoder(fields=multipart_fields)
                         kwargs['data'] = encoder
-                        # Content-Type 兼容：仅当请求头没有合法 multipart 开头时才覆盖
-                        existing_ct = kwargs.get('headers', {}).get('Content-Type', '')
-                        if not _is_multipart_content_type(existing_ct):
-                            kwargs['headers']['Content-Type'] = encoder.content_type
+                        # 始终使用 encoder 生成的 Content-Type（含正确 boundary），
+                        # 不能用用户手动配置的 boundary，否则 body 和 header 不匹配
+                        kwargs['headers']['Content-Type'] = encoder.content_type
             else:
                 # 默认使用JSON格式
                 if isinstance(request_body, dict) or isinstance(request_body, list):

@@ -94,6 +94,13 @@ const router = createRouter({
       component: () => import("../views/reports/TestRunReportForm.vue"),
       props: true,
       meta: { title: "生成测试报告" }
+    },
+    // ===== 日志查询 =====
+    {
+      path: "/log-query",
+      name: "log-query",
+      component: () => import("../views/log-query/LogQuery.vue"),
+      meta: { title: "日志查询" }
     }
   ]
 });

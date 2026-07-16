@@ -12,6 +12,18 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 
 from pathlib import Path
 import os
+import sys
+import logging.handlers
+
+# Windows 兼容：日志轮转失败时静默跳过，避免 PermissionError
+if sys.platform == 'win32':
+    _orig_do_rollover = logging.handlers.RotatingFileHandler.doRollover
+    def _safe_do_rollover(self):
+        try:
+            _orig_do_rollover(self)
+        except PermissionError:
+            pass
+    logging.handlers.RotatingFileHandler.doRollover = _safe_do_rollover
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -299,13 +311,14 @@ LOGGING = {
             'class': 'logging.StreamHandler',
             'formatter': 'simple'
         },
-        'file': {  # 文件输出
+        'file': {  # 文件输出（Windows 兼容：轮转失败时静默跳过）
             'level': 'INFO',
             'class': 'logging.handlers.RotatingFileHandler',
             'filename': LOGS_DIR / 'django.log',
             'maxBytes': 1024 * 1024 * 5,  # 5 MB
             'backupCount': 5,
             'formatter': 'verbose',
+            'encoding': 'utf-8',
         },
         'mail_admins': {  # 发生错误邮件通知管理员
             'level': 'ERROR',

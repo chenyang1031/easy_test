@@ -52,6 +52,7 @@ from .scheduled_task_views import (
 )
 from .email_config_views import EmailConfigViewSet
 from .parameter_config_views import ParameterConfigViewSet
+from .log_views import LogListView, LogReadView, LogStreamView, CommandExecuteView
 
 router = DefaultRouter()
 router.register(r'projects', ProjectViewSet)
@@ -161,6 +162,11 @@ urlpatterns = [
         name='api_asset_import_preview_url',
     ),
     path(
+        'v1/api-assets/import/preview-curl',
+        ApiImportExportViewSet.as_view({'post': 'preview_curl'}),
+        name='api_asset_import_preview_curl',
+    ),
+    path(
         'v1/api-assets/import/confirm',
         ApiImportExportViewSet.as_view({'post': 'confirm_import'}),
         name='api_asset_import_confirm',
@@ -255,4 +261,15 @@ urlpatterns = [
     path('v1/parameter-config/test_ai/',
          ParameterConfigViewSet.as_view({'post': 'test_ai'}),
          name='parameter-config-test-ai'),
+
+    # 临时调试端点：排查 multipart 上传问题（用后删除）
+    path('v1/debug/multipart/',
+         __import__('test_manager.api.debug_multipart', fromlist=['debug_multipart']).debug_multipart,
+         name='debug-multipart'),
+
+    # ===== 日志查询 API =====
+    path('v1/logs/', LogListView.as_view(), name='log-list'),
+    path('v1/logs/read/', LogReadView.as_view(), name='log-read'),
+    path('v1/logs/stream/', LogStreamView.as_view(), name='log-stream'),
+    path('v1/logs/execute/', CommandExecuteView.as_view(), name='log-execute'),
 ]

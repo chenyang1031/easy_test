@@ -101,6 +101,8 @@ export function getMenuData({ isAuthenticated = false } = {}) {
           href: '/app/#/task-monitor', matchBases: ['/app/'], matchHashes: ['/task-monitor'] },
         { type: 'link', label: '执行日志', icon: 'ClipboardData',
           href: '/app/#/task-execution-logs', matchBases: ['/app/'], matchHashes: ['/task-execution-logs'] },
+        { type: 'link', label: '日志查询', icon: 'Terminal',
+          href: '/app/#/log-query', matchBases: ['/app/'], matchHashes: ['/log-query'] },
       ],
     },
     // ========== 用户&设置 ==========

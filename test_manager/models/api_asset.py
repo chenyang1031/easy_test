@@ -63,6 +63,7 @@ class ApiAsset(models.Model):
     SOURCE_OPENAPI = "openapi"
     SOURCE_GOREPLAY = "goreplay"
     SOURCE_AI_DOCUMENT = "ai_document"
+    SOURCE_CURL = "curl"
     SOURCE_CHOICES = [
         (SOURCE_MANUAL, "手工"),
         (SOURCE_POSTMAN, "Postman"),
@@ -70,6 +71,7 @@ class ApiAsset(models.Model):
         (SOURCE_OPENAPI, "OpenAPI"),
         (SOURCE_GOREPLAY, "GoReplay"),
         (SOURCE_AI_DOCUMENT, "AI文档"),
+        (SOURCE_CURL, "cURL"),
     ]
     PARAM_STATUS_ENABLED = "enabled"
     PARAM_STATUS_DISABLED = "disabled"

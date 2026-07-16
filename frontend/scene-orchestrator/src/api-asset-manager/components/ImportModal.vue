@@ -46,6 +46,32 @@
           </el-col>
         </el-row>
       </el-tab-pane>
+
+      <!-- cURL 导入 -->
+      <el-tab-pane label="cURL 导入" name="curl">
+        <el-row :gutter="12" style="margin-bottom:14px">
+          <el-col :span="14">
+            <el-select v-model="targetProject" placeholder="目标项目" style="width:100%">
+              <el-option v-for="p in store.platformProjects" :key="p.id" :label="p.name" :value="p.id" />
+            </el-select>
+          </el-col>
+          <el-col :span="5">
+            <el-select v-model="targetGroup" placeholder="目标分组" clearable style="width:100%">
+              <el-option v-for="g in store.flatGroupsForSelect" :key="g.id ?? 'root'" :label="g.displayName" :value="g.id" />
+            </el-select>
+          </el-col>
+          <el-col :span="5">
+            <el-button :loading="previewLoading" @click="previewCurlImport">解析 cURL</el-button>
+          </el-col>
+        </el-row>
+        <el-input
+          v-model="curlText"
+          type="textarea"
+          :rows="8"
+          placeholder="粘贴 curl 命令，支持多条（每条以 curl 开头，换行分隔）&#10;示例：&#10;curl -X GET 'https://api.example.com/users' -H 'Authorization: Bearer xxx'&#10;curl -X POST https://api.example.com/items -H 'Content-Type: application/json' -d '{&quot;name&quot;:&quot;test&quot;}'"
+          style="font-family:monospace"
+        />
+      </el-tab-pane>
     </el-tabs>
 
     <!-- 预览结果 -->
@@ -95,6 +121,7 @@ const selectedFile = ref(null)
 const targetProject = ref(store.platformProjectId)
 const targetGroup = ref(null)
 const onlineUrl = ref('')
+const curlText = ref('')
 const previewLoading = ref(false)
 const importLoading = ref(false)
 const previewItems = ref([])
@@ -142,6 +169,22 @@ async function previewUrlImport() {
       projectId = api_project_id
     }
     const data = await apiAssetApi.previewImportUrl(onlineUrl.value, projectId)
+    previewItems.value = data.items || []
+    conflictCount.value = data.conflict_count || 0
+  } catch (e) { errorMsg.value = e?.message || '解析失败' }
+  finally { previewLoading.value = false }
+}
+
+async function previewCurlImport() {
+  if (!curlText.value?.trim()) { errorMsg.value = '请粘贴 curl 命令'; return }
+  previewLoading.value = true; errorMsg.value = ''
+  try {
+    let projectId = null
+    if (targetProject.value) {
+      const { api_project_id } = await apiProjectApi.resolve(targetProject.value)
+      projectId = api_project_id
+    }
+    const data = await apiAssetApi.previewImportCurl(curlText.value, projectId)
     previewItems.value = data.items || []
     conflictCount.value = data.conflict_count || 0
   } catch (e) { errorMsg.value = e?.message || '解析失败' }
