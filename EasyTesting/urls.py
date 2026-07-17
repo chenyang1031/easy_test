@@ -32,6 +32,7 @@ urlpatterns = [
 
     path('admin/', admin.site.urls),
     path('api/', include('test_manager.api.urls')),
+    path('api/', include('test_manager.ui_automation.urls')),
     # 场景执行报告生成（模块 B）：/scene-executions/<id>/generate-report/
     path('', include('test_manager.report.urls')),
 

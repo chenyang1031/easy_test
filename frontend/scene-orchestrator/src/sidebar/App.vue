@@ -274,6 +274,7 @@ const navIconPaths = {
   Operation: '<circle cx="12" cy="12" r="3" /><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />',
   Laptop: '<path d="M20 16V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9m16 0-4 2H8l-4-2m16 0 2 4H2l2-4" />',
   Terminal: '<polyline points="4 17 10 11 4 5" /><line x1="12" y1="19" x2="20" y2="19" />',
+  DataLine: '<path d="M3 3v18h18" /><path d="m19 9-5 5-4-4-3 3" />',
 }
 
 // ============ 方法 ============

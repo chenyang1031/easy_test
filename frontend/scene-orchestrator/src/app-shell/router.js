@@ -346,6 +346,14 @@ const routes = [
         meta: { title: '新建 Mock 数据' },
       },
 
+      // ===== 数据工厂 =====
+      {
+        path: 'data-factory',
+        name: 'dataFactory',
+        component: () => import('../views/data-factory/DataFactory.vue'),
+        meta: { title: '数据工厂' },
+      },
+
       // ===== 测试报告 =====
       {
         path: 'reports',
@@ -485,6 +493,34 @@ const routes = [
         component: () => import('../views/scheduled-tasks/TaskExecutionLogDetail.vue'),
         props: true,
         meta: { title: '执行日志详情' },
+      },
+
+      // ===== UI 自动化 =====
+      {
+        path: 'ui-automation',
+        name: 'uiAutomation',
+        component: () => import('../views/ui-automation/UiAutomationLayout.vue'),
+        meta: { title: 'UI自动化' },
+      },
+      {
+        path: 'ui-ai',
+        name: 'uiAI',
+        component: () => import('../views/ui-automation/UiAICasePage.vue'),
+        meta: { title: 'AI智能用例' },
+      },
+      {
+        path: 'ui-scheduled',
+        name: 'uiScheduled',
+        component: () => import('../views/ui-automation/UiScheduledTaskPage.vue'),
+        meta: { title: 'UI定时任务' },
+      },
+
+      // ===== 日志查询 =====
+      {
+        path: 'log-query',
+        name: 'logQuery',
+        component: () => import('../views/log-query/LogQuery.vue'),
+        meta: { title: '日志查询' },
       },
 
       // ===== 邮件配置 =====

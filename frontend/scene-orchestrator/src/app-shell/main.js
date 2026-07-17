@@ -6,6 +6,7 @@ import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 import 'element-plus/dist/index.css'
 import App from './App.vue'
 import router from './router.js'
+import i18n from '../i18n/index.js'
 
 const app = createApp(App)
 
@@ -22,6 +23,9 @@ app.use(ElementPlus, { locale: zhCn })
 
 // Vue Router — 统一 hash 路由
 app.use(router)
+
+// vue-i18n — 数据工厂组件依赖
+app.use(i18n)
 
 // 将 Django 注入的 __INITIAL_STATE__ 暴露为全局，方便组件读取
 window.__APP_STATE__ = window.__INITIAL_STATE__ || {}

@@ -58,6 +58,8 @@ INSTALLED_APPS = [
     "django_celery_beat",
 
     "test_manager",
+    "test_manager.data_factory",
+    "test_manager.ui_automation",
 
 ]
 X_FRAME_OPTIONS = "SAMEORIGIN"

@@ -18,3 +18,10 @@ requests_toolbelt
 js2py>=0.74
 mammoth>=1.6.0
 pydantic==1.8.2
+
+# UI 自动化模块依赖
+playwright>=1.40.0
+browser-use>=0.1.0
+langchain-openai>=0.1.0
+weasyprint>=60.0
+fakerx>=1.0.0

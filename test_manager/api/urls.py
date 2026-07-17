@@ -52,7 +52,7 @@ from .scheduled_task_views import (
 )
 from .email_config_views import EmailConfigViewSet
 from .parameter_config_views import ParameterConfigViewSet
-from .log_views import LogListView, LogReadView, LogStreamView, CommandExecuteView
+from .log_views import LogListView, LogReadView, log_stream_view, CommandExecuteView
 
 router = DefaultRouter()
 router.register(r'projects', ProjectViewSet)
@@ -146,6 +146,8 @@ urlpatterns = [
     ),
     path('v1/', include(router.urls)),
     path('v1/', include('test_manager.report.api_urls')),
+    # ===== 数据工厂 API =====
+    path('v1/data-factory/', include('test_manager.data_factory.urls')),
     path(
         'v1/performance/task/<int:pk>/stop/',
         PerformanceTestTaskViewSet.as_view({'post': 'stop_test'}),
@@ -270,6 +272,6 @@ urlpatterns = [
     # ===== 日志查询 API =====
     path('v1/logs/', LogListView.as_view(), name='log-list'),
     path('v1/logs/read/', LogReadView.as_view(), name='log-read'),
-    path('v1/logs/stream/', LogStreamView.as_view(), name='log-stream'),
+    path('v1/logs/stream/', log_stream_view, name='log-stream'),
     path('v1/logs/execute/', CommandExecuteView.as_view(), name='log-execute'),
 ]

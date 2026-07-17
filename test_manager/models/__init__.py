@@ -20,3 +20,16 @@ from .performance import PerformanceTestResult, PerformanceTestTask
 from .test_case_rule import TestCaseGenerationRule, AICaseDraftRuleUsage  # noqa: F401
 from .prompt_template import PromptTemplate  # noqa: F401
 from .ai_model_provider import AIModelProvider  # noqa: F401
+
+# UI 自动化模型
+from test_manager.ui_automation.models import (  # noqa: F401
+    UiModule, UiPage, UiElement, UiElementGroup,
+    UiPageSteps, UiPageStepsDetailed,
+    UiTestCase, UiCaseStepsDetailed,
+    UiTestScript, UiScriptStep,
+    UiPageObject, UiPageObjectElement,
+    UiBatchExecutionRecord, UiExecutionRecord,
+    UiEnvironmentConfig, UiPublicData, UiActuator,
+    UiScheduledTask, UiNotificationLog,
+    UiAICase, UiAIExecutionRecord, UiOperationRecord,
+)

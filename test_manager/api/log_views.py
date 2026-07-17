@@ -6,7 +6,8 @@ import time
 import subprocess
 
 from django.conf import settings
-from django.http import StreamingHttpResponse
+from django.contrib.auth.decorators import login_required
+from django.http import StreamingHttpResponse, JsonResponse
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
@@ -75,40 +76,36 @@ class LogReadView(APIView):
             return Response({'error': f'读取日志失败: {e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-class LogStreamView(APIView):
-    """SSE 流式推送日志（类似 tail -f）
-    SessionAuthentication 下浏览器自动携带 cookie，EventSource 可直接使用。
-    """
-    permission_classes = [IsAuthenticated]
+@login_required
+def log_stream_view(request):
+    """SSE 流式推送日志（原生 Django 视图，避免 DRF 内容协商干扰 EventSource）"""
+    filename = request.GET.get('file', 'django.log')
+    filepath = _resolve_log_path(filename)
+    if not filepath or not os.path.exists(filepath):
+        return JsonResponse({'error': '日志文件不存在'}, status=404)
 
-    def get(self, request):
-        filename = request.query_params.get('file', 'django.log')
-        filepath = _resolve_log_path(filename)
-        if not filepath or not os.path.exists(filepath):
-            return Response({'error': '日志文件不存在'}, status=status.HTTP_404_NOT_FOUND)
+    def event_stream():
+        try:
+            with open(filepath, 'r', encoding='utf-8', errors='replace') as f:
+                f.seek(0, 2)  # 跳到文件末尾
+                while True:
+                    line = f.readline()
+                    if line:
+                        yield f"data: {line.rstrip()}\n\n"
+                    else:
+                        time.sleep(0.5)
+        except GeneratorExit:
+            pass
+        except Exception as e:
+            yield f"data: [ERROR] {e}\n\n"
 
-        def event_stream():
-            try:
-                with open(filepath, 'r', encoding='utf-8', errors='replace') as f:
-                    f.seek(0, 2)  # 跳到文件末尾
-                    while True:
-                        line = f.readline()
-                        if line:
-                            yield f"data: {line.rstrip()}\n\n"
-                        else:
-                            time.sleep(0.5)
-            except GeneratorExit:
-                pass
-            except Exception as e:
-                yield f"data: [ERROR] {e}\n\n"
-
-        response = StreamingHttpResponse(
-            event_stream(),
-            content_type='text/event-stream',
-        )
-        response['Cache-Control'] = 'no-cache'
-        response['X-Accel-Buffering'] = 'no'
-        return response
+    response = StreamingHttpResponse(
+        event_stream(),
+        content_type='text/event-stream',
+    )
+    response['Cache-Control'] = 'no-cache'
+    response['X-Accel-Buffering'] = 'no'
+    return response
 
 
 class CommandExecuteView(APIView):

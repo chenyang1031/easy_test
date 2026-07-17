@@ -95,6 +95,25 @@ const router = createRouter({
       props: true,
       meta: { title: "生成测试报告" }
     },
+    // ===== UI自动化 =====
+    {
+      path: "/ui-automation",
+      name: "ui-automation",
+      component: () => import("../views/ui-automation/UiAutomationLayout.vue"),
+      meta: { title: "UI自动化" }
+    },
+    {
+      path: "/ui-ai",
+      name: "ui-ai",
+      component: () => import("../views/ui-automation/UiAICasePage.vue"),
+      meta: { title: "AI智能用例" }
+    },
+    {
+      path: "/ui-scheduled",
+      name: "ui-scheduled",
+      component: () => import("../views/ui-automation/UiScheduledTaskPage.vue"),
+      meta: { title: "UI定时任务" }
+    },
     // ===== 日志查询 =====
     {
       path: "/log-query",

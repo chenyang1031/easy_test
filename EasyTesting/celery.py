@@ -30,6 +30,10 @@ app.conf.beat_schedule = {
         'task': 'test_manager.tasks.cleanup_old_scene_executions',
         'schedule': 86400.0,  # 每天执行一次
     },
+    'check-ui-scheduled-tasks': {
+        'task': 'test_manager.ui_automation.tasks.check_ui_scheduled_tasks',
+        'schedule': 60.0,  # 每分钟检查 UI 定时任务
+    },
 }
 
 app.conf.timezone = 'Asia/Shanghai'
