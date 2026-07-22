@@ -461,24 +461,38 @@ def cleanup_old_execution_logs():
 
 @shared_task(name='test_manager.tasks.check_zombie_scene_executions')
 def check_zombie_scene_executions():
-    """检测并清理僵尸场景执行记录（status=running 且超过 10 分钟未完成）"""
+    """检测并清理僵尸场景执行记录（status=running 且超过 5 分钟未完成）。
+
+    先设置 cancel_requested 标志（让执行引擎在检查点主动退出），
+    再将已超时的记录直接标记为 stopped。
+    """
     from .models import TestSceneExecution
 
     logger.info("开始检测僵尸场景执行记录")
     try:
-        cutoff = timezone.now() - timedelta(minutes=10)
+        cutoff = timezone.now() - timedelta(minutes=5)
         zombies = TestSceneExecution.objects.filter(
             status=TestSceneExecution.STATUS_RUNNING,
             started_at__lt=cutoff,
-        )
+        ).select_related("scene")
         count = zombies.count()
         if count:
-            logger.warning(f"发现 {count} 条僵尸执行记录，正在标记为失败")
+            # 逐条记录详细日志
+            for z in zombies:
+                elapsed = (timezone.now() - z.started_at).total_seconds()
+                logger.warning(
+                    "僵尸执行: #%d 场景=%s 已运行 %.0fs",
+                    z.id, z.scene.name, elapsed,
+                )
+            # 先设置 cancel_requested，让执行引擎在检查点响应退出
+            zombies.update(cancel_requested=True)
+            # 直接标记为 stopped（超时兜底，执行引擎的 save 前会检查此状态不再覆盖）
             zombies.update(
-                status=TestSceneExecution.STATUS_FAILED,
-                error_message="服务端超时保护：执行超过 10 分钟未完成，已自动标记为失败",
+                status=TestSceneExecution.STATUS_STOPPED,
+                error_message="服务端超时保护：执行超过 5 分钟未完成，已自动停止",
                 finished_at=timezone.now(),
             )
+            logger.info(f"已清理 {count} 条僵尸场景执行记录")
         return count
     except Exception as e:
         logger.error(f"检测僵尸场景执行记录失败: {str(e)}")

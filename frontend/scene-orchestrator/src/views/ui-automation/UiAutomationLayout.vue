@@ -47,7 +47,14 @@
           <span>模块树</span>
           <el-button type="primary" size="small" text @click="showAddModule = true">+ 新增</el-button>
         </div>
+        <div v-if="moduleTree.length === 0" class="tree-empty">
+          <div class="tree-empty-icon">&#128194;</div>
+          <p class="tree-empty-text">暂无模块</p>
+          <p class="tree-empty-hint">模块用于组织页面和元素，点击上方「+ 新增」创建第一个模块</p>
+          <el-button type="primary" size="small" @click="showAddModule = true" style="margin-top: 12px;">创建模块</el-button>
+        </div>
         <el-tree
+          v-else
           :data="moduleTree"
           node-key="id"
           :props="{ label: 'name', children: 'children' }"
@@ -58,17 +65,19 @@
           @node-drop="onNodeDrop"
         >
           <template #default="{ node, data }">
-            <span class="tree-node-label">
-              <span>{{ data.name }}</span>
-              <span class="tree-node-count">{{ data.element_count || 0 }}</span>
+            <span class="tree-node-row">
+              <span class="tree-node-label">
+                <span>{{ data.name }}</span>
+                <span class="tree-node-count">{{ data.element_count || 0 }}</span>
+              </span>
+              <el-button class="tree-node-delete" type="danger" size="small" text @click.stop="deleteModule(data)">×</el-button>
             </span>
           </template>
         </el-tree>
       </div>
 
       <div class="ui-content-panel">
-        <!-- 子路由内容 -->
-        <router-view :project-id="selectedProject" :module-id="selectedModuleId" @refresh="loadStats" />
+        <UiContentTabs :project-id="selectedProject" :module-id="selectedModuleId" :module-tree="moduleTree" @refresh="loadStats" />
       </div>
     </div>
 
@@ -97,6 +106,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { uiModuleApi, uiDashboardApi } from '../../api/uiAutomation'
+import UiContentTabs from './UiContentTabs.vue'
 import { http } from '../../api/http'
 
 const router = useRouter()
@@ -118,6 +128,9 @@ async function loadProjects() {
     if (projects.value.length > 0 && !selectedProject.value) {
       selectedProject.value = projects.value[0].id
     }
+    // 初始加载模块树和统计数据
+    loadModuleTree()
+    loadStats()
   } catch (e) {
     console.error('加载项目失败', e)
   }
@@ -160,6 +173,18 @@ async function onNodeDrop(draggingNode, dropNode, dropType) {
     loadModuleTree()
   } catch (e) {
     console.error('移动模块失败', e)
+  }
+}
+
+async function deleteModule(data) {
+  if (!confirm('确定删除模块「' + data.name + '」？')) return
+  try {
+    await uiModuleApi.delete(data.id)
+    loadModuleTree()
+    loadStats()
+    if (selectedModuleId.value === data.id) selectedModuleId.value = null
+  } catch (e) {
+    console.error('删除模块失败', e)
   }
 }
 
@@ -242,11 +267,27 @@ onMounted(() => {
   font-weight: 600;
   color: var(--text-primary);
 }
+.tree-node-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding-right: 4px;
+}
 .tree-node-label {
   display: flex;
   align-items: center;
   gap: 6px;
   font-size: 13px;
+}
+.tree-node-delete {
+  opacity: 0;
+  font-size: 14px;
+  padding: 0 4px;
+  transition: opacity 0.15s;
+}
+.tree-node-row:hover .tree-node-delete {
+  opacity: 1;
 }
 .tree-node-count {
   font-size: 11px;
@@ -254,6 +295,30 @@ onMounted(() => {
   background: var(--bg-body);
   padding: 1px 6px;
   border-radius: 10px;
+}
+.tree-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 16px;
+  text-align: center;
+}
+.tree-empty-icon {
+  font-size: 40px;
+  margin-bottom: 12px;
+  opacity: 0.5;
+}
+.tree-empty-text {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+.tree-empty-hint {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.6;
 }
 .ui-content-panel {
   flex: 1;

@@ -367,11 +367,13 @@ class TestSceneExecution(models.Model):
     STATUS_FAILED = "failed"
     # 全部节点均执行完且无硬失败，但存在「失败继续」策略下仍未通过的断言
     STATUS_PARTIAL_SUCCESS = "partial_success"
+    STATUS_STOPPED = "stopped"
     STATUS_CHOICES = [
         (STATUS_RUNNING, "执行中"),
         (STATUS_SUCCESS, "成功"),
         (STATUS_FAILED, "失败"),
         (STATUS_PARTIAL_SUCCESS, "部分成功"),
+        (STATUS_STOPPED, "已停止"),
     ]
 
     RUN_MODE_ALL = "all"
@@ -421,6 +423,11 @@ class TestSceneExecution(models.Model):
     error_message = models.TextField(blank=True, default="", verbose_name="错误信息", db_comment="错误信息")
     started_at = models.DateTimeField(auto_now_add=True, verbose_name="开始时间", db_comment="开始时间")
     finished_at = models.DateTimeField(null=True, blank=True, verbose_name="结束时间", db_comment="结束时间")
+    cancel_requested = models.BooleanField(
+        default=False,
+        verbose_name="取消请求",
+        db_comment="外部请求取消此执行，执行引擎在节点检查点读取",
+    )
     created_by = models.ForeignKey(
         User,
         on_delete=models.SET_NULL,

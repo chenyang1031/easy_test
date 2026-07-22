@@ -13,23 +13,23 @@
     <link rel="stylesheet" href="{% static 'css/sidebars.css' %}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Fira+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="icon" type="image/svg+xml" href="{% static 'svg/test.svg' %}">
     <link rel="stylesheet" href="{% static 'scene-orchestrator/assets/sidebar.css' %}">
     <style>
         :root {
             /* 主色 — 深邃海军蓝 */
-            --primary-color: #1E40AF;
-            --secondary-color: #3B82F6;
+            --primary-color: #4F46E5;
+            --secondary-color: #7C3AED;
             /* 语义色 — 测试状态语义 */
             --success-color: #10B981;
-            --info-color: #3B82F6;
+            --info-color: #6366F1;
             --warning-color: #F59E0B;
             --danger-color: #EF4444;
             --light-color: #F8FAFC;
             --dark-color: #0F172A;
             /* 扩展变量 — 中性色体系 */
-            --bg-body: #F1F5F9;
+            --bg-body: #F8FAFC;
             --bg-card: #FFFFFF;
             --text-primary: #0F172A;
             --text-secondary: #64748B;
@@ -39,12 +39,12 @@
             --bg-navbar: #FFFFFF;
             --sidebar-text: #475569;
             --sidebar-text-muted: #94A3B8;
-            --sidebar-text-active: #1E40AF;
+            --sidebar-text-active: #4F46E5;
             --sidebar-icon: #94A3B8;
-            --sidebar-icon-active: #3B82F6;
+            --sidebar-icon-active: #6366F1;
             --sidebar-border: #E2E8F0;
             --sidebar-hover-bg: #F1F5F9;
-            --sidebar-active-bg: rgba(30, 64, 175, 0.06);
+            --sidebar-active-bg: rgba(79, 70, 229, 0.06);
             --navbar-text: #1E293B;
             --navbar-brand-text: #1E293B;
             /* 状态语义色 */
@@ -53,15 +53,15 @@
             --status-running: #F59E0B;
             --status-pending: #6B7280;
             /* 字体 */
-            --font-heading: 'Fira Code', 'Consolas', 'Courier New', monospace;
-            --font-body: 'Fira Sans', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            --font-mono: 'Fira Code', 'Consolas', 'Courier New', monospace;
+            --font-heading: 'JetBrains Mono', 'Consolas', 'Courier New', monospace;
+            --font-body: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            --font-mono: 'JetBrains Mono', 'Consolas', 'Courier New', monospace;
         }
 
         /* ===== 深色模式支持 (通过 JS 检测系统偏好 + 手动切换) ===== */
         .dark-mode {
-            --primary-color: #3B82F6;
-            --secondary-color: #60A5FA;
+            --primary-color: #818CF8;
+            --secondary-color: #A78BFA;
             --success-color: #34D399;
             --info-color: #60A5FA;
             --warning-color: #FBBF24;
@@ -557,7 +557,7 @@
 
         .badge.bg-primary {
             background-color: rgba(30, 64, 175, 0.1) !important;
-            color: #1E40AF;
+            color: #4F46E5;
         }
 
         .badge.bg-secondary {
@@ -1157,4 +1157,5 @@
 {#</script>#}
 {% block extra_js %}{% endblock %}
 </body>
+</html>
 </html>

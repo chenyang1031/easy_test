@@ -13,8 +13,18 @@
     </div>
 
     <div class="panel-card">
-    <div class="alert alert-info py-2" v-if="isRunning">
-      正在执行中，页面每2秒自动刷新进度...
+    <div class="alert alert-info py-2 d-flex align-items-center justify-content-between" v-if="isRunning">
+      <span>正在执行中，页面每2秒自动刷新进度...</span>
+      <el-popconfirm
+        title="确定停止此执行？"
+        confirm-button-text="停止"
+        cancel-button-text="取消"
+        @confirm="stopExecution"
+      >
+        <template #reference>
+          <el-button type="danger" size="small" plain>停止执行</el-button>
+        </template>
+      </el-popconfirm>
     </div>
 
     <div v-if="!executions.length" class="text-muted py-4 text-center">暂无执行记录</div>
@@ -38,7 +48,9 @@
                     ? 'bg-warning text-dark'
                     : row.status === 'failed'
                       ? 'bg-danger'
-                      : 'bg-secondary'
+                      : row.status === 'stopped'
+                        ? 'bg-warning text-dark'
+                        : 'bg-secondary'
               ]"
             >
               {{
@@ -50,7 +62,9 @@
                       ? "失败"
                       : row.status === "running"
                         ? "执行中"
-                        : row.status
+                        : row.status === "stopped"
+                          ? "已停止"
+                          : row.status
               }}
             </span>
             <small class="text-muted">{{ formatTime(row.started_at) }}</small>
@@ -82,9 +96,10 @@
 <script setup>
 import { computed, onMounted, onUnmounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import { ElMessage } from 'element-plus'
 import { ArrowLeft, Refresh } from '@element-plus/icons-vue'
 import ExecutionLogPanel from "../components/ExecutionLogPanel.vue";
-import { fetchSceneExecutions } from "../api/scene";
+import { fetchSceneExecutions, stopSceneExecution } from "../api/scene";
 
 const route = useRoute();
 const router = useRouter();
@@ -104,6 +119,17 @@ function goDesigner() {
 
 function selectExecution(row) {
   latestExecution.value = row;
+}
+
+async function stopExecution() {
+  const exec = latestExecution.value;
+  if (!exec || exec.status !== 'running') return;
+  try {
+    await stopSceneExecution(exec.id);
+    ElMessage.success('停止信号已发送，等待执行引擎响应');
+  } catch (e) {
+    ElMessage.error(e.message || '停止失败');
+  }
 }
 
 async function refreshExecutions() {

@@ -246,6 +246,7 @@ const groupIconPaths = {
   Calendar: '<rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" />',
   Sliders: '<path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3" /><circle cx="4" cy="14" r="2" /><circle cx="12" cy="11" r="2" /><circle cx="20" cy="16" r="2" />',
   Monitor: '<rect x="2" y="3" width="20" height="14" rx="2" /><path d="M8 21h8M12 17v4" />',
+  Phone: '<rect x="5" y="2" width="14" height="20" rx="2" /><path d="M12 18h.01" />',
 }
 
 const navIconPaths = {
@@ -275,6 +276,20 @@ const navIconPaths = {
   Laptop: '<path d="M20 16V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9m16 0-4 2H8l-4-2m16 0 2 4H2l2-4" />',
   Terminal: '<polyline points="4 17 10 11 4 5" /><line x1="12" y1="19" x2="20" y2="19" />',
   DataLine: '<path d="M3 3v18h18" /><path d="m19 9-5 5-4-4-3 3" />',
+  // --- APP 自动化 ---
+  Odometer: '<circle cx="12" cy="12" r="10" /><path d="M12 8v4l3 3" /><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />',
+  Cpu: '<rect x="4" y="4" width="16" height="16" rx="2" /><rect x="9" y="9" width="6" height="6" /><path d="M9 1v3M15 1v3M9 20v3M15 20v3M20 9h3M20 14h3M1 9h3M1 14h3" />',
+  Aim: '<circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="6" /><circle cx="12" cy="12" r="2" /><path d="M12 2v4M12 18v4M2 12h4M18 12h4" />',
+  Document: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /><polyline points="10 9 9 9 8 9" />',
+  Files: '<path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" /><polyline points="13 2 13 9 20 9" />',
+  VideoPlay: '<rect x="2" y="4" width="15" height="16" rx="2" /><path d="M17 8l5-3v14l-5-3" />',
+  DataAnalysis: '<path d="M3 3v18h18" /><rect x="7" y="10" width="3" height="8" /><rect x="14" y="6" width="3" height="12" /><path d="M7 7l5-3 4 2 4-4" />',
+  AlarmClock: '<circle cx="12" cy="13" r="8" /><path d="M12 9v4l2 2" /><path d="M5 3L2 6" /><path d="M22 6l-3-3" /><path d="M6 19l-2 2" /><path d="M18 19l2 2" />',
+  Bell: '<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 0 1-3.46 0" />',
+  // --- UI 自动化 ---
+  WindowStack: '<rect x="2" y="3" width="20" height="14" rx="2" /><path d="M8 21h8M12 17v4" /><path d="M2 7h20" />',
+  Robot: '<rect x="3" y="8" width="18" height="12" rx="2" /><circle cx="9" cy="14" r="1.5" /><circle cx="15" cy="14" r="1.5" /><path d="M12 2v4" /><path d="M8 8V6a4 4 0 0 1 8 0v2" /><path d="M9 20v2M15 20v2" />',
+  Alarm: '<circle cx="12" cy="13" r="8" /><path d="M12 9v4l2 2" /><path d="M5 3L2 6" /><path d="M22 6l-3-3" />',
 }
 
 // ============ 方法 ============
@@ -607,15 +622,15 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   background: var(--sidebar-hover-bg);
-  border-radius: 6px;
+  border-radius: 8px;
   padding: 0 8px;
   border: 1px solid transparent;
-  transition: border-color 0.2s;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 .search-wrapper:focus-within {
   border-color: var(--primary-color);
   background: var(--bg-sidebar);
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.08);
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.1);
 }
 .search-icon {
   flex-shrink: 0;
@@ -763,11 +778,11 @@ onUnmounted(() => {
   gap: 6px;
   padding: 5px 12px 5px 14px;
   margin: 1px 6px;
-  border-radius: 4px;
+  border-radius: 8px;
   text-decoration: none;
   color: var(--sidebar-text);
   font-size: 0.78rem;
-  transition: all 0.15s ease;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
   position: relative;
 }
@@ -865,11 +880,11 @@ onUnmounted(() => {
   padding: 5px 6px;
   background: none;
   border: none;
-  border-radius: 4px;
+  border-radius: 6px;
   color: var(--sidebar-text);
   font-size: 0.72rem;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  transition: background 0.2s, color 0.2s;
 }
 .footer-btn:hover {
   background: var(--sidebar-hover-bg);

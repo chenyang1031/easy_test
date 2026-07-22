@@ -19,6 +19,19 @@
         <el-button v-if="execution?.status === 'running'" type="info" plain size="small" @click="loadDetail">
           <el-icon><Refresh /></el-icon> 刷新
         </el-button>
+        <el-popconfirm
+          v-if="execution?.status === 'running'"
+          title="确定停止此执行？"
+          confirm-button-text="停止"
+          cancel-button-text="取消"
+          @confirm="stopExecution"
+        >
+          <template #reference>
+            <el-button type="danger" plain size="small">
+              <el-icon><VideoPause /></el-icon> 停止执行
+            </el-button>
+          </template>
+        </el-popconfirm>
         <el-popconfirm title="确定删除此执行记录？" @confirm="handleDelete">
           <template #reference>
             <el-button type="danger" plain size="small">
@@ -340,7 +353,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import {
   ArrowLeft, Refresh, InfoFilled, DataAnalysis, List,
-  Connection, Document, Box, Delete, Download,
+  Connection, Document, Box, Delete, Download, VideoPause,
 } from '@element-plus/icons-vue'
 import { sceneExecutionApi } from '../api/index.js'
 
@@ -399,6 +412,7 @@ function statusTag(status) {
     partial_success: { type: 'warning', text: '部分成功' },
     failed: { type: 'danger', text: '失败' },
     running: { type: 'primary', text: '执行中' },
+    stopped: { type: 'warning', text: '已停止' },
   }
   return map[status] || { type: 'info', text: status || '未知' }
 }
@@ -493,6 +507,18 @@ async function handleDelete() {
     router.push('/scene-executions')
   } catch (e) {
     ElMessage.error(e.message || '删除失败')
+  }
+}
+
+async function stopExecution() {
+  if (!execution.value) return
+  try {
+    await sceneExecutionApi.stop(execution.value.id)
+    ElMessage.success('停止信号已发送，等待执行引擎响应')
+    // 保持轮询等待状态从 running 变为 stopped
+    startPolling()
+  } catch (e) {
+    ElMessage.error(e.message || '停止失败')
   }
 }
 

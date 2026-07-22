@@ -154,5 +154,13 @@ export const testSuiteImportExportApi = {
 export const sceneExecutionApi = {
   list: (params = {}) => request(`/api/v1/test-scene-executions/?${new URLSearchParams(params)}`),
   get: (id) => request(`/api/v1/test-scene-executions/${id}/`),
+  stop: (id) => request(`/api/v1/test-scene-executions/${id}/stop/`, { method: 'POST' }),
   remove: (id) => request(`/api/v1/test-scene-executions/${id}/`, { method: 'DELETE' }),
+}
+
+// ========== 文件上传 ==========
+export function uploadFile(file) {
+  const formData = new FormData()
+  formData.append('file', file)
+  return request('/api/v1/api-assets/upload/', { method: 'POST', body: formData })
 }

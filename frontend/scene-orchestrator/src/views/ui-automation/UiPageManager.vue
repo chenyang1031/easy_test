@@ -2,7 +2,7 @@
   <div class="ui-page-manager">
     <div class="toolbar">
       <el-input v-model="search" placeholder="搜索页面..." size="small" clearable style="width: 200px" @input="loadPages" />
-      <el-button type="primary" size="small" @click="showDialog = true">+ 新增页面</el-button>
+      <el-button type="primary" size="small" @click="openAddPage">+ 新增页面</el-button>
     </div>
     <el-table :data="pages" size="small" stripe v-loading="loading" empty-text="暂无页面">
       <el-table-column prop="name" label="页面名称" min-width="150" />
@@ -22,7 +22,15 @@
         <el-form-item label="名称"><el-input v-model="form.name" /></el-form-item>
         <el-form-item label="URL"><el-input v-model="form.url" /></el-form-item>
         <el-form-item label="模块">
-          <el-input v-model="form.module" type="number" placeholder="模块ID" />
+          <el-tree-select
+            v-model="form.module"
+            :data="moduleTreeOptions"
+            :props="{ label: 'name', value: 'id', children: 'children' }"
+            check-strictly
+            placeholder="选择所属模块"
+            clearable
+            style="width: 100%"
+          />
         </el-form-item>
         <el-form-item label="描述"><el-input v-model="form.description" type="textarea" /></el-form-item>
       </el-form>
@@ -35,10 +43,14 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { uiPageApi } from '../../api/uiAutomation'
 
-const props = defineProps({ projectId: [Number, String], moduleId: [Number, String] })
+const props = defineProps({
+  projectId: [Number, String],
+  moduleId: [Number, String],
+  moduleTree: { type: Array, default: () => [] }
+})
 const pages = ref([])
 const loading = ref(false)
 const search = ref('')
@@ -46,6 +58,8 @@ const showDialog = ref(false)
 const saving = ref(false)
 const editing = ref(false)
 const form = ref({ name: '', url: '', module: '', description: '' })
+
+const moduleTreeOptions = computed(() => props.moduleTree || [])
 
 async function loadPages() {
   loading.value = true
@@ -56,6 +70,12 @@ async function loadPages() {
     pages.value = data.results || data || []
   } catch (e) { console.error(e) }
   finally { loading.value = false }
+}
+
+function openAddPage() {
+  editing.value = false
+  form.value = { name: '', url: '', module: props.moduleId || '', description: '' }
+  showDialog.value = true
 }
 
 function editPage(row) {

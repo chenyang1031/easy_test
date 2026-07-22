@@ -4,9 +4,16 @@
     <div class="page-header">
       <div class="page-header-left">
         <h2 class="page-title">仪表盘</h2>
+        <span class="page-subtitle">项目概览与活动追踪</span>
       </div>
       <div class="page-header-right">
-        <el-button size="default" @click="loadData"><el-icon><Refresh /></el-icon> 刷新</el-button>
+        <button class="refresh-btn" @click="loadData">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+            <path d="M23 4v6h-6M1 20v-6h6" />
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+          </svg>
+          刷新数据
+        </button>
       </div>
     </div>
 
@@ -18,9 +25,10 @@
       show-icon
       closable
       @close="error = null"
+      style="border-radius: 10px; margin-bottom: 16px;"
     >
       <template #default>
-        <el-button size="small" type="danger" @click="loadData">重试</el-button>
+        <button class="retry-btn" @click="loadData">重试</button>
       </template>
     </el-alert>
 
@@ -35,8 +43,8 @@
       <GrowthTrendChart :trends="data.trends" />
 
       <!-- 下方区域：表格 + 侧边 -->
-      <div class="row">
-        <div class="col-main">
+      <div class="dashboard-row">
+        <div class="dashboard-col-main">
           <RecentTestRuns
             :runs="data.recentTestRuns"
             :loading="runsLoading"
@@ -44,7 +52,7 @@
           />
           <RecentSceneExecutions :executions="data.recentSceneExecutions" />
         </div>
-        <div class="col-side">
+        <div class="dashboard-col-side">
           <ActivityTimeline :activities="data.activities" @refresh="loadData" />
           <QuickActions />
         </div>
@@ -113,8 +121,10 @@ onMounted(() => loadData())
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
 }
-.fade-in { animation: fadeInUp 0.25s ease; }
+.fade-in { animation: fadeInUp 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+</style>
 
+<style scoped>
 /* ---- 页面标题 ---- */
 .page-header {
   display: flex;
@@ -122,50 +132,102 @@ onMounted(() => loadData())
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 12px;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
 }
-.page-header-left { display: flex; align-items: baseline; gap: 12px; }
-.page-title { font-size: 24px; font-weight: 600; color: #303133; margin: 0; line-height: 1.3; }
-.page-header-right { display: flex; gap: 8px; align-items: center; }
+.page-header-left {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+.page-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary, #0F172A);
+  margin: 0;
+  line-height: 1.3;
+}
+.page-subtitle {
+  font-size: 0.85rem;
+  color: var(--text-secondary, #94A3B8);
+  font-weight: 400;
+}
+.page-header-right {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
 
-/* 全局重置：dashboard 容器无 card hover 特效和背景干扰 */
+.refresh-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border: 1px solid var(--border-color, #E2E8F0);
+  border-radius: 8px;
+  background: var(--bg-card, #fff);
+  color: var(--text-secondary, #64748B);
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.refresh-btn:hover {
+  border-color: var(--primary-color, #4F46E5);
+  color: var(--primary-color, #4F46E5);
+  background: rgba(79, 70, 229, 0.04);
+}
+
+.retry-btn {
+  padding: 4px 12px;
+  border: none;
+  border-radius: 6px;
+  background: #EF4444;
+  color: #fff;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+/* ---- 全局容器 ---- */
 .dashboard-container {
   padding: 0;
 }
-.dashboard-container .card {
-  transition: none;
-}
-.dashboard-container .card:hover {
-  transform: none;
-  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-}
 
-.row {
+/* ---- 下方布局 ---- */
+.dashboard-row {
   display: flex;
-  gap: 24px;
-  margin-bottom: 24px;
+  gap: 20px;
+  margin-top: 20px;
 }
-.col-main {
+.dashboard-col-main {
   flex: 1;
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 20px;
 }
-.col-side {
-  width: 360px;
+.dashboard-col-side {
+  width: 340px;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 20px;
 }
 
 @media (max-width: 1200px) {
-  .row {
+  .dashboard-row {
     flex-direction: column;
   }
-  .col-side {
+  .dashboard-col-side {
     width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .page-title {
+    font-size: 1.25rem;
+  }
+  .page-subtitle {
+    display: none;
   }
 }
 </style>

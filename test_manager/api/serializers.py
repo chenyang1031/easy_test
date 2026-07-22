@@ -1052,6 +1052,7 @@ class TestSceneExecutionListSerializer(serializers.ModelSerializer):
             'duration_ms',
             'started_at', 'finished_at',
             'created_by_name', 'environment', 'environment_name',
+            'cancel_requested',
             'created_at', 'updated_at',
         ]
         read_only_fields = ['created_at', 'updated_at']

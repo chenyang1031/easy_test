@@ -60,6 +60,7 @@ INSTALLED_APPS = [
     "test_manager",
     "test_manager.data_factory",
     "test_manager.ui_automation",
+    "test_manager.app_automation",
 
 ]
 X_FRAME_OPTIONS = "SAMEORIGIN"

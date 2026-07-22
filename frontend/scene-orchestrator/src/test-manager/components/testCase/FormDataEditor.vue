@@ -25,8 +25,10 @@
           <el-input v-if="row.type==='text'" v-model="row.value" size="small" placeholder="Value" @input="emitChange" />
           <el-input v-else-if="row.type==='json'" v-model="row.value" size="small" type="textarea" :rows="2" placeholder='{"key":"value"}' @input="emitChange" />
           <div v-else class="file-picker">
-            <span v-if="row.value" class="file-name">{{ row.value }}</span>
-            <el-button size="small" @click="pickFile(row)">选择文件</el-button>
+            <el-tag v-if="row.value" type="success" size="small" closable @close="clearFile(row)">
+              {{ row.fileName || row.value.split('/').pop() }}
+            </el-tag>
+            <el-button size="small" @click="handleFileUpload(row)">选择文件</el-button>
           </div>
         </template>
       </el-table-column>
@@ -44,6 +46,8 @@
 
 <script setup>
 import { ref, watch } from 'vue'
+import { ElMessage } from 'element-plus'
+import { uploadFile } from '../../api/index.js'
 
 const props = defineProps({ modelValue: { type: Array, default: () => [] } })
 const emit = defineEmits(['update:modelValue'])
@@ -54,10 +58,38 @@ function syncFromProp() {
 }
 syncFromProp()
 
-function emitChange() { emit('update:modelValue', rows.value.map(({key,value,description,checked,type}) => ({key,value,description,checked,type}))) }
+function emitChange() { emit('update:modelValue', rows.value.map(({key,value,description,checked,type,fileName}) => ({key,value,description,checked,type,fileName}))) }
 function addRow() { rows.value.push({ key:'', value:'', description:'', checked:true, type:'text' }); emitChange() }
 function removeRow(i) { rows.value.splice(i,1); emitChange() }
-function pickFile(row) { row.value = prompt('输入文件名:') || ''; emitChange() }
+
+function clearFile(row) {
+  row.value = ''
+  row.fileName = ''
+  emitChange()
+}
+
+async function handleFileUpload(row) {
+  const input = document.createElement('input')
+  input.type = 'file'
+  input.onchange = async (e) => {
+    const file = e.target?.files?.[0]
+    if (!file) return
+    try {
+      const res = await uploadFile(file)
+      if (res?.success && res?.file_path) {
+        row.value = res.file_path
+        row.fileName = res.file_name || file.name
+        row.type = 'file'
+        emitChange()
+      } else {
+        ElMessage.error(res?.detail || '文件上传失败')
+      }
+    } catch (err) {
+      ElMessage.error(err.message || '文件上传失败')
+    }
+  }
+  input.click()
+}
 
 watch(() => props.modelValue, () => syncFromProp(), { deep: true })
 </script>
@@ -66,6 +98,5 @@ watch(() => props.modelValue, () => syncFromProp(), { deep: true })
 .editor { margin-bottom:8px; background:#f9fafb; border-radius:8px; padding:10px 12px; }
 .editor-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
 .editor-header h6 { margin:0; font-size:13px; font-weight:500; color:#606266; }
-.file-picker { display:flex; align-items:center; gap:6px; }
-.file-name { font-size:12px; color:#909399; max-width:100px; overflow:hidden; text-overflow:ellipsis; }
+.file-picker { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
 </style>

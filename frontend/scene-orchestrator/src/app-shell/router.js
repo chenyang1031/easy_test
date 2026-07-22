@@ -515,6 +515,86 @@ const routes = [
         meta: { title: 'UI定时任务' },
       },
 
+      // ===== APP 自动化 =====
+      {
+        path: 'app-automation/dashboard',
+        name: 'appDashboard',
+        component: () => import('../views/app-automation/dashboard/Dashboard.vue'),
+        meta: { title: 'APP Dashboard' },
+      },
+      {
+        path: 'app-automation/projects',
+        name: 'appProjectList',
+        component: () => import('../views/app-automation/projects/ProjectList.vue'),
+        meta: { title: 'APP项目管理' },
+      },
+      {
+        path: 'app-automation/devices',
+        name: 'appDeviceList',
+        component: () => import('../views/app-automation/devices/DeviceList.vue'),
+        meta: { title: 'APP设备管理' },
+      },
+      {
+        path: 'app-automation/packages',
+        name: 'appPackageList',
+        component: () => import('../views/app-automation/packages/PackageList.vue'),
+        meta: { title: 'APP包名管理' },
+      },
+      {
+        path: 'app-automation/elements',
+        name: 'appElementList',
+        component: () => import('../views/app-automation/elements/ElementList.vue'),
+        meta: { title: 'APP元素管理' },
+      },
+      {
+        path: 'app-automation/scene-builder',
+        name: 'appSceneBuilder',
+        component: () => import('../views/app-automation/test-cases/SceneBuilder.vue'),
+        meta: { title: 'APP用例编排' },
+      },
+      {
+        path: 'app-automation/test-cases',
+        name: 'appTestCaseList',
+        component: () => import('../views/app-automation/test-cases/TestCaseList.vue'),
+        meta: { title: 'APP测试用例' },
+      },
+      {
+        path: 'app-automation/test-suites',
+        name: 'appTestSuiteList',
+        component: () => import('../views/app-automation/suites/SuiteList.vue'),
+        meta: { title: 'APP测试套件' },
+      },
+      {
+        path: 'app-automation/executions',
+        name: 'appExecutionList',
+        component: () => import('../views/app-automation/executions/ExecutionList.vue'),
+        meta: { title: 'APP执行记录' },
+      },
+      {
+        path: 'app-automation/reports',
+        name: 'appReportList',
+        component: () => import('../views/app-automation/reports/ReportList.vue'),
+        meta: { title: 'APP测试报告' },
+      },
+      {
+        path: 'app-automation/scheduled-tasks',
+        name: 'appScheduledTasks',
+        component: () => import('../views/app-automation/scheduled-tasks/ScheduledTasks.vue'),
+        meta: { title: 'APP定时任务' },
+      },
+      {
+        path: 'app-automation/notification-logs',
+        name: 'appNotificationLogs',
+        component: () => import('../views/app-automation/notification/NotificationLogs.vue'),
+        meta: { title: 'APP通知日志' },
+      },
+      {
+        path: 'app-automation/settings',
+        name: 'appSettings',
+        component: () => import('../views/app-automation/settings/AppSettings.vue'),
+        meta: { title: 'APP设置' },
+      },
+
       // ===== 日志查询 =====
       {
         path: 'log-query',

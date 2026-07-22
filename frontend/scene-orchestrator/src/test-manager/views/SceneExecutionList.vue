@@ -38,6 +38,7 @@
               <el-option label="成功" value="success" />
               <el-option label="失败" value="failed" />
               <el-option label="部分成功" value="partial_success" />
+              <el-option label="已停止" value="stopped" />
             </el-select>
           </el-col>
         </el-row>
@@ -153,6 +154,7 @@ function statusTag(status) {
     partial_success: { type: 'warning', text: '部分成功' },
     failed: { type: 'danger', text: '失败' },
     running: { type: 'primary', text: '执行中' },
+    stopped: { type: 'warning', text: '已停止' },
   }
   return map[status] || { type: 'info', text: status || '未知' }
 }

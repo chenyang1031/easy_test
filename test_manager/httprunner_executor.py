@@ -511,6 +511,25 @@ def _execute_with_requests(test_case, environment, variables=None):
             request_body = replace_variables(request_body, variables)
             print(f"##Request body after variable replacement: {request_body}")
 
+            # 数组格式转字典（前端 FormDataEditor 保存的格式为 [{key, value, type, ...}]）
+            if isinstance(request_body, list) and getattr(test_case, 'request_body_format', '') == 'form-data':
+                converted = {}
+                for item in request_body:
+                    if not isinstance(item, dict) or not item.get('key'):
+                        continue
+                    if item.get('checked') is False:
+                        continue
+                    key = item['key']
+                    if str(item.get('type', '')).lower() == 'file':
+                        converted[key] = {
+                            'type': 'File',
+                            'file_path': item.get('value', ''),
+                            'file_name': item.get('fileName', '') or (item.get('value', '').split('/')[-1] if item.get('value') else '')
+                        }
+                    else:
+                        converted[key] = item.get('value', '')
+                request_body = converted
+
             # 根据请求体格式设置请求参数
             if hasattr(test_case, 'request_body_format'):
                 if test_case.request_body_format == 'json':

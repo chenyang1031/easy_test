@@ -15,11 +15,14 @@ try:
 
     django_asgi_app = get_asgi_application()
 
-    from test_manager.ui_automation.routing import websocket_urlpatterns
+    from test_manager.ui_automation.routing import websocket_urlpatterns as ui_ws_patterns
+    from test_manager.app_automation.routing import websocket_urlpatterns as app_ws_patterns
+
+    combined_ws_patterns = ui_ws_patterns + app_ws_patterns
 
     application = ProtocolTypeRouter({
         "http": django_asgi_app,
-        "websocket": URLRouter(websocket_urlpatterns),
+        "websocket": URLRouter(combined_ws_patterns),
     })
 except ImportError:
     # channels 未安装，使用标准 ASGI

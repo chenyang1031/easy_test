@@ -24,7 +24,7 @@ app.conf.beat_schedule = {
     },
     'check-zombie-scene-executions': {
         'task': 'test_manager.tasks.check_zombie_scene_executions',
-        'schedule': 300.0,  # 每 5 分钟执行一次
+        'schedule': 120.0,  # 每 2 分钟执行一次
     },
     'cleanup-old-scene-executions': {
         'task': 'test_manager.tasks.cleanup_old_scene_executions',
@@ -33,6 +33,14 @@ app.conf.beat_schedule = {
     'check-ui-scheduled-tasks': {
         'task': 'test_manager.ui_automation.tasks.check_ui_scheduled_tasks',
         'schedule': 60.0,  # 每分钟检查 UI 定时任务
+    },
+    'check-app-scheduled-tasks': {
+        'task': 'test_manager.app_automation.tasks.check_app_scheduled_tasks',
+        'schedule': 60.0,  # 每分钟检查 APP 定时任务
+    },
+    'check-app-device-locks': {
+        'task': 'test_manager.app_automation.tasks.check_and_release_expired_devices',
+        'schedule': 300.0,  # 每 5 分钟检查设备锁定
     },
 }
 

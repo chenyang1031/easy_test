@@ -732,7 +732,8 @@ def _build_proxy_case(node, resolved_headers, resolved_params_url, resolved_para
     构建 ProxyCase 供 execute_test_case 执行。
     文件检测、格式切换、参数拆分合并由 _handle_file_params 处理。
     """
-    timeout = int(node.timeout) if node.timeout else 30
+    _MAX_NODE_TIMEOUT = 120  # 全局硬上限 2 分钟，防止单节点阻塞过久
+    timeout = min(int(node.timeout) if node.timeout else 30, _MAX_NODE_TIMEOUT)
     api_format = getattr(node.api_asset, "request_body_format", "json") or "json"
     node_body_type = getattr(node, "body_type", None) or api_format
 
@@ -989,7 +990,32 @@ def _execute_scene_body(scene, execution, nodes, run_mode, runtime_config_overri
 
     node_results = []
     stop_after_failed = False
+    cancelled = False
     for node in nodes:
+        # ── 取消检查点：在节点循环顶部检查外部取消请求 ──
+        if not cancelled:
+            cancel_flag = (
+                TestSceneExecution.objects
+                .filter(pk=execution.pk)
+                .values_list("cancel_requested", flat=True)
+                .first()
+            )
+            if cancel_flag:
+                cancelled = True
+
+        if cancelled:
+            node_results.append(
+                {
+                    "node_id": node.id,
+                    "node_key": node.node_key,
+                    "node_name": node.name,
+                    "status": "skipped",
+                    "reason": "用户手动停止",
+                    "assert_results": [],
+                }
+            )
+            continue
+
         if stop_after_failed:
             node_results.append(
                 {
@@ -1444,7 +1470,10 @@ def _execute_scene_body(scene, execution, nodes, run_mode, runtime_config_overri
         summary["environment"] = {"id": env_obj.id, "name": env_obj.name, "base_url": env_obj.base_url}
     execution.summary = summary
     execution.finished_at = timezone.now()
-    if failed > 0:
+    if cancelled:
+        execution.status = TestSceneExecution.STATUS_STOPPED
+        execution.error_message = "用户手动停止执行"
+    elif failed > 0:
         execution.status = TestSceneExecution.STATUS_FAILED
         first_failed = next((item for item in node_results if item.get("status") == "failed"), {})
         execution.error_message = first_failed.get("reason") or "场景存在失败节点"
@@ -1454,6 +1483,17 @@ def _execute_scene_body(scene, execution, nodes, run_mode, runtime_config_overri
     else:
         execution.status = TestSceneExecution.STATUS_SUCCESS
         execution.error_message = ""
+    # ── 防竞态：僵尸检测可能已抢先标记 stopped，不再覆盖 ──
+    if not cancelled:
+        db_status = (
+            TestSceneExecution.objects
+            .filter(pk=execution.pk)
+            .values_list("status", flat=True)
+            .first()
+        )
+        if db_status == TestSceneExecution.STATUS_STOPPED:
+            execution.status = TestSceneExecution.STATUS_STOPPED
+            execution.error_message = execution.error_message or "执行已被服务端超时保护停止"
     execution.save(
         update_fields=[
             "total_nodes",

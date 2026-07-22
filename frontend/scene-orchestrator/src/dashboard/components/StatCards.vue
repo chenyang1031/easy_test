@@ -1,17 +1,22 @@
 <template>
   <div class="stat-cards-row">
-    <div
+    <a
       v-for="card in cards"
       :key="card.key"
-      class="stat-card-wrapper"
+      :href="card.link"
+      class="stat-card"
+      :class="card.accent"
     >
-      <div class="card h-100">
-        <div class="card-body stat-card" :class="card.color">
-          <div class="stat-title">{{ card.label }}</div>
-          <a :href="card.link" class="stat-value">{{ stats[card.key] }}</a>
-        </div>
+      <div class="stat-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"
+          v-html="card.icon"
+        ></svg>
       </div>
-    </div>
+      <div class="stat-body">
+        <div class="stat-value">{{ stats[card.key] }}</div>
+        <div class="stat-label">{{ card.label }}</div>
+      </div>
+    </a>
   </div>
 </template>
 
@@ -24,71 +29,187 @@ defineProps({
 })
 
 const cards = [
-  { key: 'projects',         label: '项目',         color: 'primary', link: '/projects/' },
-  { key: 'testCases',       label: '测试用例',      color: 'success', link: '/test-cases-vue/#/test-cases' },
-  { key: 'testSuites',      label: '测试套件',      color: 'info',    link: '/test-suites-vue/#/test-suites' },
-  { key: 'testRuns',        label: '测试运行',      color: 'warning', link: '/test-suites-vue/#/test-runs' },
-  { key: 'reports',         label: '测试报告',      color: 'danger',  link: '/reports/' },
-  { key: 'testScenes',      label: '测试场景',      color: 'primary', link: '/test-scene-orchestrator/' },
-  { key: 'sceneExecutions', label: '场景执行',      color: 'info',    link: '/test-suites-vue/#/scene-executions' },
+  {
+    key: 'projects',
+    label: '项目',
+    accent: 'indigo',
+    link: '/projects/',
+    icon: '<rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" />',
+  },
+  {
+    key: 'testCases',
+    label: '测试用例',
+    accent: 'emerald',
+    link: '/test-cases-vue/#/test-cases',
+    icon: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" />',
+  },
+  {
+    key: 'testSuites',
+    label: '测试套件',
+    accent: 'violet',
+    link: '/test-suites-vue/#/test-suites',
+    icon: '<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />',
+  },
+  {
+    key: 'testRuns',
+    label: '测试运行',
+    accent: 'amber',
+    link: '/test-suites-vue/#/test-runs',
+    icon: '<polygon points="5 3 19 12 5 21 5 3" />',
+  },
+  {
+    key: 'reports',
+    label: '测试报告',
+    accent: 'rose',
+    link: '/reports/',
+    icon: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /><polyline points="10 9 9 9 8 9" />',
+  },
+  {
+    key: 'testScenes',
+    label: '测试场景',
+    accent: 'cyan',
+    link: '/test-scene-orchestrator/',
+    icon: '<circle cx="12" cy="12" r="10" /><polygon points="10 8 16 12 10 16 10 8" />',
+  },
+  {
+    key: 'sceneExecutions',
+    label: '场景执行',
+    accent: 'teal',
+    link: '/test-suites-vue/#/scene-executions',
+    icon: '<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" />',
+  },
 ]
 </script>
 
 <style scoped>
 .stat-cards-row {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: 16px;
-  margin-bottom: 16px;
-}
-.stat-card-wrapper .card {
-  margin-bottom: 0;
-}
-.stat-card {
-  border-radius: 10px;
-  padding: 1.5rem;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-}
-.stat-card .stat-title {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #6c757d;
-  margin-bottom: 0.5rem;
-}
-.stat-card .stat-value {
-  font-size: 2rem;
-  font-weight: 600;
-  margin-bottom: 0.5rem;
-  display: inline-block;
-  text-decoration: underline;
-  text-underline-offset: 3px;
-  color: inherit;
-  cursor: pointer;
-}
-.stat-card .stat-value:hover {
-  opacity: 0.75;
+  margin-bottom: 20px;
 }
 
-.stat-card.primary {
-  background-color: rgba(67, 97, 238, 0.1);
-  color: #4361ee;
+.stat-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 20px;
+  background: var(--bg-card, #fff);
+  border: 1px solid var(--border-color, #E2E8F0);
+  border-radius: 12px;
+  border-left: 4px solid;
+  text-decoration: none;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
 }
-.stat-card.success {
-  background-color: rgba(76, 201, 240, 0.1);
-  color: #4cc9f0;
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.08);
 }
-.stat-card.info {
-  background-color: rgba(72, 149, 239, 0.1);
-  color: #4895ef;
+
+/* 图标容器 */
+.stat-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
-.stat-card.warning {
-  background-color: rgba(247, 37, 133, 0.1);
-  color: #f72585;
+
+/* 文字区域 */
+.stat-body {
+  min-width: 0;
 }
-.stat-card.danger {
-  background-color: rgba(230, 57, 70, 0.1);
-  color: #e63946;
+.stat-value {
+  font-size: 1.6rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--text-primary, #0F172A);
+  font-variant-numeric: tabular-nums;
+}
+.stat-label {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text-secondary, #64748B);
+  margin-top: 2px;
+}
+
+/* ============ 配色方案 ============ */
+.stat-card.indigo {
+  border-left-color: #4F46E5;
+}
+.stat-card.indigo .stat-icon {
+  background: rgba(79, 70, 229, 0.08);
+  color: #4F46E5;
+}
+
+.stat-card.emerald {
+  border-left-color: #10B981;
+}
+.stat-card.emerald .stat-icon {
+  background: rgba(16, 185, 129, 0.08);
+  color: #10B981;
+}
+
+.stat-card.violet {
+  border-left-color: #7C3AED;
+}
+.stat-card.violet .stat-icon {
+  background: rgba(124, 58, 237, 0.08);
+  color: #7C3AED;
+}
+
+.stat-card.amber {
+  border-left-color: #F59E0B;
+}
+.stat-card.amber .stat-icon {
+  background: rgba(245, 158, 11, 0.08);
+  color: #F59E0B;
+}
+
+.stat-card.rose {
+  border-left-color: #F43F5E;
+}
+.stat-card.rose .stat-icon {
+  background: rgba(244, 63, 94, 0.08);
+  color: #F43F5E;
+}
+
+.stat-card.cyan {
+  border-left-color: #06B6D4;
+}
+.stat-card.cyan .stat-icon {
+  background: rgba(6, 182, 212, 0.08);
+  color: #06B6D4;
+}
+
+.stat-card.teal {
+  border-left-color: #14B8A6;
+}
+.stat-card.teal .stat-icon {
+  background: rgba(20, 184, 166, 0.08);
+  color: #14B8A6;
+}
+
+/* ============ 响应式 ============ */
+@media (max-width: 768px) {
+  .stat-cards-row {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 10px;
+  }
+  .stat-card {
+    padding: 14px 16px;
+    gap: 10px;
+  }
+  .stat-icon {
+    width: 36px;
+    height: 36px;
+  }
+  .stat-value {
+    font-size: 1.3rem;
+  }
 }
 </style>

@@ -1,24 +1,22 @@
 <template>
-  <div class="card">
-    <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
-      <span>增长趋势</span>
-      <div class="d-flex gap-2 align-items-center">
+  <div class="chart-card">
+    <div class="chart-card-header">
+      <h3 class="chart-card-title">增长趋势</h3>
+      <div class="chart-card-actions">
         <el-radio-group v-model="activePeriod" size="small" @change="onPeriodChange">
           <el-radio-button value="week">周</el-radio-button>
           <el-radio-button value="month">月</el-radio-button>
           <el-radio-button value="year">年</el-radio-button>
         </el-radio-group>
-        <el-button size="small" @click="exportChart">
+        <el-button size="small" text @click="exportChart" class="export-btn">
           <el-icon style="margin-right:4px"><Download /></el-icon>
-          导出图片
+          导出
         </el-button>
       </div>
     </div>
-    <div class="card-body position-relative">
-      <!-- 空数据提示 -->
-      <div v-if="!hasData" class="chart-empty-hint text-muted">暂无数据</div>
-      <!-- ECharts 容器 -->
-      <div ref="chartRef" style="width:100%; height:320px"></div>
+    <div class="chart-card-body">
+      <div v-if="!hasData" class="chart-empty-hint">暂无数据</div>
+      <div ref="chartRef" class="chart-container"></div>
     </div>
   </div>
 </template>
@@ -39,26 +37,25 @@ const chartRef = ref(null)
 const activePeriod = ref('week')
 let chartInstance = null
 
-// 当前活跃的数据集
 const currentData = computed(() => {
   return props.trends?.[activePeriod.value]
 })
 
-// 检查是否有数据
 const hasData = computed(() => {
   const ds = currentData.value?.datasets
   if (!ds) return false
   return Object.values(ds).some(series => series?.some(v => v > 0))
 })
 
+/* 新配色 — 与设计系统协调 */
 const COLOR_MAP = {
-  projects: '#4cc9f0',
-  test_cases: '#4361ee',
-  test_suites: '#f72585',
-  test_runs: '#7209b7',
-  test_reports: '#e63946',
-  test_scenes: '#2dc653',
-  test_scene_executions: '#f4a261',
+  projects: '#4F46E5',
+  test_cases: '#10B981',
+  test_suites: '#7C3AED',
+  test_runs: '#F59E0B',
+  test_reports: '#F43F5E',
+  test_scenes: '#06B6D4',
+  test_scene_executions: '#14B8A6',
 }
 
 const LABEL_MAP = {
@@ -81,46 +78,51 @@ function buildOption() {
     smooth: true,
     data: values,
     symbol: 'circle',
-    symbolSize: 6,
-    lineStyle: { width: 2 },
+    symbolSize: 5,
+    lineStyle: { width: 2.5 },
     areaStyle: {
-      opacity: 0.08,
+      opacity: 0.06,
     },
     itemStyle: {
-      color: COLOR_MAP[key] || '#4361ee',
+      color: COLOR_MAP[key] || '#4F46E5',
     },
   }))
 
   return {
     tooltip: {
       trigger: 'axis',
-      backgroundColor: 'rgba(255,255,255,0.95)',
-      borderColor: '#e4e7ed',
+      backgroundColor: 'rgba(255,255,255,0.96)',
+      borderColor: '#E2E8F0',
       borderWidth: 1,
-      textStyle: { fontSize: 12 },
+      textStyle: { fontSize: 12, color: '#334155' },
+      extraCssText: 'border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.06);',
     },
     legend: {
       type: 'scroll',
       bottom: 0,
-      textStyle: { fontSize: 12 },
+      textStyle: { fontSize: 12, color: '#64748B' },
+      icon: 'roundRect',
+      itemWidth: 12,
+      itemHeight: 3,
     },
     grid: {
-      left: 40,
+      left: 44,
       right: 20,
-      top: 20,
-      bottom: 50,
+      top: 16,
+      bottom: 48,
     },
     xAxis: {
       type: 'category',
       data: data.labels || [],
-      axisLine: { lineStyle: { color: '#dcdfe6' } },
-      axisLabel: { color: '#909399' },
+      axisLine: { lineStyle: { color: '#E2E8F0' } },
+      axisLabel: { color: '#94A3B8', fontSize: 11 },
+      axisTick: { show: false },
     },
     yAxis: {
       type: 'value',
       minInterval: 1,
-      splitLine: { lineStyle: { color: '#f0f0f0' } },
-      axisLabel: { color: '#909399' },
+      splitLine: { lineStyle: { color: '#F1F5F9', type: 'dashed' } },
+      axisLabel: { color: '#94A3B8', fontSize: 11 },
     },
     series,
   }
@@ -164,15 +166,62 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
+.chart-card {
+  background: var(--bg-card, #fff);
+  border: 1px solid var(--border-color, #E2E8F0);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.chart-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px 12px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.chart-card-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary, #0F172A);
+  margin: 0;
+}
+
+.chart-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.export-btn {
+  color: var(--text-secondary, #64748B) !important;
+  font-size: 0.8rem;
+}
+.export-btn:hover {
+  color: var(--primary-color, #4F46E5) !important;
+}
+
+.chart-card-body {
+  padding: 0 20px 16px;
+  position: relative;
+}
+
+.chart-container {
+  width: 100%;
+  height: 320px;
+}
+
 .chart-empty-hint {
   position: absolute;
-  left: 0;
-  right: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  text-align: center;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  color: var(--text-secondary, #94A3B8);
   z-index: 1;
   pointer-events: none;
-  font-size: 1rem;
 }
 </style>

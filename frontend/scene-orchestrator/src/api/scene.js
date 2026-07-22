@@ -64,6 +64,13 @@ export function markSceneExecutionTimeout(sceneId) {
   return http.post(`/api/v1/test-scenes/${sceneId}/mark-execution-timeout/`, {});
 }
 
+/**
+ * 请求停止一个正在执行的场景（协作式取消：设置 DB 标志，执行引擎在下一个节点检查点响应退出）。
+ */
+export function stopSceneExecution(executionId) {
+  return http.post(`/api/v1/test-scene-executions/${executionId}/stop/`, {});
+}
+
 export function fetchSceneExecutions(sceneId, params = {}) {
   const query = new URLSearchParams();
   Object.entries(params).forEach(([key, value]) => {

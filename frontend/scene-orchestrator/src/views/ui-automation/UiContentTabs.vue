@@ -2,10 +2,10 @@
   <div class="ui-content-tabs">
     <el-tabs v-model="activeTab" @tab-click="onTabChange">
       <el-tab-pane label="页面管理" name="pages">
-        <UiPageManager :project-id="projectId" :module-id="moduleId" v-if="activeTab === 'pages'" />
+        <UiPageManager :project-id="projectId" :module-id="moduleId" :module-tree="moduleTree" v-if="activeTab === 'pages'" />
       </el-tab-pane>
       <el-tab-pane label="元素管理" name="elements">
-        <UiElementManager :project-id="projectId" :module-id="moduleId" v-if="activeTab === 'elements'" />
+        <UiElementManager :project-id="projectId" :module-id="moduleId" :module-tree="moduleTree" :pages="pagesForElement" v-if="activeTab === 'elements'" />
       </el-tab-pane>
       <el-tab-pane label="测试用例" name="cases">
         <UiTestCaseManager :project-id="projectId" :module-id="moduleId" v-if="activeTab === 'cases'" @refresh="$emit('refresh')" />
@@ -24,7 +24,8 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
+import { uiPageApi } from '../../api/uiAutomation'
 import UiPageManager from './UiPageManager.vue'
 import UiElementManager from './UiElementManager.vue'
 import UiTestCaseManager from './UiTestCaseManager.vue'
@@ -32,10 +33,23 @@ import UiExecutionManager from './UiExecutionManager.vue'
 import UiEnvManager from './UiEnvManager.vue'
 import UiPublicDataManager from './UiPublicDataManager.vue'
 
-const props = defineProps({ projectId: [Number, String], moduleId: [Number, String] })
+const props = defineProps({ projectId: [Number, String], moduleId: [Number, String], moduleTree: { type: Array, default: () => [] } })
 defineEmits(['refresh'])
 
+const pagesForElement = ref([])
 const activeTab = ref('pages')
+
+async function loadPagesForElement() {
+  if (!props.projectId) return
+  try {
+    const params = { project: props.projectId }
+    if (props.moduleId) params.module = props.moduleId
+    const data = await uiPageApi.list(params)
+    pagesForElement.value = data.results || data || []
+  } catch (e) { console.error(e) }
+}
+watch(() => [props.projectId, props.moduleId], loadPagesForElement)
+loadPagesForElement()
 function onTabChange() {}
 </script>
 

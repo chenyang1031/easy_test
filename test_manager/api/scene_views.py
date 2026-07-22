@@ -358,10 +358,11 @@ class TestSceneViewSet(viewsets.ModelViewSet):
             .first()
         )
         if latest:
+            latest.cancel_requested = True
             latest.status = TestSceneExecution.STATUS_FAILED
             latest.error_message = "客户端请求超时，执行已标记为失败"
             latest.finished_at = timezone.now()
-            latest.save(update_fields=["status", "error_message", "finished_at"])
+            latest.save(update_fields=["status", "error_message", "finished_at", "cancel_requested"])
         return Response({"detail": "已处理" if latest else "无正在执行的记录"})
 
     @action(detail=True, methods=["get"], url_path="executions")
@@ -1207,7 +1208,7 @@ class TestSceneNodeViewSet(viewsets.ModelViewSet):
 
 
 class TestSceneExecutionViewSet(viewsets.ModelViewSet):
-    http_method_names = ["get", "delete", "head", "options"]
+    http_method_names = ["get", "post", "delete", "head", "options"]
     queryset = TestSceneExecution.objects.select_related(
         "scene", "scene__project", "scene__project__platform_project",
         "target_node", "created_by", "environment",
@@ -1240,6 +1241,24 @@ class TestSceneExecutionViewSet(viewsets.ModelViewSet):
         if status_value:
             queryset = queryset.filter(status=status_value)
         return queryset.order_by("-created_at")
+
+    @action(detail=True, methods=["post"], url_path="stop")
+    def stop(self, request, pk=None):
+        """请求停止一个正在执行的场景（协作式取消：设置标志，等待执行引擎在检查点响应）。"""
+        execution = self.get_object()
+        if execution.status != TestSceneExecution.STATUS_RUNNING:
+            return Response(
+                {"detail": "只能停止正在执行的任务"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if execution.cancel_requested:
+            return Response({"detail": "已发送过停止信号，等待执行引擎响应"})
+        # 项目权限校验
+        if not _can_access_project(request.user, execution.scene.project):
+            raise PermissionDenied("无权操作此执行记录")
+        execution.cancel_requested = True
+        execution.save(update_fields=["cancel_requested", "updated_at"])
+        return Response({"detail": "已发送停止信号", "execution_id": execution.id})
 
     def perform_destroy(self, instance):
         instance.delete()

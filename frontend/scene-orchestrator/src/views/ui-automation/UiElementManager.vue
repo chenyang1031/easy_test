@@ -7,7 +7,7 @@
         <el-option label="链接" value="link" /><el-option label="下拉框" value="dropdown" />
         <el-option label="文本" value="text" /><el-option label="表格" value="table" />
       </el-select>
-      <el-button type="primary" size="small" @click="showDialog = true">+ 新增元素</el-button>
+      <el-button type="primary" size="small" @click="openAddElement">+ 新增元素</el-button>
     </div>
     <el-table :data="elements" size="small" stripe v-loading="loading" empty-text="暂无元素">
       <el-table-column prop="name" label="名称" min-width="120" />
@@ -45,7 +45,11 @@
           </el-select>
         </el-form-item>
         <el-form-item label="定位值"><el-input v-model="form.locator_value" /></el-form-item>
-        <el-form-item label="页面"><el-input v-model.number="form.page" type="number" placeholder="页面ID" /></el-form-item>
+        <el-form-item label="页面">
+          <el-select v-model="form.page" placeholder="选择所属页面" clearable filterable style="width: 100%">
+            <el-option v-for="p in pages" :key="p.id" :label="p.name" :value="p.id" />
+          </el-select>
+        </el-form-item>
         <el-form-item label="描述"><el-input v-model="form.description" type="textarea" /></el-form-item>
       </el-form>
       <template #footer>
@@ -60,7 +64,7 @@
 import { ref, watch, onMounted } from 'vue'
 import { uiElementApi } from '../../api/uiAutomation'
 
-const props = defineProps({ projectId: [Number, String], moduleId: [Number, String] })
+const props = defineProps({ projectId: [Number, String], moduleId: [Number, String], pages: { type: Array, default: () => [] } })
 const elements = ref([])
 const loading = ref(false)
 const search = ref('')
@@ -81,6 +85,12 @@ async function loadElements() {
     elements.value = data.results || data || []
   } catch (e) { console.error(e) }
   finally { loading.value = false }
+}
+
+function openAddElement() {
+  editing.value = false
+  form.value = { name: '', element_type: 'input', locator_type: 'css', locator_value: '', page: props.pages.length > 0 ? props.pages[0].id : '', description: '' }
+  showDialog.value = true
 }
 
 function editElement(row) {

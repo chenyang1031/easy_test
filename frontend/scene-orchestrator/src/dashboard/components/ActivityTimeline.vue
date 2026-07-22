@@ -1,39 +1,35 @@
 <template>
-  <div class="card">
-    <div class="card-header d-flex justify-content-between align-items-center">
-      <span>活动时间线</span>
-      <el-button size="small" circle @click="$emit('refresh')">
-        <el-icon><Refresh /></el-icon>
-      </el-button>
+  <div class="data-card">
+    <div class="data-card-header">
+      <h3 class="data-card-title">活动时间线</h3>
+      <button class="refresh-btn" @click="$emit('refresh')" title="刷新">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15">
+          <path d="M23 4v6h-6M1 20v-6h6" />
+          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+        </svg>
+      </button>
     </div>
-    <div class="card-body p-0">
+    <div class="data-card-body">
       <el-empty v-if="activities.length === 0" description="最近没有活动" :image-size="60" />
-      <ul v-else class="list-group list-group-flush timeline">
-        <li
+      <div v-else class="timeline-list">
+        <div
           v-for="(act, idx) in activities.slice(0, 5)"
           :key="idx"
-          class="list-group-item"
+          class="timeline-item"
         >
-          <div class="d-flex">
-            <div class="timeline-icon" :class="timelineIconClass(act.status)">
-              <el-icon><component :is="timelineIcon(act.status)" /></el-icon>
-            </div>
-            <div class="ms-3">
-              <div class="fw-bold">{{ act.action }}</div>
-              <div class="text-muted small">{{ act.timestamp }}</div>
-              <div>{{ act.description }}</div>
-            </div>
+          <div class="timeline-dot" :class="dotClass(act.status)"></div>
+          <div class="timeline-content">
+            <div class="timeline-action">{{ act.action }}</div>
+            <div class="timeline-desc" v-if="act.description">{{ act.description }}</div>
+            <div class="timeline-time">{{ act.timestamp }}</div>
           </div>
-        </li>
-      </ul>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { Refresh } from '@element-plus/icons-vue'
-import { Check, Clock, Close, WarnTriangleFilled, Aim } from '@element-plus/icons-vue'
-
 defineProps({
   activities: {
     type: Array,
@@ -43,39 +39,116 @@ defineProps({
 
 defineEmits(['refresh'])
 
-function timelineIconClass(status) {
-  if (status === 'completed') return 'bg-success'
-  if (status === 'failed') return 'bg-danger'
-  if (status === 'running') return 'bg-warning'
-  if (status === 'pending') return 'bg-primary'
-  return 'bg-info'
-}
-
-function timelineIcon(status) {
-  if (status === 'completed') return Check
-  if (status === 'failed') return Close
-  if (status === 'running') return Clock
-  if (status === 'pending') return Aim
-  return WarnTriangleFilled
+function dotClass(status) {
+  if (status === 'completed') return 'success'
+  if (status === 'failed') return 'danger'
+  if (status === 'running') return 'running'
+  if (status === 'pending') return 'pending'
+  return 'default'
 }
 </script>
 
 <style scoped>
-.timeline .timeline-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
+.data-card {
+  background: var(--bg-card, #fff);
+  border: 1px solid var(--border-color, #E2E8F0);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.data-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px 12px;
+}
+
+.data-card-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary, #0F172A);
+  margin: 0;
+}
+
+.refresh-btn {
+  width: 28px;
+  height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  color: var(--text-secondary, #94A3B8);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.refresh-btn:hover {
+  background: var(--sidebar-hover-bg, #F1F5F9);
+  color: var(--primary-color, #4F46E5);
+}
+
+.data-card-body {
+  padding: 0 20px 16px;
+}
+
+.timeline-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.timeline-item {
+  display: flex;
+  gap: 12px;
+  padding: 10px 0;
+  position: relative;
+}
+.timeline-item + .timeline-item {
+  border-top: 1px solid var(--border-color, #F1F5F9);
+}
+
+.timeline-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
   flex-shrink: 0;
+  margin-top: 5px;
 }
-.timeline .list-group-item {
-  border-left: none;
-  border-right: none;
+.timeline-dot.success { background: #10B981; }
+.timeline-dot.danger { background: #F43F5E; }
+.timeline-dot.running {
+  background: #4F46E5;
+  animation: pulse 1.5s infinite;
 }
-.timeline .list-group-item:first-child {
-  border-top: none;
+.timeline-dot.pending { background: #94A3B8; }
+.timeline-dot.default { background: #CBD5E1; }
+
+.timeline-content {
+  min-width: 0;
+  flex: 1;
+}
+
+.timeline-action {
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--text-primary, #0F172A);
+}
+
+.timeline-desc {
+  font-size: 0.75rem;
+  color: var(--text-secondary, #64748B);
+  margin-top: 2px;
+}
+
+.timeline-time {
+  font-size: 0.7rem;
+  color: var(--text-secondary, #94A3B8);
+  margin-top: 3px;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
 }
 </style>

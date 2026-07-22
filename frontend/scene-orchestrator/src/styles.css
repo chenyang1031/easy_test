@@ -1,6 +1,7 @@
 :root {
-  --primary-color: #1E40AF;
-  --primary-light: #3B82F6;
+  --primary-color: #4F46E5;
+  --primary-light: #6366F1;
+  --primary-glow: #818CF8;
   --success-color: #10B981;
   --danger-color: #EF4444;
   --warning-color: #F59E0B;
@@ -30,11 +31,11 @@
   --fs-code: var(--el-font-size-extra-small);
   --fs-meta: var(--fs-tiny);
 
-  /* ============ 阴影与深度（fallback：app_shell.html 覆盖）============ */
-  --card-shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
-  --card-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
-  --card-shadow-md: 0 4px 6px rgba(0,0,0,0.05), 0 2px 4px rgba(0,0,0,0.04);
-  --card-shadow-lg: 0 10px 15px rgba(0,0,0,0.06), 0 4px 6px rgba(0,0,0,0.04);
+  /* ============ 阴影与深度（indigo-tinted）============ */
+  --card-shadow-sm: 0 1px 2px rgba(99, 102, 241, 0.04);
+  --card-shadow: 0 1px 3px rgba(99, 102, 241, 0.06), 0 1px 2px rgba(99, 102, 241, 0.04);
+  --card-shadow-md: 0 4px 6px rgba(99, 102, 241, 0.06), 0 2px 4px rgba(99, 102, 241, 0.04);
+  --card-shadow-lg: 0 10px 15px rgba(99, 102, 241, 0.08), 0 4px 6px rgba(99, 102, 241, 0.04);
 }
 
 /* ============ Utility: 卡片深度 ============ */
@@ -52,13 +53,13 @@
 
 /* ============ Element Plus 主题色对齐 ============ */
 :root {
-  --el-color-primary: #1E40AF;
-  --el-color-primary-light-3: #3B82F6;
-  --el-color-primary-light-5: #60A5FA;
-  --el-color-primary-light-7: #93C5FD;
-  --el-color-primary-light-8: #BFDBFE;
-  --el-color-primary-light-9: #DBEAFE;
-  --el-color-primary-dark-2: #1E3A8A;
+  --el-color-primary: #4F46E5;
+  --el-color-primary-light-3: #6366F1;
+  --el-color-primary-light-5: #818CF8;
+  --el-color-primary-light-7: #A5B4FC;
+  --el-color-primary-light-8: #C7D2FE;
+  --el-color-primary-light-9: #E0E7FF;
+  --el-color-primary-dark-2: #4338CA;
 
   --el-color-success: #10B981;
   --el-color-success-light-3: #34D399;
@@ -89,7 +90,7 @@
   --el-color-info-light-9: #F8FAFC;
 
   --el-bg-color: #FFFFFF;
-  --el-bg-color-page: #F1F5F9;
+  --el-bg-color-page: #F8FAFC;
   --el-bg-color-overlay: #FFFFFF;
   --el-text-color-primary: #0F172A;
   --el-text-color-regular: #334155;
@@ -99,8 +100,8 @@
   --el-border-color-light: #F1F5F9;
   --el-border-color-lighter: #F8FAFC;
   --el-border-color-extra-light: #FAFBFC;
-  --el-border-radius-base: 6px;
-  --el-border-radius-small: 4px;
+  --el-border-radius-base: 10px;
+  --el-border-radius-small: 6px;
   --el-border-radius-round: 20px;
   --el-border-radius-circle: 50%;
   --el-font-weight-primary: 500;

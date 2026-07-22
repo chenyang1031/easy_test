@@ -276,7 +276,7 @@ onUnmounted(() => {
   padding: 0;
   background: none;
   border: 1px solid var(--navbar-toggle-border, rgba(255,255,255,0.15));
-  border-radius: 6px;
+  border-radius: 8px;
   color: var(--navbar-toggle-color, rgba(255,255,255,0.8));
   cursor: pointer;
   transition: all 0.15s;
@@ -297,7 +297,7 @@ onUnmounted(() => {
   font-family: var(--font-heading);
 }
 .navbar-brand .brand-icon {
-  color: var(--sidebar-icon-active, #3B82F6);
+  color: var(--sidebar-icon-active, #6366F1);
 }
 
 .navbar-right {
@@ -347,7 +347,7 @@ onUnmounted(() => {
   width: 30px;
   height: 30px;
   border-radius: 50%;
-  background: var(--primary-color, #1E40AF);
+  background: var(--primary-color, #4F46E5);
   color: #fff;
   display: flex;
   align-items: center;
@@ -368,11 +368,11 @@ onUnmounted(() => {
 /* ============ 路由过渡 ============ */
 .fade-slide-enter-active,
 .fade-slide-leave-active {
-  transition: opacity 0.2s ease, transform 0.2s ease;
+  transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1), transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .fade-slide-enter-from {
   opacity: 0;
-  transform: translateY(8px);
+  transform: translateY(12px);
 }
 .fade-slide-leave-to {
   opacity: 0;

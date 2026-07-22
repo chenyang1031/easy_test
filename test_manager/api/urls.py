@@ -148,6 +148,8 @@ urlpatterns = [
     path('v1/', include('test_manager.report.api_urls')),
     # ===== 数据工厂 API =====
     path('v1/data-factory/', include('test_manager.data_factory.urls')),
+    # ===== APP 自动化 API =====
+    path('v1/app-automation/', include('test_manager.app_automation.urls')),
     path(
         'v1/performance/task/<int:pk>/stop/',
         PerformanceTestTaskViewSet.as_view({'post': 'stop_test'}),

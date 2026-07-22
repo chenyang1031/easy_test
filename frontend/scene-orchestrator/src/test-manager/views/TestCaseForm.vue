@@ -153,6 +153,9 @@
                 class="json-editor"
               />
               <FormDataEditor v-else v-model="form.request_body" />
+              <div v-if="bodyFormat==='form-data'" class="upload-field-name-row">
+                <el-input v-model="form.upload_field_name" placeholder="文件字段名（如: file，可选）" size="small" style="width:220px" />
+              </div>
             </div>
           </el-collapse-item>
 
@@ -233,6 +236,7 @@ const form = reactive({
   request_params: [], request_headers: [], request_body: [],
   extract_params: [], validation_rules: [],
   request_body_format: 'json',
+  upload_field_name: '',
 })
 
 const isEdit = computed(() => !!props.id)
@@ -260,6 +264,7 @@ onMounted(async () => {
         extract_params: data.extract_params || [],
         validation_rules: normalizeValidationRules(data.validation_rules),
         request_body_format: data.request_body_format || 'json',
+        upload_field_name: data.upload_field_name || '',
       })
       bodyFormat.value = data.request_body_format || 'json'
       if (bodyFormat.value === 'json') {
@@ -360,6 +365,7 @@ async function submit() {
       request_body: bodyFormat.value === 'json' ? JSON.parse(requestBodyJson.value || '{}') : form.request_body,
       validation_rules: buildValidationRules(form.validation_rules),
       extract_params: form.extract_params.filter(r => r.checked !== false),
+      upload_field_name: bodyFormat.value === 'form-data' ? (form.upload_field_name || '') : '',
     }
 
     if (isEdit.value) {
@@ -596,6 +602,12 @@ function buildValidationRules(arr) {
   gap: 12px;
 }
 .body-format-switch { align-self: flex-start; }
+.upload-field-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
 .json-editor :deep(textarea) {
   font-family: 'Cascadia Code', 'Fira Code', 'JetBrains Mono', 'Consolas', monospace;
   font-size: 13.5px;
