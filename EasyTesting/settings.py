@@ -17,13 +17,21 @@ import logging.handlers
 
 # Windows 兼容：日志轮转失败时静默跳过，避免 PermissionError
 if sys.platform == 'win32':
-    _orig_do_rollover = logging.handlers.RotatingFileHandler.doRollover
-    def _safe_do_rollover(self):
+    _orig_rotating_do_rollover = logging.handlers.RotatingFileHandler.doRollover
+    def _safe_rotating_do_rollover(self):
         try:
-            _orig_do_rollover(self)
+            _orig_rotating_do_rollover(self)
         except PermissionError:
             pass
-    logging.handlers.RotatingFileHandler.doRollover = _safe_do_rollover
+    logging.handlers.RotatingFileHandler.doRollover = _safe_rotating_do_rollover
+
+    _orig_timed_do_rollover = logging.handlers.TimedRotatingFileHandler.doRollover
+    def _safe_timed_do_rollover(self):
+        try:
+            _orig_timed_do_rollover(self)
+        except PermissionError:
+            pass
+    logging.handlers.TimedRotatingFileHandler.doRollover = _safe_timed_do_rollover
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -314,12 +322,13 @@ LOGGING = {
             'class': 'logging.StreamHandler',
             'formatter': 'simple'
         },
-        'file': {  # 文件输出（Windows 兼容：轮转失败时静默跳过）
+        'file': {  # 文件输出（按天轮转，保留14天）
             'level': 'INFO',
-            'class': 'logging.handlers.RotatingFileHandler',
+            'class': 'logging.handlers.TimedRotatingFileHandler',
             'filename': LOGS_DIR / 'django.log',
-            'maxBytes': 1024 * 1024 * 5,  # 5 MB
-            'backupCount': 5,
+            'when': 'midnight',
+            'interval': 1,
+            'backupCount': 14,
             'formatter': 'verbose',
             'encoding': 'utf-8',
         },

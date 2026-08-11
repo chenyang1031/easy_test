@@ -25,6 +25,7 @@ from .scene_views import (
     SceneDownloadedFileViewSet,
 )
 from .performance_views import PerformanceTestTaskViewSet
+from .performance_batch_views import PerformanceBatchTaskViewSet
 from .replay_import_views import ReplayImportViewSet
 from .scene_import_export_views import SceneImportExportViewSet
 from .test_case_import_export_views import TestCaseImportExportViewSet
@@ -77,6 +78,7 @@ router.register(r'test-scene-nodes', TestSceneNodeViewSet, basename='test-scene-
 router.register(r'test-scene-executions', TestSceneExecutionViewSet, basename='test-scene-execution')
 router.register(r'downloaded-files', SceneDownloadedFileViewSet, basename='downloaded-file')
 router.register(r'performance/tasks', PerformanceTestTaskViewSet, basename='performance-task')
+router.register(r'performance/batch', PerformanceBatchTaskViewSet, basename='performance-batch')
 router.register(r'ai/generation-records', AIGenerationRecordViewSet, basename='ai-generation-record')
 router.register(r'test-case-groups', TestCaseGroupViewSet, basename='test-case-group')
 router.register(r'test-suite-groups', TestSuiteGroupViewSet, basename='test-suite-group')

@@ -37,8 +37,7 @@
           </div>
         </div>
         <div class="log-container" ref="logContainer">
-          <pre class="log-content"><span v-for="(line, i) in logLines" :key="i" :class="lineClass(line)">{{ line }}
-</span></pre>
+          <div class="log-content"><span v-for="(line, i) in logLines" :key="i" :class="lineClass(line)">{{ line }}</span></div>
           <div v-if="logLines.length === 0 && !loadingHistory" class="log-empty">
             暂无日志，请选择文件后点击"加载历史"或"实时日志"
           </div>
@@ -129,7 +128,8 @@ async function loadHistory() {
   try {
     const data = await logApi.read(selectedFile.value, 500);
     const content = data.content || "";
-    logLines.value = content.split("\n").filter(l => l.length > 0);
+    // 后端返回的是用 \n 连接的字符串，直接按 \n 分割
+    logLines.value = content.split("\n").filter(l => l.trim().length > 0);
     await nextTick();
     scrollBottom();
   } catch {
@@ -254,7 +254,12 @@ onUnmounted(stopStream);
   font-family: Consolas, Monaco, 'Courier New', monospace; font-size: 13px; line-height: 1.55;
 }
 .log-content {
-  margin: 0; white-space: pre-wrap; word-break: break-all; color: #d4d4d4;
+  margin: 0; color: #d4d4d4;
+}
+.log-content > span {
+  display: block;
+  white-space: pre-wrap;
+  word-break: break-all;
 }
 .log-content .log-error { color: #f56c6c; }
 .log-content .log-warning { color: #e6a23c; }

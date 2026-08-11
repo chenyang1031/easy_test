@@ -101,3 +101,47 @@ export function fetchPerformanceReport(taskId) {
 export function fetchPerformanceDiagnostics(taskId) {
   return http.get(`${BASE}/${taskId}/diagnostics/`);
 }
+
+// ==================== 批量执行 API ====================
+
+const BATCH_BASE = "/api/v1/performance/batch";
+
+export function fetchBatchTasks(params = {}) {
+  const q = buildQuery(params);
+  const url = q ? `${BATCH_BASE}/?${q}` : `${BATCH_BASE}/`;
+  return http.get(url);
+}
+
+export function fetchBatchDetail(batchId) {
+  return http.get(`${BATCH_BASE}/${batchId}/`);
+}
+
+export function createBatchTask(payload) {
+  return http.post(`${BATCH_BASE}/`, payload);
+}
+
+export function updateBatchTask(batchId, payload) {
+  return http.put(`${BATCH_BASE}/${batchId}/`, payload);
+}
+
+export function deleteBatchTask(batchId) {
+  return http.delete(`${BATCH_BASE}/${batchId}/`);
+}
+
+export function startBatch(batchId) {
+  return http.post(`${BATCH_BASE}/${batchId}/start/`, {});
+}
+
+export function stopBatch(batchId) {
+  return http.post(`${BATCH_BASE}/${batchId}/stop/`, {});
+}
+
+export function fetchBatchItems(batchId, params = {}) {
+  const q = buildQuery(params);
+  const url = q ? `${BATCH_BASE}/${batchId}/items/?${q}` : `${BATCH_BASE}/${batchId}/items/`;
+  return http.get(url);
+}
+
+export function fetchBatchReport(batchId) {
+  return http.get(`${BATCH_BASE}/${batchId}/report/`);
+}

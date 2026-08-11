@@ -79,7 +79,7 @@ export function getMenuData({ isAuthenticated = false } = {}) {
           matchPaths: ['/reports/'], matchBases: ['/app/'], matchHashes: ['/reports'] },
         { type: 'link', label: '性能测试', icon: 'LightningChargeFilled',
           href: '/app/#/performance',
-          matchPaths: ['/performance/'], matchBases: ['/app/'], matchHashes: ['/performance'] },
+          matchPaths: ['/performance/'], matchBases: ['/app/'], matchHashes: ['/performance/tasks', '/performance/tasks/'] },
         { type: 'section', label: 'AI辅助' },
         { type: 'link', label: 'AI草稿箱', icon: 'InboxFilled',
           href: '/app/#/ai/draft-box',

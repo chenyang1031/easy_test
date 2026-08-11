@@ -17,6 +17,7 @@ from test_manager.models.document_gen import DocumentGenRecord, AIGenerationReco
 from test_manager.models.parameter import ParameterConfig
 
 from .performance import PerformanceTestResult, PerformanceTestTask
+from .performance_batch import PerformanceBatchTask, PerformanceBatchItem
 from .test_case_rule import TestCaseGenerationRule, AICaseDraftRuleUsage  # noqa: F401
 from .prompt_template import PromptTemplate  # noqa: F401
 from .ai_model_provider import AIModelProvider  # noqa: F401

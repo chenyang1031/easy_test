@@ -7,6 +7,9 @@
         <span class="page-subtitle">管理性能测试任务，支持固定并发和阶梯负载模式</span>
       </div>
       <div class="page-header-right">
+        <button type="button" class="btn btn-sm btn-success" :disabled="selectedRows.length === 0" @click="openBatchDialog">
+          批量执行<span v-if="selectedRows.length">({{ selectedRows.length }})</span>
+        </button>
         <button type="button" class="btn btn-sm btn-primary" :disabled="!projects.length" @click="goNew">
           新建任务
         </button>
@@ -90,7 +93,8 @@
     </div>
 
     <div class="table-wrap mt-3">
-      <el-table v-loading="listLoading" :data="displayRows" stripe size="small" class="perf-task-table">
+      <el-table ref="tableRef" v-loading="listLoading" :data="displayRows" stripe size="small" class="perf-task-table" @selection-change="handleSelectionChange">
+        <el-table-column type="selection" width="50" align="center" :selectable="isRowSelectable" />
         <el-table-column prop="name" label="名称" min-width="200" show-overflow-tooltip />
         <el-table-column prop="project_name" label="项目" min-width="100" show-overflow-tooltip />
         <el-table-column prop="interface_name" label="接口" min-width="120" show-overflow-tooltip />
@@ -167,6 +171,33 @@
       </div>
     </div>
     </div>
+
+    <!-- 批量执行配置弹窗 -->
+    <el-dialog v-model="batchDialogVisible" title="批量执行配置" width="520px">
+      <el-form label-width="120px">
+        <el-form-item label="批量名称">
+          <el-input v-model="batchForm.name" placeholder="批量压测名称" />
+        </el-form-item>
+        <el-form-item label="所属项目">
+          <el-select v-model="batchForm.project" placeholder="选择项目" style="width: 100%;">
+            <el-option v-for="p in projects" :key="p.id" :label="p.name" :value="p.id" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="执行模式">
+          <el-radio-group v-model="batchForm.execute_mode">
+            <el-radio-button value="serial">串行</el-radio-button>
+            <el-radio-button value="parallel">并行</el-radio-button>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item v-if="batchForm.execute_mode === 'parallel'" label="最大并发数">
+          <el-input-number v-model="batchForm.max_concurrent" :min="2" :max="20" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="batchDialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="batchSubmitting" @click="confirmBatch">确认并执行</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -177,7 +208,9 @@ import {
   fetchPerformanceTasks,
   deletePerformanceTask,
   startPerformanceTest,
-  stopPerformanceTest
+  stopPerformanceTest,
+  createBatchTask,
+  startBatch,
 } from "../../api/performance";
 import { fetchProjects } from "../../api/scene";
 import { confirmWarning, msgError, msgSuccess, msgWarning } from "../../utils/uiMessage.js";
@@ -194,6 +227,18 @@ const rawRows = ref([]);
 const total = ref(0);
 const page = ref(1);
 const pageSize = ref(20);
+
+// 批量执行相关状态
+const tableRef = ref(null);
+const selectedRows = ref([]);
+const batchDialogVisible = ref(false);
+const batchSubmitting = ref(false);
+const batchForm = ref({
+  name: '',
+  project: '',
+  execute_mode: 'serial',
+  max_concurrent: 5,
+});
 
 const filterLoadType = ref("");
 const filterAssertion = ref("");
@@ -272,10 +317,72 @@ async function loadTasks() {
     const res = await fetchPerformanceTasks(params);
     rawRows.value = res.results || [];
     total.value = res.count ?? rawRows.value.length;
+    tableRef.value?.clearSelection();
   } catch (e) {
     msgError(e?.message || "加载任务列表失败");
   } finally {
     listLoading.value = false;
+  }
+}
+
+// ---- 批量执行相关函数 ----
+function isRowSelectable(row) {
+  return row.status !== 'running';
+}
+
+function handleSelectionChange(selection) {
+  selectedRows.value = selection;
+}
+
+function generateBatchName() {
+  const d = new Date();
+  const ts = `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}_${String(d.getHours()).padStart(2,'0')}${String(d.getMinutes()).padStart(2,'0')}${String(d.getSeconds()).padStart(2,'0')}`;
+  return `批量压测_${ts}`;
+}
+
+function openBatchDialog() {
+  if (selectedRows.value.length === 0) {
+    msgWarning("请先选择要执行的任务");
+    return;
+  }
+  batchForm.value = {
+    name: generateBatchName(),
+    project: selectedProjectId.value || String(selectedRows.value[0].project || selectedRows.value[0].project_id || ''),
+    execute_mode: 'serial',
+    max_concurrent: 5,
+  };
+  batchDialogVisible.value = true;
+}
+
+async function confirmBatch() {
+  if (!batchForm.value.project) {
+    msgError("请选择所属项目");
+    return;
+  }
+  batchSubmitting.value = true;
+  try {
+    const createRes = await createBatchTask({
+      name: batchForm.value.name,
+      project: parseInt(batchForm.value.project),
+      execute_mode: batchForm.value.execute_mode,
+      max_concurrent: batchForm.value.max_concurrent,
+      performance_task_ids: selectedRows.value.map(r => r.id),
+    });
+    const batchId = createRes.id || createRes.data?.id;
+    if (!batchId) throw new Error("创建批量任务失败");
+    await startBatch(batchId);
+    msgSuccess("批量任务已启动");
+    batchDialogVisible.value = false;
+    tableRef.value?.clearSelection();
+    router.push({
+      name: "perf-batch-console",
+      params: { id: String(batchId) },
+      query: { _run: String(Date.now()) },
+    });
+  } catch (e) {
+    msgError(e?.message || "批量执行失败");
+  } finally {
+    batchSubmitting.value = false;
   }
 }
 

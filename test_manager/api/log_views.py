@@ -46,6 +46,43 @@ class LogListView(APIView):
         return Response(files)
 
 
+def _read_last_n_lines(filepath, n, encoding='utf-8'):
+    """
+    高效读取文件末尾 N 行，不会将整个文件加载到内存。
+    从文件末尾向前逐块读取，直到凑够 N 行或到达文件开头。
+    """
+    block_size = 8192
+    lines = []
+    remainder = b''
+
+    file_size = os.path.getsize(filepath)
+    if file_size == 0:
+        return [], 0
+
+    with open(filepath, 'rb') as f:
+        # 从文件末尾向前逐块读取
+        position = file_size
+        while position > 0 and len(lines) < n + 1:
+            read_size = min(block_size, position)
+            position -= read_size
+            f.seek(position)
+            chunk = f.read(read_size) + remainder
+            parts = chunk.split(b'\n')
+            remainder = parts[0]
+            lines = parts[1:] + lines
+
+        # 如果还有剩余，说明已到文件开头
+        if remainder:
+            lines.insert(0, remainder)
+
+    # 粗略统计总行数（基于文件大小与平均行长估算，避免全量读取）
+    # 对于大文件这是近似值，对于小文件精确值已由上面得到
+    total_lines = len(lines) if position <= 0 else None
+
+    decoded = [line.decode(encoding, errors='replace') for line in lines[-n:]]
+    return decoded, total_lines
+
+
 class LogReadView(APIView):
     """读取日志文件内容（返回最后 N 行）"""
     permission_classes = [IsAuthenticated]
@@ -63,15 +100,15 @@ class LogReadView(APIView):
             return Response({'error': '日志文件不存在'}, status=status.HTTP_404_NOT_FOUND)
 
         try:
-            with open(filepath, 'r', encoding='utf-8', errors='replace') as f:
-                all_lines = f.readlines()
-            result_lines = all_lines[-lines:]
-            return Response({
+            result_lines, total_lines = _read_last_n_lines(filepath, lines)
+            response_data = {
                 'file': filename,
-                'total_lines': len(all_lines),
-                'content': ''.join(result_lines),
+                'content': '\n'.join(result_lines),
                 'returned_lines': len(result_lines),
-            })
+            }
+            if total_lines is not None:
+                response_data['total_lines'] = total_lines
+            return Response(response_data)
         except Exception as e:
             return Response({'error': f'读取日志失败: {e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 

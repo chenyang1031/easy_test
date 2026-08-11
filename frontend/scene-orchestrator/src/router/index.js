@@ -6,6 +6,8 @@ import PerformanceTaskList from "../views/performance/PerformanceTaskList.vue";
 import PerformanceTaskEditor from "../views/performance/PerformanceTaskEditor.vue";
 import PerformanceConsole from "../views/performance/PerformanceConsole.vue";
 import PerformanceReport from "../views/performance/PerformanceReport.vue";
+import PerformanceBatchConsole from "../views/performance/PerformanceBatchConsole.vue";
+import PerformanceBatchReport from "../views/performance/PerformanceBatchReport.vue";
 import ReportListPage from "../views/reports/ReportListPage.vue";
 import ReportDetailPage from "../views/reports/ReportDetailPage.vue";
 import ReportFormPage from "../views/reports/ReportFormPage.vue";
@@ -39,6 +41,20 @@ const router = createRouter({
       name: "perf-report",
       component: PerformanceReport,
       meta: { title: "性能测试报告" }
+    },
+    
+    // ===== 批量压测（控制台 & 报告）=====
+    {
+      path: "/performance/batch/:id/console",
+      name: "perf-batch-console",
+      component: PerformanceBatchConsole,
+      meta: { title: "批量任务实时监控" }
+    },
+    {
+      path: "/performance/batch/:id/report",
+      name: "perf-batch-report",
+      component: PerformanceBatchReport,
+      meta: { title: "批量压测报告" }
     },
     {
       path: "/scenes/:id/designer",
