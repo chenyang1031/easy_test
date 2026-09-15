@@ -78,8 +78,7 @@
           </div>
           <div class="filter-item filter-item--search">
             <label class="filter-label filter-label--short">搜索</label>
-            <input v-model="keyword" class="form-control form-control-sm filter-control" placeholder="搜索场景名称" @keyup.enter="queryScenes" />
-            <button class="btn btn-sm btn-primary" @click="queryScenes">搜索</button>
+            <input v-model="keyword" class="form-control form-control-sm filter-control" placeholder="搜索场景名称（回车或点右侧搜索）" @keyup.enter="queryScenes" />
           </div>
           <div class="filter-item">
             <label class="filter-label filter-label--short">状态</label>
@@ -143,6 +142,7 @@
         </div>
       </div>
       <div class="toolbar-actions">
+        <button class="btn btn-sm btn-primary" @click="queryScenes">搜索</button>
         <el-tooltip :content="batchExecuteTooltip" placement="top" :disabled="!batchExecuteTooltip">
           <span class="d-inline-block">
             <button
@@ -160,9 +160,6 @@
           @click="openBatchDeleteConfirm"
         >
           {{ batchDeleteLoading ? "删除中..." : selectedIds.length ? `批量删除 (${selectedIds.length})` : "批量删除" }}
-        </button>
-        <button class="btn btn-sm btn-outline-secondary me-1" :disabled="!selectedApiProjectId" @click="replayImportVisible = true">
-          回放导入
         </button>
         <button class="btn btn-sm btn-outline-secondary me-1" :disabled="!selectedApiProjectId" @click="sceneExportImportVisible = true">
           导出/导入
@@ -384,13 +381,6 @@
       </template>
     </el-dialog>
 
-    <!-- 回放导入弹窗 -->
-    <ReplayImportDialog
-      v-model="replayImportVisible"
-      :default-platform-project-id="selectedPlatformProjectId"
-      @success="onReplayImportSuccess"
-    />
-
     <!-- 场景编排导出/导入弹窗 -->
     <SceneImportExportDialog
       v-model="sceneExportImportVisible"
@@ -480,7 +470,6 @@ import { computed, onActivated, onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { ElMessage, ElMessageBox } from "element-plus";
 import ExecutionLogPanel from "../components/ExecutionLogPanel.vue";
-import ReplayImportDialog from "../components/ReplayImportDialog.vue";
 import SceneImportExportDialog from "../components/SceneImportExportDialog.vue";
 import { sceneBatchApi } from "../test-manager/api/index.js";
 import {
@@ -568,7 +557,6 @@ const sceneGroupOptions = computed(() => {
   });
 });
 
-const replayImportVisible = ref(false);
 const sceneExportImportVisible = ref(false);
 
 const envListUrl = "/environments/";
@@ -1060,13 +1048,6 @@ async function openLogDrawer(item) {
 
 function selectLogDetail(row) {
   selectedLogId.value = row.id;
-}
-
-function onReplayImportSuccess(data) {
-  if (data?.scene_id) {
-    queryScenes();
-    router.push({ name: "scene-designer", params: { id: data.scene_id } });
-  }
 }
 
 function onSceneImportSuccess() {
