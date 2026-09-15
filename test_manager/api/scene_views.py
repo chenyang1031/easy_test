@@ -17,6 +17,7 @@ from test_manager.env_variables_compat import variables_for_runtime
 from test_manager.models import ApiAsset, ApiGroup, ApiProject, Environment, TestScene, TestSceneExecution, TestSceneNode, TestSceneNodeSyncLog, SceneDownloadedFile
 from test_manager.httprunner_executor import get_debugtalk_functions_meta
 from .scene_engine import execute_scene
+from .scene_validators import validate_scene
 from .api_asset_sync_utils import (
     compute_node_api_diff,
     get_node_snapshot_for_rollback,
@@ -271,6 +272,7 @@ class TestSceneViewSet(viewsets.ModelViewSet):
                 request_headers=node.request_headers or {},
                 request_params=node.request_params or {},
                 request_body=node.request_body or {},
+                request_url=node.request_url or "",
                 param_type=node.param_type or "json",
                 body_type=node.body_type or "json",
                 assert_rules=node.assert_rules or [],
@@ -288,9 +290,24 @@ class TestSceneViewSet(viewsets.ModelViewSet):
                 api_sync_snapshot=node.api_sync_snapshot or {},
                 pre_request_script=node.pre_request_script or "",
                 script_timeout=node.script_timeout,
+                retry_count=node.retry_count,
+                retry_match=node.retry_match or "",
             )
         data = self.get_serializer(copied).data
         return Response(data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=["post"])
+    def validate(self, request, pk=None):
+        """场景健康检查：静态校验配置缺陷（未定义变量/URL 占位符/跨模块覆盖），不发起任何请求。"""
+        scene = self.get_object()
+        self._ensure_project_permission(scene.project)
+        environment_id = request.data.get("environment_id")
+        issues = validate_scene(scene, environment_id=environment_id)
+        return Response({
+            "issues": issues,
+            "error_count": sum(1 for i in issues if i.get("severity") == "error"),
+            "warning_count": sum(1 for i in issues if i.get("severity") == "warning"),
+        })
 
     @action(detail=True, methods=["post"])
     def execute(self, request, pk=None):
@@ -822,19 +839,26 @@ class TestSceneNodeViewSet(viewsets.ModelViewSet):
             request_headers=node.request_headers or {},
             request_params=node.request_params or {},
             request_body=node.request_body or {},
+            request_url=node.request_url or "",
             param_type=node.param_type or "json",
             body_type=node.body_type or "json",
             assert_rules=node.assert_rules or [],
             extract_rules=node.extract_rules or [],
             expected_status_code=node.expected_status_code,
+            expected_response_headers=node.expected_response_headers or {},
+            expected_response_body=node.expected_response_body,
             timeout=node.timeout,
             on_failed=node.on_failed,
             sort=next_sort,
             is_enabled=node.is_enabled,
+            environment=node.environment,
+            custom_base_url=node.custom_base_url or "",
             api_synced_at=node.api_synced_at,
             api_sync_snapshot=node.api_sync_snapshot or {},
             pre_request_script=node.pre_request_script or "",
             script_timeout=node.script_timeout,
+            retry_count=node.retry_count,
+            retry_match=node.retry_match or "",
         )
         _touch_scene_updated_at(scene)
         return Response(TestSceneNodeSerializer(new_node).data, status=status.HTTP_201_CREATED)
@@ -1234,6 +1258,9 @@ class TestSceneExecutionViewSet(viewsets.ModelViewSet):
         scene_id = self.request.query_params.get("scene_id")
         if scene_id:
             queryset = queryset.filter(scene_id=scene_id)
+        scene_name = (self.request.query_params.get("scene_name") or "").strip()
+        if scene_name:
+            queryset = queryset.filter(scene__name__icontains=scene_name)
         project = self.request.query_params.get("project")
         if project:
             queryset = queryset.filter(scene__project__platform_project_id=project)

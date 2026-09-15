@@ -57,7 +57,7 @@ class EnvironmentSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'name', 'project', 'project_name', 'base_url',
             'variables', 'request_headers', 'category', 'is_global_visible',
-            'pre_request_script', 'script_timeout',
+            'pre_request_script', 'script_timeout', 'probe_url',
             'created_at', 'updated_at',
         ]
         read_only_fields = ['created_at', 'updated_at']
@@ -981,6 +981,7 @@ class TestSceneNodeSerializer(serializers.ModelSerializer):
             'environment', 'custom_base_url',
             'api_synced_at', 'api_sync_snapshot',
             'pre_request_script', 'script_timeout',
+            'retry_count', 'retry_match',
             'request_url',
             'group_name',
             'api_asset_url', 'api_asset_method',

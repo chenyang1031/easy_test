@@ -238,6 +238,7 @@
       destroy-on-close
       append-to-body
       class="node-dialog"
+      @closed="onNodeDialogClosed"
     >
       <template v-if="nodeDialog.node">
         <el-tabs v-model="nodeDialog.activeTab">
@@ -348,7 +349,7 @@
 </template>
 
 <script setup>
-import { computed, reactive, ref, onMounted, onUnmounted } from 'vue'
+import { computed, reactive, ref, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import {
@@ -484,6 +485,52 @@ function showNodeDetail(node) {
   nodeDialog.node = node
   nodeDialog.activeTab = 'overview'
   nodeDialog.visible = true
+  // 同步深链参数（替换历史栈，避免每次点击都入栈），刷新/分享可直达弹窗
+  const nodeParam = node.node_key || node.node_id
+  if (nodeParam != null && String(route.query.node || '') !== String(nodeParam)) {
+    router.replace({ query: { ...route.query, node: nodeParam } })
+  }
+}
+
+// ---- 深链与弹窗状态治理 ----
+// ?node=<node_key|node_id> 直达节点详情弹窗（人和自动化都受益）
+function openNodeFromQuery() {
+  const nodeParam = String(route.query.node || '')
+  if (!nodeParam) return
+  const target = nodeResults.value.find(
+    (n) => String(n.node_key) === nodeParam || String(n.node_id) === nodeParam
+  )
+  if (target && nodeDialog.node?.node_key !== target.node_key) showNodeDetail(target)
+}
+
+function onNodeDialogClosed() {
+  nodeDialog.node = null
+  if (route.query.node) {
+    const { node, ...rest } = route.query
+    router.replace({ query: rest })
+  }
+}
+
+// 弹窗关闭后 query 已被清空，watch 会再置一次 visible=false，无副作用
+watch(() => route.query.node, (val) => {
+  if (!val) {
+    nodeDialog.visible = false
+  } else {
+    openNodeFromQuery()
+  }
+})
+
+// detail→detail 跳转时关闭弹窗并重载，避免遮罩残留挡住后续交互
+watch(() => route.params.id, () => {
+  nodeDialog.visible = false
+  if (route.params.id) loadDetail()
+})
+
+// Element Plus 的 ESC 关闭在焦点不在弹窗内时失效，这里在 document 级兜底
+function onDocKeydown(e) {
+  if (e.key === 'Escape' && nodeDialog.visible) {
+    nodeDialog.visible = false
+  }
 }
 
 function startPolling() {
@@ -530,6 +577,8 @@ async function loadDetail() {
     const data = await sceneExecutionApi.get(id)
     execution.value = data
     nodeResults.value = data.node_results || []
+    // 支持带 ?node= 直达节点详情弹窗
+    openNodeFromQuery()
     // 如果正在执行中，启动轮询
     if (data.status === 'running') {
       startPolling()
@@ -544,8 +593,14 @@ async function loadDetail() {
   }
 }
 
-onMounted(loadDetail)
-onUnmounted(stopPolling)
+onMounted(() => {
+  loadDetail()
+  document.addEventListener('keydown', onDocKeydown)
+})
+onUnmounted(() => {
+  stopPolling()
+  document.removeEventListener('keydown', onDocKeydown)
+})
 </script>
 
 <style scoped>

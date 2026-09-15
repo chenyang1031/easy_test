@@ -18,6 +18,7 @@ requests_toolbelt
 js2py>=0.74
 mammoth>=1.6.0
 pydantic==1.8.2
+whitenoise>=6.5.0
 
 # UI 自动化模块依赖
 playwright>=1.40.0
@@ -25,3 +26,5 @@ browser-use>=0.1.0
 langchain-openai>=0.1.0
 weasyprint>=60.0
 fakerx>=1.0.0
+# 多进程安全的日志轮转（Windows 下 TimedRotatingFileHandler 重命名会被并发句柄卡住）
+concurrent-log-handler>=0.9.25

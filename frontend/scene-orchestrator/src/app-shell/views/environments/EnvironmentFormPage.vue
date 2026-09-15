@@ -124,6 +124,15 @@
                     />
                     <div class="form-help">脚本执行超时时间，默认为 1000ms</div>
                   </el-form-item>
+
+                  <el-form-item label="Token 探活 URL（可选）">
+                    <el-input
+                      v-model="form.probe_url"
+                      placeholder="如 /portal/system/getUserInfo，留空则批量执行前不探活"
+                      style="max-width:480px"
+                    />
+                    <div class="form-help">批量执行开跑前会先 GET 此地址（自动携带环境请求头）；返回 401/403 时整批跳过并提示 Token 过期，避免整批场景白白失败。相对路径自动拼接环境 base_url。</div>
+                  </el-form-item>
                 </el-form>
               </div>
             </el-tab-pane>
@@ -269,6 +278,7 @@ const form = ref({
   is_global_visible: false,
   pre_request_script: '',
   script_timeout: 1000,
+  probe_url: '',
 })
 
 const formErrors = reactive({
@@ -340,6 +350,7 @@ async function handleSubmit() {
       is_global_visible: form.value.is_global_visible,
       pre_request_script: form.value.pre_request_script,
       script_timeout: form.value.script_timeout,
+      probe_url: (form.value.probe_url || '').trim(),
       variables: buildVariablesObject(varRows.value),
       request_headers: buildHeadersArray(headerRows.value),
     }
@@ -387,6 +398,7 @@ async function loadDetail() {
       is_global_visible: !!env.is_global_visible,
       pre_request_script: env.pre_request_script || '',
       script_timeout: env.script_timeout ?? 1000,
+      probe_url: env.probe_url || '',
     }
     const variablesObj = safeJsonParse(
       typeof env.variables === 'string' ? env.variables : JSON.stringify(env.variables || {}),

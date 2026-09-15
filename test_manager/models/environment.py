@@ -44,6 +44,14 @@ class Environment(models.Model):
         db_comment="脚本执行超时时间，单位毫秒",
         help_text="超时时间≤1000ms",
     )
+    probe_url = models.CharField(
+        max_length=500,
+        blank=True,
+        default="",
+        verbose_name="探活URL",
+        db_comment="批量执行前的 Token 探活地址；返回 401/403 时整批跳过。留空则不探活",
+        help_text="相对路径会自动拼接环境 base_url，如 /portal/system/getUserInfo",
+    )
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="创建时间", db_comment="创建时间")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="更新时间", db_comment="更新时间")
 

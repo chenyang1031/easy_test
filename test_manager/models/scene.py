@@ -205,6 +205,18 @@ class TestSceneNode(models.Model):
         verbose_name="脚本超时(ms)",
         db_comment="前置脚本执行超时（毫秒），0 表示使用默认值 1000ms",
     )
+    retry_count = models.PositiveIntegerField(
+        default=0,
+        verbose_name="失败自动重试次数",
+        db_comment="节点失败后的自动重试次数，0 表示不重试",
+    )
+    retry_match = models.CharField(
+        max_length=200,
+        blank=True,
+        default="",
+        verbose_name="重试匹配文本",
+        db_comment="不为空时，失败原因或服务端 msg 包含该文本才重试（针对竞态类瞬态失败）",
+    )
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="创建时间", db_comment="创建时间")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="更新时间", db_comment="更新时间")
 
@@ -359,6 +371,105 @@ class TestSceneNodeSyncLog(models.Model):
         return f"NodeSync-{self.node_id}-{self.sync_type}"
 
 
+class SceneBatchExecution(models.Model):
+    """场景批量执行批次。
+
+    一次批量执行 N 个场景只产生一条批次记录（场景执行列表中合并展示），
+    每个场景的实际执行记录通过 TestSceneExecution.batch 关联到批次。
+    """
+
+    STATUS_RUNNING = "running"
+    STATUS_SUCCESS = "success"
+    STATUS_FAILED = "failed"
+    STATUS_PARTIAL_SUCCESS = "partial_success"
+    STATUS_STOPPED = "stopped"
+    STATUS_CHOICES = [
+        (STATUS_RUNNING, "执行中"),
+        (STATUS_SUCCESS, "成功"),
+        (STATUS_FAILED, "失败"),
+        (STATUS_PARTIAL_SUCCESS, "部分成功"),
+        (STATUS_STOPPED, "已停止"),
+    ]
+
+    EXECUTE_MODE_SERIAL = "serial"
+    EXECUTE_MODE_PARALLEL = "parallel"
+    EXECUTE_MODE_CHOICES = [
+        (EXECUTE_MODE_SERIAL, "串行"),
+        (EXECUTE_MODE_PARALLEL, "并发"),
+    ]
+
+    name = models.CharField(max_length=200, verbose_name="批次名称", db_comment="批次名称，如：批量执行 (3 个场景)")
+    project = models.ForeignKey(
+        "ApiProject",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="scene_batch_records",
+        verbose_name="所属项目",
+        db_comment="所属项目（与 TestScene.project 一致，指向 ApiProject）",
+    )
+    environment = models.ForeignKey(
+        Environment,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="scene_batches",
+        verbose_name="运行环境",
+        db_comment="运行环境",
+    )
+    execute_mode = models.CharField(
+        max_length=20,
+        choices=EXECUTE_MODE_CHOICES,
+        default=EXECUTE_MODE_SERIAL,
+        verbose_name="执行方式",
+        db_comment="串行/并发",
+    )
+    total_scenes = models.PositiveIntegerField(default=0, verbose_name="场景总数", db_comment="场景总数")
+    completed_scenes = models.PositiveIntegerField(default=0, verbose_name="已完成场景数", db_comment="已完成场景数")
+    success_scenes = models.PositiveIntegerField(default=0, verbose_name="成功场景数", db_comment="成功场景数")
+    failed_scenes = models.PositiveIntegerField(default=0, verbose_name="失败场景数", db_comment="失败场景数")
+    partial_scenes = models.PositiveIntegerField(default=0, verbose_name="部分成功场景数", db_comment="部分成功场景数")
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default=STATUS_RUNNING,
+        verbose_name="批次状态",
+        db_comment="批次聚合状态",
+    )
+    cancel_requested = models.BooleanField(
+        default=False,
+        verbose_name="取消请求",
+        db_comment="外部请求停止批次，调度线程在每个场景启动前读取",
+    )
+    error_message = models.TextField(blank=True, default="", verbose_name="错误信息", db_comment="错误信息")
+    started_at = models.DateTimeField(auto_now_add=True, verbose_name="开始时间", db_comment="开始时间")
+    finished_at = models.DateTimeField(null=True, blank=True, verbose_name="结束时间", db_comment="结束时间")
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="scene_batch_executions",
+        verbose_name="创建人",
+        db_comment="创建人",
+    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="创建时间", db_comment="创建时间")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="更新时间", db_comment="更新时间")
+
+    class Meta:
+        db_table = "scene_batch_execution"
+        verbose_name = "场景批量执行批次"
+        verbose_name_plural = verbose_name
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["status", "created_at"], name="scene_batch_status_idx"),
+            models.Index(fields=["-created_at"], name="scene_batch_created_idx"),
+        ]
+
+    def __str__(self):
+        return f"SceneBatch-{self.id}-{self.name}"
+
+
 class TestSceneExecution(models.Model):
     """测试场景执行记录。"""
 
@@ -446,6 +557,15 @@ class TestSceneExecution(models.Model):
         verbose_name="运行环境",
         db_comment="运行环境",
     )
+    batch = models.ForeignKey(
+        SceneBatchExecution,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="executions",
+        verbose_name="所属批次",
+        db_comment="批量执行时所属的批次记录",
+    )
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="创建时间", db_comment="创建时间")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="更新时间", db_comment="更新时间")
 
@@ -458,6 +578,8 @@ class TestSceneExecution(models.Model):
             models.Index(fields=["scene", "created_at"], name="test_scene_exec_scene_idx"),
             models.Index(fields=["status", "created_at"], name="test_scene_exec_status_idx"),
             models.Index(fields=["-created_at"], name="test_scene_exec_created_idx"),
+            # 统一列表按 batch IS NULL + created_at 倒序取行，复合索引可走覆盖索引避免全表扫大 JSON 字段
+            models.Index(fields=["batch", "-created_at"], name="test_scene_exec_batch_idx"),
         ]
 
     def __str__(self):

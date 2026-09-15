@@ -155,7 +155,8 @@ def _resolve_from_pool(path_text, variable_pool):
                 elif isinstance(current, list) and p.isdigit():
                     idx = int(p)
                     if idx < 0 or idx >= len(current):
-                        raise VariableResolveError(f"数组下标越界: {p}")
+                        hint = "列表为空，可能缺少测试数据" if len(current) == 0 else f"列表长度仅 {len(current)}"
+                        raise VariableResolveError(f"数组下标越界: {path_text}[{p}]（{hint}）")
                     current = current[idx]
                 else:
                     raise VariableResolveError(f"变量路径不存在: {path_text}")
@@ -168,7 +169,8 @@ def _resolve_from_pool(path_text, variable_pool):
         if isinstance(current, list) and segment.isdigit():
             idx = int(segment)
             if idx < 0 or idx >= len(current):
-                raise VariableResolveError(f"数组下标越界: {segment}")
+                hint = "列表为空，可能缺少测试数据" if len(current) == 0 else f"列表长度仅 {len(current)}"
+                raise VariableResolveError(f"数组下标越界: {path_text}[{segment}]（{hint}）")
             current = current[idx]
             continue
 
@@ -664,6 +666,66 @@ def _soft_assertion_failure_count(assert_details):
     return n
 
 
+def _short_value(value, limit=60):
+    """断言失败原因里的期望/实际值展示：转短字符串，超长截断。"""
+    text = value if isinstance(value, str) else repr(value)
+    return text if len(text) <= limit else text[: limit - 3] + "..."
+
+
+def _build_assert_failure_reason(assert_details, node_context):
+    """
+    断言失败时的节点失败原因：定位第一条未通过的硬断言（路径/期望/实际），
+    并附带响应体里的服务端 msg，替代一句孤零零的"断言失败"。
+    """
+    candidates = [
+        d for d in (assert_details or [])
+        if isinstance(d, dict) and not d.get("passed") and not d.get("skipped")
+        and str(d.get("on_failed", "")).lower() != TestSceneNode.ON_FAILED_CONTINUE
+    ]
+    reason_text = ""
+    if candidates:
+        d = candidates[0]
+        seg = f"断言失败: {d.get('path') or ''}".rstrip()
+        expected, actual = d.get("expected"), d.get("actual")
+        if expected is not None or actual is not None:
+            seg += f" 期望 {_short_value(expected)} 实际 {_short_value(actual)}"
+        detail_text = (d.get("reason") or "").strip()
+        # 已展示期望/实际时不再重复追加同类描述
+        if detail_text and "期望" not in detail_text:
+            seg = f"{seg}（{detail_text}）" if seg else detail_text
+        reason_text = seg
+    # 服务端 msg：业务响应体常见的 msg/message/error 字段
+    body = node_context.get("response") if isinstance(node_context, dict) else None
+    server_msg = ""
+    if isinstance(body, dict):
+        for key in ("msg", "message", "error", "error_msg"):
+            val = body.get(key)
+            if isinstance(val, str) and val.strip():
+                server_msg = val.strip()
+                break
+    if server_msg:
+        reason_text = f"{reason_text}（服务端: {server_msg}）" if reason_text else f"服务端: {server_msg}"
+    return reason_text or "断言失败"
+
+
+def _retry_message_matched(node, reason, node_context):
+    """
+    重试匹配判定：未配置 retry_match 时任何失败都重试；
+    配置了则要求失败原因或服务端 msg 包含该文本（子串匹配，避免误重试非目标失败）。
+    """
+    match_text = (getattr(node, "retry_match", "") or "").strip()
+    if not match_text:
+        return True
+    haystack = reason or ""
+    body = node_context.get("response") if isinstance(node_context, dict) else None
+    if isinstance(body, dict):
+        for key in ("msg", "message", "error", "error_msg"):
+            val = body.get(key)
+            if isinstance(val, str):
+                haystack += f" {val}"
+    return match_text in haystack
+
+
 def _normalize_extract_rule(rule):
     if not isinstance(rule, dict):
         return None
@@ -671,11 +733,19 @@ def _normalize_extract_rule(rule):
     path = str(rule.get("path") or "").strip()
     if not name or not path:
         return None
-    return {"name": name, "path": path}
+    # required/default_value 为可选增强键：老数据缺省时保持原行为（必填、无默认值）
+    required = rule.get("required")
+    has_default = "default_value" in rule and rule.get("default_value") is not None
+    return {
+        "name": name,
+        "path": path,
+        "required": True if required is None else bool(required),
+        "default_value": rule.get("default_value") if has_default else None,
+    }
 
 
 def apply_extract_rules(extract_rules, node_context, variable_pool):
-    """根据提取规则写入变量池。"""
+    """根据提取规则写入变量池。required=False 的规则未命中时取 default_value。"""
     if not isinstance(extract_rules, list):
         return {}
     extracted = {}
@@ -683,7 +753,16 @@ def apply_extract_rules(extract_rules, node_context, variable_pool):
         rule = _normalize_extract_rule(raw_rule)
         if not rule:
             continue
-        value = _extract_by_path(node_context, rule["path"])
+        try:
+            value = _extract_by_path(node_context, rule["path"])
+        except VariableResolveError:
+            if not rule["required"]:
+                value = rule["default_value"]
+            else:
+                # 调用方会统一加上"提取变量失败: "前缀
+                raise VariableResolveError(
+                    f"「{rule['name']}」路径未命中: {rule['path']}（响应结构可能缺少测试数据）"
+                )
         variable_pool[rule["name"]] = value
         extracted[rule["name"]] = value
     return extracted
@@ -784,6 +863,13 @@ def _build_initial_variable_pool(scene, runtime_config_override=None):
     variable_pool = {}
     # 先注入 debugtalk 函数（供 {{func()}} 调用）
     variable_pool.update(get_debugtalk_functions())
+
+    # --- 内置变量：每次执行注入一次，执行内保持不变、跨执行唯一 ---
+    # 可在场景变量/节点参数/断言中直接引用，如 {{runId}}、{{timestamp}}；
+    # 用户定义的同名变量在后写入，会覆盖内置值。
+    built_ts = int(time.time() * 1000)
+    variable_pool["timestamp"] = built_ts
+    variable_pool["runId"] = f"run{built_ts}{uuid.uuid4().hex[:4]}"
 
     # --- 场景变量预渲染 ---
     # 将场景变量中的 {{func()}} 和 {{var}} 预先解析一次，一次执行内所有节点共享同一值。
@@ -923,7 +1009,7 @@ def _resolve_node_base_url(node, scene, global_env_obj, effective_runtime_config
     return effective_runtime_config.get("base_url", "").rstrip("/"), "未指定"
 
 
-def execute_scene(scene, operator, run_mode=TestSceneExecution.RUN_MODE_ALL, target_node=None, runtime_config_override=None):
+def execute_scene(scene, operator, run_mode=TestSceneExecution.RUN_MODE_ALL, target_node=None, runtime_config_override=None, batch=None):
     """
     场景执行引擎主入口。
     核心流程：
@@ -933,6 +1019,7 @@ def execute_scene(scene, operator, run_mode=TestSceneExecution.RUN_MODE_ALL, tar
     4) 按 on_failed 策略决定继续或终止
     5) 保存结构化执行记录（节点请求/响应/断言细节）
     环境优先级：接口自定义 > 场景自定义 > 全局环境
+    batch：批量执行时传入 SceneBatchExecution，执行记录会挂到该批次下
     """
     if run_mode == TestSceneExecution.RUN_MODE_SINGLE and not target_node:
         raise ValueError("单步执行必须指定 target_node")
@@ -964,6 +1051,7 @@ def execute_scene(scene, operator, run_mode=TestSceneExecution.RUN_MODE_ALL, tar
         run_mode=run_mode,
         status=TestSceneExecution.STATUS_RUNNING,
         created_by=operator,
+        batch=batch,
     )
 
     try:
@@ -991,7 +1079,13 @@ def _execute_scene_body(scene, execution, nodes, run_mode, runtime_config_overri
     node_results = []
     stop_after_failed = False
     cancelled = False
-    for node in nodes:
+    # 节点失败自动重试：用索引回退实现"重跑当前节点"，retry_attempts 记录每个节点已重试次数
+    node_list = list(nodes)
+    retry_attempts = {}
+    node_index = 0
+    while node_index < len(node_list):
+        node = node_list[node_index]
+        node_index += 1
         # ── 取消检查点：在节点循环顶部检查外部取消请求 ──
         if not cancelled:
             cancel_flag = (
@@ -1406,7 +1500,7 @@ def _execute_scene_body(scene, execution, nodes, run_mode, runtime_config_overri
         if not run_ok:
             reason = run_result.get("error_message") or "接口调用失败"
         elif not assert_passed:
-            reason = "断言失败"
+            reason = _build_assert_failure_reason(assert_details, node_context)
         elif extract_error:
             reason = extract_error
 
@@ -1432,6 +1526,24 @@ def _execute_scene_body(scene, execution, nodes, run_mode, runtime_config_overri
             node_result_item["script_logs"] = [{"level": l.get("level", "log"), "msg": l.get("msg", "")} for l in script_logs]
         if pre_request_script_input_snapshot is not None:
             node_result_item["pre_request_script_input"] = pre_request_script_input_snapshot
+
+        # --- 失败自动重试：针对竞态类瞬态失败（如"转写中"），按节点配置回退重跑 ---
+        retry_used = retry_attempts.get(node.id, 0)
+        if (
+            not success
+            and retry_used < (node.retry_count or 0)
+            and _retry_message_matched(node, reason, node_context)
+        ):
+            retry_attempts[node.id] = retry_used + 1
+            node_index -= 1  # 重跑当前节点
+            time.sleep(1)  # 重试间隔，给竞态（如文件转写）留出窗口
+            continue
+        if retry_used:
+            node_result_item["retry_used"] = retry_used
+            if not success:
+                reason = f"{reason}（已自动重试 {retry_used} 次仍失败）"
+                node_result_item["reason"] = reason
+
         node_results.append(node_result_item)
         if not success and node.on_failed == TestSceneNode.ON_FAILED_STOP:
             stop_after_failed = True

@@ -2,6 +2,7 @@
 日志查询 API - 读取服务器日志、SSE 流式推送、执行命令
 """
 import os
+import re
 import time
 import subprocess
 
@@ -17,6 +18,19 @@ LOG_DIR = settings.LOGS_DIR
 ALLOWED_LOG_FILES = ['django.log']
 COMMAND_TIMEOUT = 30
 MAX_OUTPUT_SIZE = 1024 * 512
+# 单行最大返回字符数：httprunner 等会把整份变量 dump 进一行日志（数万字符），
+# 不截断会导致前端渲染成巨大文本块
+MAX_LINE_CHARS = 2000
+# Windows 日志行尾是 \r\n，个别写入方还会用孤立 \r 分隔，统一拍平
+_LINE_SEP_RE = re.compile(r'\r\n|\r|\n')
+
+
+def _normalize_line(text):
+    """清理行尾控制符并截断超长行"""
+    text = text.rstrip('\r\n')
+    if len(text) > MAX_LINE_CHARS:
+        return text[:MAX_LINE_CHARS] + f' …[已截断，原行共 {len(text)} 字符]'
+    return text
 
 
 def _resolve_log_path(filename):
@@ -79,8 +93,12 @@ def _read_last_n_lines(filepath, n, encoding='utf-8'):
     # 对于大文件这是近似值，对于小文件精确值已由上面得到
     total_lines = len(lines) if position <= 0 else None
 
-    decoded = [line.decode(encoding, errors='replace') for line in lines[-n:]]
-    return decoded, total_lines
+    decoded = []
+    for raw in lines[-n:]:
+        for seg in _LINE_SEP_RE.split(raw.decode(encoding, errors='replace')):
+            if seg:
+                decoded.append(_normalize_line(seg))
+    return decoded[-n:], total_lines
 
 
 class LogReadView(APIView):
@@ -128,7 +146,9 @@ def log_stream_view(request):
                 while True:
                     line = f.readline()
                     if line:
-                        yield f"data: {line.rstrip()}\n\n"
+                        for seg in _LINE_SEP_RE.split(line.rstrip()):
+                            if seg:
+                                yield f"data: {_normalize_line(seg)}\n\n"
                     else:
                         time.sleep(0.5)
         except GeneratorExit:

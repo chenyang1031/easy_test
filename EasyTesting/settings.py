@@ -76,6 +76,7 @@ SILENCED_SYSTEM_CHECKS = ["security.W019"]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",  # 静态文件压缩和缓存
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -149,6 +150,22 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
+
+# 静态文件收集目录（用于生产环境 collectstatic）
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+# 静态文件优化配置
+# 使用 CompressedStaticFilesStorage 压缩静态文件（gzip/brotli）
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
+
+# Whitenoise 压缩和缓存配置
+WHITENOISE_USE_FINDERS = True
+WHITENOISE_MANIFEST_STRICT = False
+WHITENOISE_ALLOW_ALL_ORIGINS = True
+
+# 静态文件缓存时间（秒）
+WHITENOISE_MAX_AGE = 31536000  # 1年
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
@@ -322,13 +339,12 @@ LOGGING = {
             'class': 'logging.StreamHandler',
             'formatter': 'simple'
         },
-        'file': {  # 文件输出（按天轮转，保留14天）
+        'file': {  # 文件输出（按大小轮转：100MB × 保留5个）
             'level': 'INFO',
-            'class': 'logging.handlers.TimedRotatingFileHandler',
+            'class': 'concurrent_log_handler.ConcurrentRotatingFileHandler',
             'filename': LOGS_DIR / 'django.log',
-            'when': 'midnight',
-            'interval': 1,
-            'backupCount': 14,
+            'maxBytes': 100 * 1024 * 1024,
+            'backupCount': 5,
             'formatter': 'verbose',
             'encoding': 'utf-8',
         },

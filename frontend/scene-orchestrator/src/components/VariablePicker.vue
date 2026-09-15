@@ -116,13 +116,19 @@ const loadError = ref("");
 const remoteOptions = ref([]);
 const activeKind = ref("");
 
+// 内置变量：引擎每次执行注入，执行内稳定、跨执行唯一，可直接用于唯一性字段
+const BUILTIN_OPTIONS = [
+  { label: "runId", value: "{{runId}}", kindText: "内置变量", valueType: "string" },
+  { label: "timestamp", value: "{{timestamp}}", kindText: "内置变量", valueType: "number" }
+];
+
 const dialogVisible = computed({
   get: () => props.visible,
   set: (v) => emit("update:visible", v)
 });
 
 const normalizedOptions = computed(() => {
-  const merged = [...remoteOptions.value, ...props.options];
+  const merged = [...BUILTIN_OPTIONS, ...remoteOptions.value, ...props.options];
   return merged.map((item) => {
     if (typeof item === "string") {
       return {
@@ -151,8 +157,8 @@ const filteredOptions = computed(() => {
   );
 });
 
-// 分组顺序：debugtalk 函数 → 环境变量 → 场景变量 → 前置变量 → 节点变量 → 其他
-const KIND_ORDER = ["debugtalk 函数", "环境变量", "场景变量", "前置变量", "节点变量", "变量"];
+// 分组顺序：内置变量 → debugtalk 函数 → 环境变量 → 场景变量 → 前置变量 → 节点变量 → 其他
+const KIND_ORDER = ["内置变量", "debugtalk 函数", "环境变量", "场景变量", "前置变量", "节点变量", "变量"];
 
 const groupedOptions = computed(() => {
   const groups = {};
@@ -176,6 +182,7 @@ const currentKindItems = computed(() => {
 
 function kindTagType(kind) {
   const map = {
+    "内置变量": "danger",
     "debugtalk 函数": "success",
     "环境变量": "warning",
     "场景变量": "primary",

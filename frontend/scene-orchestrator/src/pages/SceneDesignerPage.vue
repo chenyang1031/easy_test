@@ -10,6 +10,14 @@
           <i class="bi bi-dot-circle"></i> 有未保存的修改
         </span>
         <button
+          class="btn btn-outline-primary"
+          :disabled="healthChecking || initLoading || !store.scene.id"
+          @click="runHealthCheck"
+        >
+          <span v-if="healthChecking" class="spinner-border spinner-border-sm me-2" role="status" />
+          <i class="bi bi-heart-pulse"></i> 健康检查
+        </button>
+        <button
           class="btn btn-primary px-4"
           :disabled="store.saving || initLoading"
           @click="saveNow"
@@ -402,6 +410,31 @@
         </button>
       </template>
     </el-dialog>
+
+    <el-dialog v-model="healthDialogVisible" title="场景健康检查" width="720px" top="8vh" append-to-body>
+      <div v-if="healthIssues.length" class="mb-2 d-flex gap-2">
+        <el-tag type="danger">错误 {{ healthErrorCount }}</el-tag>
+        <el-tag type="warning">警告 {{ healthWarningCount }}</el-tag>
+        <span class="text-muted small align-self-center">错误级别的问题会导致节点执行失败</span>
+      </div>
+      <el-table v-if="healthIssues.length" :data="healthIssues" size="small" max-height="420">
+        <el-table-column label="级别" width="70">
+          <template #default="{ row }">
+            <el-tag :type="row.severity === 'error' ? 'danger' : 'warning'" size="small">
+              {{ row.severity === "error" ? "错误" : "警告" }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="node_name" label="节点" width="170" show-overflow-tooltip />
+        <el-table-column prop="message" label="问题描述" min-width="380" />
+      </el-table>
+      <div v-else class="text-center text-muted py-4">
+        <i class="bi bi-check-circle text-success me-1"></i> 未发现问题，场景配置良好
+      </div>
+      <template #footer>
+        <button class="btn btn-sm btn-primary" @click="healthDialogVisible = false">知道了</button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -424,7 +457,8 @@ import {
   syncNodeParams,
   syncAllSceneNodes,
   reorderSceneNodes,
-  updateSceneNode
+  updateSceneNode,
+  validateScene
 } from "../api/scene";
 import { fetchApiGroups } from "../api/apiAsset";
 import { useSceneStore } from "../stores/sceneStore";
@@ -439,6 +473,9 @@ const assets = ref([]);
 const environments = ref([]);
 const addDialogVisible = ref(false);
 const sceneVarsDialogVisible = ref(false);
+const healthChecking = ref(false);
+const healthDialogVisible = ref(false);
+const healthIssues = ref([]);
 const sceneVarRows = ref([]);
 const sceneVarsPickerVisible = ref(false);
 const activeSceneVarRowIdx = ref(-1);
@@ -1249,9 +1286,45 @@ async function saveNow() {
     await store.flushSave();
     lastSavedAt.value = new Date().toLocaleTimeString();
     ElMessage.success("保存成功");
+    runSilentHealthCheck();
   } catch (error) {
     console.error("保存失败:", error);
     ElMessage.error(error?.message || "保存失败");
+  }
+}
+
+const healthErrorCount = computed(() => healthIssues.value.filter(i => i.severity === "error").length);
+const healthWarningCount = computed(() => healthIssues.value.filter(i => i.severity === "warning").length);
+
+async function runHealthCheck() {
+  if (!store.scene?.id) {
+    ElMessage.warning("请先保存场景后再执行健康检查");
+    return;
+  }
+  healthChecking.value = true;
+  try {
+    const data = await validateScene(store.scene.id);
+    healthIssues.value = data?.issues || [];
+    healthDialogVisible.value = true;
+  } catch (error) {
+    console.error("健康检查失败:", error);
+    ElMessage.error(error?.message || "健康检查失败");
+  } finally {
+    healthChecking.value = false;
+  }
+}
+
+/** 保存后静默检查：只对错误级别做一次性提醒，不打断保存流程 */
+async function runSilentHealthCheck() {
+  if (!store.scene?.id) return;
+  try {
+    const data = await validateScene(store.scene.id);
+    const errorCount = Number(data?.error_count || 0);
+    if (errorCount > 0) {
+      ElMessage.warning(`健康检查发现 ${errorCount} 个配置错误，可能影响执行，请点击"健康检查"查看详情`);
+    }
+  } catch {
+    // 静默检查失败不影响保存
   }
 }
 

@@ -21,6 +21,14 @@ export default defineConfig({
     outDir: "../../static/scene-orchestrator",
     emptyOutDir: true,
     chunkSizeWarningLimit: 1500,
+    // 启用 CSS 代码分割
+    cssCodeSplit: true,
+    // 启用 CSS 压缩
+    cssMinify: 'esbuild',
+    // 启用压缩
+    minify: 'esbuild',
+    // 生成 source map（生产环境可以关闭以减小体积）
+    sourcemap: false,
     rollupOptions: {
       input: {
         // ===== 统一 SPA Shell 入口 =====
@@ -50,7 +58,21 @@ export default defineConfig({
           return `assets/${chunkInfo.name}.js`;
         },
         chunkFileNames: "assets/[name]-[hash].js",
-        assetFileNames: "assets/[name][extname]",
+        // 模板（templates/*.html）按固定名引用的入口 CSS 保持原名；其余 CSS 带内容哈希。
+        // 不加哈希时每次构建 CSS 同名，浏览器长缓存会导致"新 JS + 旧 CSS"的样式错乱
+        assetFileNames: (assetInfo) => {
+          const name = (assetInfo.names && assetInfo.names[0]) || assetInfo.name || "";
+          const entryCss = new Set([
+            "app-shell.css", "App.css", "element-plus.css", "main.css", "sidebar.css",
+            "aiGenRecord.css", "apiAssetManager.css", "documentImport.css", "draftBox.css",
+            "mockData.css", "modelProviderManager.css", "promptTemplateManager.css",
+            "ruleManager.css", "testManager.css",
+          ]);
+          if (name.endsWith(".css") && !entryCss.has(name)) {
+            return "assets/[name]-[hash][extname]";
+          }
+          return "assets/[name][extname]";
+        },
         manualChunks(id) {
           if (id.includes("node_modules")) {
             if (id.includes("echarts")) return "echarts";

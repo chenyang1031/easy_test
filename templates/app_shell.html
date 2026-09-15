@@ -12,16 +12,20 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
 
+  {# ===== 资源预连接提示 ===== #}
+  <link rel="dns-prefetch" href="//fonts.googleapis.com" />
+  <link rel="dns-prefetch" href="//fonts.gstatic.com" />
+
   {# ===== Bootstrap CSS（与 base.html 保持一致）===== #}
   <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet">
   <link rel="stylesheet" href="{% static 'css/bootstrap-icons.css' %}">
 
   {# ===== Element Plus CSS ===== #}
-  <link rel="stylesheet" href="{% static 'scene-orchestrator/assets/element-plus.css' %}">
+  <link rel="stylesheet" href="{% static 'scene-orchestrator/assets/element-plus.css' %}?v={% now 'U' %}">
 
   {# ===== 应用 CSS（由 Vite 构建产出）===== #}
-  <link rel="stylesheet" href="{% static 'scene-orchestrator/assets/app-shell.css' %}">
-  <link rel="stylesheet" href="{% static 'scene-orchestrator/assets/App.css' %}">
+  <link rel="stylesheet" href="{% static 'scene-orchestrator/assets/app-shell.css' %}?v={% now 'U' %}">
+  <link rel="stylesheet" href="{% static 'scene-orchestrator/assets/App.css' %}?v={% now 'U' %}">
 
   {# ===== 全局 CSS 变量 ===== #}
   <style>

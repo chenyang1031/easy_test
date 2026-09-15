@@ -70,6 +70,8 @@
 
       <!-- 内容区 -->
       <main class="app-content">
+        <!-- 全局多标签栏：访问过的功能页自动成为标签，可切换/关闭 -->
+        <TagsView />
         <router-view v-slot="{ Component }">
           <transition name="fade-slide" mode="out-in">
             <component :is="Component" :key="$route.path" />
@@ -84,7 +86,9 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import Sidebar from '../../sidebar/App.vue'
+import TagsView from '../components/TagsView.vue'
 import { logoutApi } from '../../api/auth'
+import { clearVisitedTabs } from '../tabsStorage'
 
 const router = useRouter()
 
@@ -167,6 +171,8 @@ async function handleUserCommand(command) {
       } catch {
         // 即使 API 失败也执行退出
       }
+      // 退出后不残留本会话的标签页
+      clearVisitedTabs()
       window.__APP_STATE__ = window.__APP_STATE__ || {}
       window.__APP_STATE__.userAuthenticated = false
       window.__APP_STATE__.userName = ''

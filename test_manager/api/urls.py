@@ -24,6 +24,10 @@ from .scene_views import (
     TestSceneExecutionViewSet,
     SceneDownloadedFileViewSet,
 )
+from .scene_batch_views import (
+    SceneBatchExecutionViewSet,
+    SceneExecutionUnifiedView,
+)
 from .performance_views import PerformanceTestTaskViewSet
 from .performance_batch_views import PerformanceBatchTaskViewSet
 from .replay_import_views import ReplayImportViewSet
@@ -76,6 +80,7 @@ router.register(r'api-asset-drafts', ApiAssetDraftViewSet, basename='api-asset-d
 router.register(r'test-scenes', TestSceneViewSet, basename='test-scene')
 router.register(r'test-scene-nodes', TestSceneNodeViewSet, basename='test-scene-node')
 router.register(r'test-scene-executions', TestSceneExecutionViewSet, basename='test-scene-execution')
+router.register(r'scene-batch-executions', SceneBatchExecutionViewSet, basename='scene-batch-execution')
 router.register(r'downloaded-files', SceneDownloadedFileViewSet, basename='downloaded-file')
 router.register(r'performance/tasks', PerformanceTestTaskViewSet, basename='performance-task')
 router.register(r'performance/batch', PerformanceBatchTaskViewSet, basename='performance-batch')
@@ -147,6 +152,12 @@ urlpatterns = [
         name='test_suite_import_confirm',
     ),
     path('v1/', include(router.urls)),
+    # 场景执行统一混合列表（批次 + 单次）
+    path(
+        'v1/scene-executions-unified/',
+        SceneExecutionUnifiedView.as_view(),
+        name='scene-executions-unified',
+    ),
     path('v1/', include('test_manager.report.api_urls')),
     # ===== 数据工厂 API =====
     path('v1/data-factory/', include('test_manager.data_factory.urls')),

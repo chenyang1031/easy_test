@@ -482,12 +482,14 @@ import { ElMessage, ElMessageBox } from "element-plus";
 import ExecutionLogPanel from "../components/ExecutionLogPanel.vue";
 import ReplayImportDialog from "../components/ReplayImportDialog.vue";
 import SceneImportExportDialog from "../components/SceneImportExportDialog.vue";
+import { sceneBatchApi } from "../test-manager/api/index.js";
 import {
   copyScene,
   createScene,
   deleteScene,
   executeScene,
   markSceneExecutionTimeout,
+  batchExecuteScenes,
   fetchEnvironments,
   fetchProjects,
   fetchSceneExecutions,
@@ -952,60 +954,78 @@ async function confirmBatchExecute() {
   batchConfirmVisible.value = false;
   const ids = [...selectedIds.value];
   batchRunning.value = true;
-  batchProgress.value = { total: ids.length, completed: 0, succeeded: 0, failed: 0, details: [] };
+  batchProgress.value = { total: ids.length, completed: 0, succeeded: 0, partial: 0, failed: 0, details: [] };
   rowRunningMap.value = new Set([...rowRunningMap.value, ...ids]);
 
   const envId = Number(selectedEnvironmentId.value);
-  const results = [];
+  const TERMINAL = new Set(["success", "failed", "partial_success", "stopped"]);
+  // 轮询兜底上限：30 分钟
+  const MAX_POLL_MS = 30 * 60 * 1000;
+  const POLL_INTERVAL = 2000;
 
-  const runOne = async (sceneId) => {
-    const name = getSceneNameById(sceneId);
-    try {
-      await executeScene(sceneId, { run_mode: "all", environment_id: envId });
-      results.push({ id: sceneId, name, ok: true });
-      batchProgress.value.succeeded++;
-    } catch (e) {
-      const msg = e?.response?.data?.detail || e?.message;
-      if (msg && String(msg).includes("请求超时")) {
-        try {
-          await markSceneExecutionTimeout(sceneId);
-        } catch (_) {}
-      }
-      results.push({ id: sceneId, name, ok: false, err: msg || "未知错误" });
-      batchProgress.value.failed++;
-    } finally {
-      batchProgress.value.completed++;
-      const next = new Set(rowRunningMap.value);
-      next.delete(sceneId);
-      rowRunningMap.value = next;
-    }
-  };
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
   try {
-    if (batchRunMode.value === "serial") {
-      for (const id of ids) {
-        await runOne(id);
+    // 服务端创建批次并开始执行（一条批次记录，场景执行列表合并展示）
+    const batch = await batchExecuteScenes({
+      scene_ids: ids,
+      environment_id: envId,
+      mode: batchRunMode.value === "parallel" ? "parallel" : "serial",
+    });
+    const batchId = batch.id;
+
+    // 轮询批次进度直至终态
+    const startedAt = Date.now();
+    let detail = batch;
+    while (!TERMINAL.has(detail.status)) {
+      if (Date.now() - startedAt > MAX_POLL_MS) {
+        ElMessage.warning("批量执行仍在后台进行，可稍后在「场景执行」页查看批次结果");
+        return;
       }
-    } else {
-      await Promise.all(ids.map((id) => runOne(id)));
+      await sleep(POLL_INTERVAL);
+      try {
+        detail = await sceneBatchApi.get(batchId);
+      } catch {
+        continue; // 单次轮询失败不中断
+      }
+      batchProgress.value.completed = detail.completed_scenes ?? 0;
+      batchProgress.value.succeeded = detail.success_scenes ?? 0;
+      batchProgress.value.partial = detail.partial_scenes ?? 0;
+      batchProgress.value.failed = detail.failed_scenes ?? 0;
     }
 
-    // P1：执行结果汇总弹窗
-    const successCount = batchProgress.value.succeeded;
-    const failCount = batchProgress.value.failed;
-    const failList = results.filter((r) => !r.ok);
+    // 汇总弹窗：批次统计 + 子执行失败明细
+    const successCount = detail.success_scenes ?? 0;
+    const partialCount = detail.partial_scenes ?? 0;
+    const failCount = detail.failed_scenes ?? 0;
+    const children = detail.executions || [];
+    const failList = children.filter(
+      (c) => c.status === "failed" || c.status === "partial_success"
+    );
+    const unexecuted = (detail.total_scenes ?? ids.length) - children.length;
 
-    const summaryLines = [`成功: ${successCount}，失败: ${failCount}`];
+    const summaryLines = [`成功: ${successCount}，部分成功: ${partialCount}，失败: ${failCount}`];
+    if (detail.status === "stopped") {
+      summaryLines.push("（批次已被停止）");
+    }
+    if (unexecuted > 0) {
+      summaryLines.push(`（有 ${unexecuted} 个场景未执行）`);
+    }
+    if (detail.error_message) {
+      summaryLines.push("", `批次说明：${detail.error_message}`);
+    }
     if (failList.length > 0) {
-      summaryLines.push("", "失败详情：");
-      failList.forEach((r) => {
-        summaryLines.push(`• ${r.name}：${r.err}`);
+      summaryLines.push("", "未通过详情：");
+      failList.forEach((c) => {
+        summaryLines.push(
+          `• ${c.scene_name}${c.status === "partial_success" ? "（部分成功）" : ""}：${c.error_message || "执行失败"}`
+        );
       });
     }
 
     await ElMessageBox.alert(summaryLines.join("\n"), "批量执行结果", {
       confirmButtonText: "确定",
-      type: failCount > 0 ? "warning" : "success",
+      type: failCount + partialCount > 0 ? "warning" : "success",
       dangerouslyUseHTMLString: false,
     });
 

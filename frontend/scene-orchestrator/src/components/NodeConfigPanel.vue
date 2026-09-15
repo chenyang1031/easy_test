@@ -24,6 +24,21 @@
               </el-select>
             </div>
             <div class="mb-2">
+              <label class="form-label form-label-sm">失败自动重试</label>
+              <div class="d-flex gap-1 align-items-center">
+                <el-select v-model="localNode.retry_count" size="small" style="width: 45%" @change="markDirty">
+                  <el-option v-for="n in [0, 1, 2, 3]" :key="n" :label="n === 0 ? '不重试' : `重试 ${n} 次`" :value="n" />
+                </el-select>
+                <input
+                  v-model="localNode.retry_match"
+                  class="form-control form-control-sm"
+                  placeholder="错误含此文本才重试，留空=都重试"
+                  @input="markDirty"
+                />
+              </div>
+              <p class="text-muted small mt-1 mb-0">适用于"转写中"等竞态类瞬态失败，重试间隔 1 秒</p>
+            </div>
+            <div class="mb-2">
               <label class="form-label form-label-sm">节点启用</label>
               <el-select v-model="localNode.is_enabled" size="small" popper-class="scene-select-popper" style="width: 100%">
                 <el-option label="启用" :value="true" />
@@ -105,8 +120,13 @@
               <div class="request-format-selector mb-2">
                 <el-radio-group v-model="requestFormat" size="small">
                   <el-radio-button label="json">JSON</el-radio-button>
-                  <el-radio-button label="kv">键值对</el-radio-button>
+                  <el-radio-button label="kv">表单/键值对</el-radio-button>
                 </el-radio-group>
+                <div v-if="formatMismatch" class="format-mismatch-hint mt-1">
+                  <i class="bi bi-exclamation-triangle text-warning"></i>
+                  <span class="small">接口资产要求 <b>form-data</b> 提交，当前按 JSON 编辑，表单字段可能被服务端忽略（"xxx不能为空"类报错多由此引起）</span>
+                  <el-button link type="primary" size="small" @click="requestFormat = 'kv'; markDirty()">改为表单</el-button>
+                </div>
               </div>
               
               <!-- 请求参数 - JSON 格式 -->
@@ -197,9 +217,17 @@
                   <div v-for="(row, idx) in extractRows" :key="`e-${idx}`" class="kv-row">
                     <input v-model="row.name" class="form-control form-control-sm" placeholder="变量名" />
                     <input v-model="row.path" class="form-control form-control-sm" placeholder="路径，如 $.response.data.token（响应体在 response 下）" />
+                    <el-checkbox v-model="row.optional" size="small" title="勾选后路径未命中时取默认值，不再报错">可选</el-checkbox>
+                    <input
+                      v-if="row.optional"
+                      v-model="row.default_value"
+                      class="form-control form-control-sm"
+                      placeholder="默认值"
+                      style="max-width: 90px"
+                    />
                     <button class="btn btn-sm btn-outline-danger" @click="removeExtractRow(idx)">删</button>
                   </div>
-                  <p class="text-muted small mt-1 mb-0">从响应中提取字段到变量池，供后续节点使用</p>
+                  <p class="text-muted small mt-1 mb-0">从响应中提取字段到变量池；勾选"可选"后路径未命中取默认值（应对响应列表为空等场景）</p>
                 </div>
               </div>
             </div>
@@ -361,7 +389,7 @@ const emit = defineEmits(["save", "update:dirty"]);
 const activeTab = ref("info");
 const localNode = ref(null);
 const headersKvRows = ref([{ key: "", value: "" }]);
-const extractRows = ref([{ name: "", path: "" }]);
+const extractRows = ref([{ name: "", path: "", optional: false, default_value: "" }]);
 const paramsText = ref("{}");
 const bodyText = ref("{}");
 const showVariablePicker = ref(false);
@@ -375,6 +403,10 @@ const requestField = computed(() => requestType.value);
 // 兼容旧代码：paramsMode 和 bodyMode（保持向后兼容，内部不再使用）
 const paramsMode = computed(() => requestFormat.value);
 const bodyMode = computed(() => requestFormat.value);
+// 资产要求 form-data 而当前按 JSON 编辑时的提示（"xxx不能为空"类失败的常见根因）
+const formatMismatch = computed(
+  () => props.node?.api_asset_request_body_format === "form-data" && requestFormat.value === "json"
+);
 const paramsTextareaRef = ref(null);
 const bodyTextareaRef = ref(null);
 const paramsKvRows = ref([]);
@@ -743,7 +775,9 @@ function toEditableNode(node) {
     custom_base_url: node.custom_base_url || "",
     request_url: node.request_url || "",
     pre_request_script: node.pre_request_script || "",
-    script_timeout: node.script_timeout ?? 1000
+    script_timeout: node.script_timeout ?? 1000,
+    retry_count: Number(node.retry_count || 0),
+    retry_match: node.retry_match || ""
   };
 }
 
@@ -1035,31 +1069,40 @@ function setHeaderCursor(index) {
 
 function extractRulesToRows(rules) {
   if (!Array.isArray(rules) || rules.length === 0) {
-    return [{ name: "", path: "" }];
+    return [{ name: "", path: "", optional: false, default_value: "" }];
   }
   return rules.map((r) => ({
     name: r.name || "",
-    path: r.path || ""
+    path: r.path || "",
+    optional: r.required === false,
+    default_value: r.default_value != null ? String(r.default_value) : ""
   }));
 }
 
 function extractRowsToRules(rows) {
   return (rows || [])
     .filter((r) => String(r.name || "").trim())
-    .map((r) => ({
-      name: String(r.name || "").trim(),
-      path: String(r.path || "").trim() || "$.response"
-    }));
+    .map((r) => {
+      const rule = {
+        name: String(r.name || "").trim(),
+        path: String(r.path || "").trim() || "$.response"
+      };
+      if (r.optional) {
+        rule.required = false;
+        rule.default_value = r.default_value ?? "";
+      }
+      return rule;
+    });
 }
 
 function addExtractRow() {
-  extractRows.value.push({ name: "", path: "" });
+  extractRows.value.push({ name: "", path: "", optional: false, default_value: "" });
 }
 
 function removeExtractRow(index) {
   extractRows.value.splice(index, 1);
   if (!extractRows.value.length) {
-    extractRows.value.push({ name: "", path: "" });
+    extractRows.value.push({ name: "", path: "", optional: false, default_value: "" });
   }
 }
 
@@ -1374,5 +1417,17 @@ onUnmounted(() => {
 .json-fullscreen-textarea:focus {
   box-shadow: none;
   outline: none;
+}
+
+.format-mismatch-hint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding: 6px 8px;
+  border: 1px solid #f3d19e;
+  background: #fdf6ec;
+  border-radius: 6px;
+  color: #b88230;
 }
 </style>

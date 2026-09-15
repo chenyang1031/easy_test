@@ -95,6 +95,7 @@ import { ref, reactive } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { User, Lock, WarningFilled } from '@element-plus/icons-vue'
 import { loginApi, fetchCurrentUser } from '../../api/auth'
+import { clearVisitedTabs } from '../../app-shell/tabsStorage'
 import { msgSuccess } from '../../utils/uiMessage.js'
 
 const router = useRouter()
@@ -128,6 +129,9 @@ async function handleLogin() {
 
   try {
     await loginApi(form.username, form.password)
+
+    // 每次成功登录都视为新会话：清空上一会话留下的标签页
+    clearVisitedTabs()
 
     try {
       const user = await fetchCurrentUser()

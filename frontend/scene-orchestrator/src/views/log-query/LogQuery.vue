@@ -37,12 +37,41 @@
           </div>
         </div>
         <div class="log-container" ref="logContainer">
-          <div class="log-content"><span v-for="(line, i) in logLines" :key="i" :class="lineClass(line)">{{ line }}</span></div>
-          <div v-if="logLines.length === 0 && !loadingHistory" class="log-empty">
-            暂无日志，请选择文件后点击"加载历史"或"实时日志"
+          <div class="log-content">
+            <div
+              v-for="(entry, i) in logEntries"
+              :key="i"
+              class="log-row"
+              :class="entry.level ? 'is-' + entry.level.toLowerCase() : ''"
+            >
+              <template v-if="entry.level">
+                <span class="log-time">{{ entry.time }}</span>
+                <span class="log-level">{{ entry.level }}</span>
+                <span class="log-module">{{ entry.module }}</span>
+                <span class="log-msg">
+                  <template v-if="entry.long && !entry.open"
+                    >{{ entry.message.slice(0, LONG_CHARS) }}<a class="log-toggle" @click="entry.open = true"
+                      >…展开全部（共 {{ entry.message.length }} 字符）</a
+                    ></template
+                  >
+                  <template v-else
+                    >{{ entry.message }}<a v-if="entry.long" class="log-toggle" @click="entry.open = false">…收起</a></template
+                  >
+                </span>
+              </template>
+              <template v-else>
+                <span class="log-msg log-raw">{{ entry.message }}</span>
+              </template>
+            </div>
+          </div>
+          <div v-if="logEntries.length === 0 && !loadingHistory" class="log-empty">
+            暂无日志：点击「加载历史」查看最近的日志（最新在上），<br />
+            或点击「实时日志」跟踪新产生的日志（最新在下）
           </div>
         </div>
-        <div class="log-footer">共 {{ logLines.length }} 行<span v-if="selectedFile"> | {{ selectedFile }}</span></div>
+        <div class="log-footer">
+          共 {{ logEntries.length }} 行<span v-if="logEntries.length">（{{ sortDesc ? '最新在最上面' : '最新在最下面' }}）</span><span v-if="selectedFile"> | {{ selectedFile }}</span>
+        </div>
       </el-tab-pane>
 
       <!-- ========== 命令终端 ========== -->
@@ -101,13 +130,37 @@ import { Refresh, Delete, VideoPlay, VideoPause, Loading, WarningFilled } from "
 const activeTab = ref("log");
 
 // ========== 日志查看 ==========
+// Django verbose 格式: [LEVEL] yyyy-mm-dd hh:mm:ss,mmm module pid tid message
+const LOG_LINE_RE = /^\[(TRACE|DEBUG|INFO|WARNING|WARN|ERROR|CRITICAL)\]\s+(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}[,.]\d+)\s+(\S+)\s+(\d+)\s+(\d+)\s*([\s\S]*)$/;
+// 超过该长度的消息默认折叠，点击可展开
+const LONG_CHARS = 600;
+
+function parseLogLine(text) {
+  const m = LOG_LINE_RE.exec(text);
+  if (m) {
+    const level = m[1] === "WARN" ? "WARNING" : m[1];
+    const message = m[6];
+    return {
+      level,
+      time: m[2],
+      module: m[3],
+      message,
+      long: message.length > LONG_CHARS,
+      open: false,
+    };
+  }
+  return { level: "", time: "", module: "", message: text, long: false, open: false };
+}
+
 const logFiles = ref([]);
 const selectedFile = ref("django.log");
-const logLines = ref([]);
+const logEntries = ref([]);
 const streaming = ref(false);
 const autoScroll = ref(true);
 const loadingHistory = ref(false);
 const logContainer = ref(null);
+// 排序模式：历史日志 = true（最新在最上面），实时日志 = false（最新在最下面）
+const sortDesc = ref(false);
 let eventSource = null;
 
 async function fetchLogFiles() {
@@ -128,10 +181,13 @@ async function loadHistory() {
   try {
     const data = await logApi.read(selectedFile.value, 500);
     const content = data.content || "";
-    // 后端返回的是用 \n 连接的字符串，直接按 \n 分割
-    logLines.value = content.split("\n").filter(l => l.trim().length > 0);
+    // 兼容 \r\n / 孤立 \r / \n 三种分隔，避免行粘连
+    const lines = content.split(/\r\n|\r|\n/).filter(l => l.trim().length > 0);
+    // 历史日志：最新在最上面
+    logEntries.value = lines.map(parseLogLine).reverse();
+    sortDesc.value = true;
     await nextTick();
-    scrollBottom();
+    scrollTop();
   } catch {
     ElMessage.error("读取日志失败");
   } finally {
@@ -146,13 +202,18 @@ function toggleStream() {
 function startStream() {
   if (!selectedFile.value) return;
   stopStream();
+  // 从历史（最新在上）切到实时：先翻回时间正序，再从底部追加新日志
+  if (sortDesc.value) {
+    logEntries.value.reverse();
+    sortDesc.value = false;
+  }
   eventSource = new EventSource(logApi.streamUrl(selectedFile.value));
   streaming.value = true;
 
   eventSource.onmessage = (e) => {
-    logLines.value.push(e.data);
-    if (logLines.value.length > 10000) {
-      logLines.value = logLines.value.slice(-8000);
+    logEntries.value.push(parseLogLine(e.data));
+    if (logEntries.value.length > 10000) {
+      logEntries.value = logEntries.value.slice(-8000);
     }
     if (autoScroll.value) nextTick(scrollBottom);
   };
@@ -168,17 +229,13 @@ function stopStream() {
   streaming.value = false;
 }
 
-function clearLog() { logLines.value = []; }
-function onFileChange() { stopStream(); logLines.value = []; }
+function clearLog() { logEntries.value = []; sortDesc.value = false; }
+function onFileChange() { stopStream(); logEntries.value = []; sortDesc.value = false; }
+function scrollTop() {
+  if (logContainer.value) logContainer.value.scrollTop = 0;
+}
 function scrollBottom() {
   if (logContainer.value) logContainer.value.scrollTop = logContainer.value.scrollHeight;
-}
-
-function lineClass(line) {
-  if (/ERROR/i.test(line)) return "log-error";
-  if (/WARNING/i.test(line)) return "log-warning";
-  if (/DEBUG/i.test(line)) return "log-debug";
-  return "";
 }
 
 function formatSize(bytes) {
@@ -247,23 +304,43 @@ onUnmounted(stopStream);
 .log-status { font-size: 13px; color: #909399; }
 .log-status.is-streaming { color: #67c23a; font-weight: 600; }
 
-/* ========== 日志容器 ========== */
+/* ========== 日志容器（终端风格） ========== */
 .log-container {
-  flex: 1; overflow-y: auto; min-height: 420px; max-height: 65vh;
-  background: #1e1e1e; padding: 10px;
-  font-family: Consolas, Monaco, 'Courier New', monospace; font-size: 13px; line-height: 1.55;
+  flex: 1; overflow: auto; min-height: 420px; max-height: 65vh;
+  background: #0c0c0c; padding: 8px 0;
+  font-family: Consolas, Monaco, 'Courier New', monospace; font-size: 13px; line-height: 1.6;
 }
-.log-content {
-  margin: 0; color: #d4d4d4;
+.log-content { color: #cccccc; }
+
+/* 每行独立块级元素，从结构上杜绝行与行粘连 */
+.log-row {
+  display: flex; align-items: baseline; gap: 10px;
+  padding: 0 12px;
 }
-.log-content > span {
-  display: block;
-  white-space: pre-wrap;
-  word-break: break-all;
-}
-.log-content .log-error { color: #f56c6c; }
-.log-content .log-warning { color: #e6a23c; }
-.log-content .log-debug { color: #909399; }
+.log-row:hover { background: #1b1b1b; }
+
+.log-time { flex-shrink: 0; color: #6a9955; }
+.log-level { flex-shrink: 0; min-width: 58px; text-align: center; font-weight: 700; }
+.log-module { flex-shrink: 0; color: #569cd6; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.log-msg { flex: 1; min-width: 0; color: #cccccc; white-space: pre-wrap; word-break: break-all; }
+
+.is-info .log-level { color: #4ec9b0; }
+.is-warning .log-level { color: #e5c07b; }
+.is-error .log-level { color: #f14c4c; }
+.is-critical .log-level { color: #ffffff; background: #b03a2e; border-radius: 2px; }
+.is-debug .log-level, .is-trace .log-level { color: #808080; font-weight: 400; }
+
+.is-error .log-msg { color: #f14c4c; }
+.is-warning .log-msg { color: #e5c07b; }
+.is-debug .log-msg, .is-trace .log-msg { color: #7f8484; }
+.is-critical .log-msg { color: #ff8a80; }
+
+/* 无法解析为标准格式的行（如异常堆栈续行） */
+.log-raw { flex: 1; color: #9a9a9a; }
+
+.log-toggle { color: #4ec9b0; cursor: pointer; margin-left: 6px; font-style: italic; user-select: none; }
+.log-toggle:hover { text-decoration: underline; }
+
 .log-empty { color: #909399; text-align: center; padding: 60px 0; font-size: 14px; }
 .log-footer {
   padding: 6px 14px; background: #f5f7fa; border-top: 1px solid #ebeef5;

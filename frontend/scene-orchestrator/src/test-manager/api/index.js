@@ -158,6 +158,18 @@ export const sceneExecutionApi = {
   remove: (id) => request(`/api/v1/test-scene-executions/${id}/`, { method: 'DELETE' }),
 }
 
+// 场景执行统一混合列表（批量批次 + 单次执行，按时间倒序合并）
+export const unifiedExecutionApi = {
+  list: (params = {}) => request(`/api/v1/scene-executions-unified/?${new URLSearchParams(params)}`),
+}
+
+// 场景批量执行批次
+export const sceneBatchApi = {
+  get: (id) => request(`/api/v1/scene-batch-executions/${id}/`),
+  stop: (id) => request(`/api/v1/scene-batch-executions/${id}/stop/`, { method: 'POST' }),
+  remove: (id) => request(`/api/v1/scene-batch-executions/${id}/`, { method: 'DELETE' }),
+}
+
 // ========== 文件上传 ==========
 export function uploadFile(file) {
   const formData = new FormData()

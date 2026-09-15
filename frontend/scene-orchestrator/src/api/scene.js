@@ -47,6 +47,11 @@ export function copyScene(sceneId, name) {
   return http.post(`/api/v1/test-scenes/${sceneId}/copy/`, { name });
 }
 
+/** 场景健康检查：静态校验配置缺陷（未定义变量/URL 占位符/跨模块覆盖），不发起请求 */
+export function validateScene(sceneId, payload = {}) {
+  return http.post(`/api/v1/test-scenes/${sceneId}/validate/`, payload);
+}
+
 /**
  * 执行场景。场景执行可能包含文件上传等长耗时操作，使用 5 分钟超时以覆盖节点配置的超时时间。
  */
@@ -62,6 +67,14 @@ export function executeScene(sceneId, payload) {
  */
 export function markSceneExecutionTimeout(sceneId) {
   return http.post(`/api/v1/test-scenes/${sceneId}/mark-execution-timeout/`, {});
+}
+
+/**
+ * 批量执行场景：后端创建一条批次记录并在服务端执行所有场景（返回批次，含 id 供轮询）。
+ */
+export function batchExecuteScenes(payload) {
+  // payload: { scene_ids: number[], environment_id: number, mode: 'serial' | 'parallel' }
+  return http.post(`/api/v1/scene-batch-executions/`, payload, { timeoutMs: 30000 });
 }
 
 /**

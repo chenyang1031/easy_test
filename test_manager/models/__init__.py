@@ -6,7 +6,7 @@ test_manager 模型包
 from test_manager.models.project import Project, ApiProject
 from test_manager.models.api_asset import ApiGroup, ApiAsset, ApiHistory, ApiAssetChangeRecord, ApiPreset, ApiAssetDraft
 from test_manager.models.test_case import TestCaseGroup, TestCase, TestSuiteGroup, TestSuite, TestSuiteCase, TestRun, TestResult, TestSuiteRun
-from test_manager.models.scene import TestScene, TestSceneNode, TestSceneNodeSyncLog, TestSceneExecution, SceneDownloadedFile
+from test_manager.models.scene import TestScene, TestSceneNode, TestSceneNodeSyncLog, SceneBatchExecution, TestSceneExecution, SceneDownloadedFile
 from test_manager.models.environment import Environment
 from test_manager.models.ai_draft import AICaseDraftGroup, AICaseDraft
 from test_manager.models.scheduled import ScheduledTask, TaskExecutionLog
