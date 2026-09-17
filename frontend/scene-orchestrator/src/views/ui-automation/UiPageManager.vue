@@ -9,8 +9,9 @@
       <el-table-column prop="url" label="URL" min-width="200" show-overflow-tooltip />
       <el-table-column prop="module_name" label="模块" width="120" />
       <el-table-column prop="element_count" label="元素数" width="80" align="center" />
-      <el-table-column label="操作" width="150" align="right">
+      <el-table-column label="操作" width="210" align="right">
         <template #default="{ row }">
+          <el-button size="small" text type="success" @click="openStepManager(row)">步骤</el-button>
           <el-button size="small" text type="primary" @click="editPage(row)">编辑</el-button>
           <el-button size="small" text type="danger" @click="deletePage(row.id)">删除</el-button>
         </template>
@@ -39,12 +40,21 @@
         <el-button type="primary" @click="savePage" :loading="saving">保存</el-button>
       </template>
     </el-dialog>
+
+    <UiPageStepManager
+      v-model:visible="stepManagerVisible"
+      :page="stepManagerPage"
+      :project-id="projectId"
+      @changed="loadPages"
+    />
   </div>
 </template>
 
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
+import { ElMessage } from 'element-plus'
 import { uiPageApi } from '../../api/uiAutomation'
+import UiPageStepManager from './UiPageStepManager.vue'
 
 const props = defineProps({
   projectId: [Number, String],
@@ -85,24 +95,39 @@ function editPage(row) {
 }
 
 async function savePage() {
+  // 模型层 module 外键不允许为空，不选模块必然保存失败，提前拦截给出明确提示
+  const moduleId = props.moduleId || form.value.module
+  if (!moduleId) {
+    ElMessage.error('请先选择所属模块（左侧模块树或下方模块选择器）')
+    return
+  }
   saving.value = true
   try {
     if (editing.value && form.value.id) {
-      await uiPageApi.update(form.value.id, form.value)
+      await uiPageApi.update(form.value.id, { ...form.value, module: moduleId })
     } else {
-      await uiPageApi.create({ ...form.value, module: props.moduleId || form.value.module })
+      await uiPageApi.create({ ...form.value, module: moduleId })
     }
     showDialog.value = false
     editing.value = false
     form.value = { name: '', url: '', module: '', description: '' }
     loadPages()
-  } catch (e) { console.error(e) }
-  finally { saving.value = false }
+  } catch (e) {
+    console.error(e)
+    ElMessage.error(e.message || '保存页面失败，请检查填写内容')
+  } finally { saving.value = false }
 }
 
 async function deletePage(id) {
   if (!confirm('确定删除此页面？')) return
   try { await uiPageApi.delete(id); loadPages() } catch (e) { console.error(e) }
+}
+
+const stepManagerVisible = ref(false)
+const stepManagerPage = ref(null)
+function openStepManager(row) {
+  stepManagerPage.value = row
+  stepManagerVisible.value = true
 }
 
 watch(() => [props.projectId, props.moduleId], loadPages)

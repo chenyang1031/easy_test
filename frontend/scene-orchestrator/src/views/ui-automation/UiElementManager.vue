@@ -47,7 +47,7 @@
         <el-form-item label="定位值"><el-input v-model="form.locator_value" /></el-form-item>
         <el-form-item label="页面">
           <el-select v-model="form.page" placeholder="选择所属页面" clearable filterable style="width: 100%">
-            <el-option v-for="p in pages" :key="p.id" :label="p.name" :value="p.id" />
+            <el-option v-for="p in pageOptions.length ? pageOptions : pages" :key="p.id" :label="p.name" :value="p.id" />
           </el-select>
         </el-form-item>
         <el-form-item label="描述"><el-input v-model="form.description" type="textarea" /></el-form-item>
@@ -62,7 +62,8 @@
 
 <script setup>
 import { ref, watch, onMounted } from 'vue'
-import { uiElementApi } from '../../api/uiAutomation'
+import { ElMessage } from 'element-plus'
+import { uiElementApi, uiPageApi } from '../../api/uiAutomation'
 
 const props = defineProps({ projectId: [Number, String], moduleId: [Number, String], pages: { type: Array, default: () => [] } })
 const elements = ref([])
@@ -73,6 +74,18 @@ const showDialog = ref(false)
 const saving = ref(false)
 const editing = ref(false)
 const form = ref({ name: '', element_type: 'input', locator_type: 'css', locator_value: '', page: '', description: '' })
+// 页面选项自加载：父组件传入的 pages prop 可能过期（新建页面后不刷新），弹窗打开时拉取最新
+const pageOptions = ref([])
+
+async function loadPageOptions() {
+  if (!props.projectId) return
+  try {
+    const params = { project: props.projectId }
+    if (props.moduleId) params.module = props.moduleId
+    const data = await uiPageApi.list(params)
+    pageOptions.value = data.results || data || []
+  } catch (e) { console.error(e) }
+}
 
 async function loadElements() {
   loading.value = true
@@ -89,12 +102,14 @@ async function loadElements() {
 
 function openAddElement() {
   editing.value = false
-  form.value = { name: '', element_type: 'input', locator_type: 'css', locator_value: '', page: props.pages.length > 0 ? props.pages[0].id : '', description: '' }
+  loadPageOptions()
+  const source = pageOptions.value.length ? pageOptions.value : props.pages
+  form.value = { name: '', element_type: 'input', locator_type: 'css', locator_value: '', page: source.length > 0 ? source[0].id : '', description: '' }
   showDialog.value = true
 }
 
 function editElement(row) {
-  editing.value = true; form.value = { ...row }; showDialog.value = true
+  editing.value = true; form.value = { ...row }; loadPageOptions(); showDialog.value = true
 }
 
 async function saveElement() {
@@ -105,7 +120,10 @@ async function saveElement() {
     showDialog.value = false; editing.value = false
     form.value = { name: '', element_type: 'input', locator_type: 'css', locator_value: '', page: '', description: '' }
     loadElements()
-  } catch (e) { console.error(e) }
+  } catch (e) {
+    console.error(e)
+    ElMessage.error(e.message || '保存元素失败')
+  }
   finally { saving.value = false }
 }
 

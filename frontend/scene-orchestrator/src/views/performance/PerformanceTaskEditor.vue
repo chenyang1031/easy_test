@@ -33,7 +33,7 @@
             </el-select>
           </el-form-item>
           <el-form-item label="关联接口" prop="interface">
-            <el-select v-model="form.interface" placeholder="选择接口" style="width: 100%" :disabled="!form.project">
+            <el-select v-model="form.interface" placeholder="选择/搜索接口" style="width: 100%" :disabled="!form.project" filterable>
               <el-option v-for="a in apiAssets" :key="a.id" :label="`${a.method} ${a.name}`" :value="a.id" />
             </el-select>
           </el-form-item>

@@ -72,7 +72,8 @@ export function computeStageProgress(task, nowMs = Date.now()) {
 /** 从采样序列估算总请求数（每秒 RPS 近似积分） */
 export function estimateTotalRequests(results) {
   if (!Array.isArray(results) || !results.length) return 0;
-  return results.reduce((s, r) => s + (Number(r.requests_per_second) || 0), 0);
+  // RPS 积分累加存在浮点误差（如 149.48000000000002），请求数语义为整数，四舍五入后返回
+  return Math.round(results.reduce((s, r) => s + (Number(r.requests_per_second) || 0), 0));
 }
 
 /** 错误分类键 → 中文 */

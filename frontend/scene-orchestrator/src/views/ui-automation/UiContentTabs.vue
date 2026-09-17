@@ -8,7 +8,7 @@
         <UiElementManager :project-id="projectId" :module-id="moduleId" :module-tree="moduleTree" :pages="pagesForElement" v-if="activeTab === 'elements'" />
       </el-tab-pane>
       <el-tab-pane label="测试用例" name="cases">
-        <UiTestCaseManager :project-id="projectId" :module-id="moduleId" v-if="activeTab === 'cases'" @refresh="$emit('refresh')" />
+        <UiTestCaseManager :project-id="projectId" :module-id="moduleId" :module-tree="moduleTree" v-if="activeTab === 'cases'" @refresh="$emit('refresh')" />
       </el-tab-pane>
       <el-tab-pane label="执行记录" name="executions">
         <UiExecutionManager :project-id="projectId" v-if="activeTab === 'executions'" />

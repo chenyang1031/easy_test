@@ -2,6 +2,7 @@
 UI 测试执行器 - 编排 Playwright 引擎执行测试用例
 """
 import asyncio
+from asgiref.sync import sync_to_async
 import logging
 import json
 import uuid
@@ -73,16 +74,21 @@ class UIExecutor:
             if test_case.front_custom:
                 self.variables.update(test_case.front_custom)
 
-            # 获取用例步骤
-            case_steps = test_case.case_steps.select_related(
-                'page_step'
-            ).prefetch_related(
-                'page_step__details__element'
-            ).order_by('case_sort')
+            # 获取用例步骤（查询在线程池中物化为列表，协程内只访问预取数据）
+            def _load_steps():
+                return list(
+                    test_case.case_steps.select_related(
+                        'page_step'
+                    ).prefetch_related(
+                        'page_step__details__element'
+                    ).order_by('case_sort')
+                )
+
+            case_steps = await sync_to_async(_load_steps, thread_sensitive=True)()
 
             for case_step in case_steps:
                 page_step = case_step.page_step
-                details = page_step.details.order_by('step_sort')
+                details = sorted(page_step.details.all(), key=lambda d: d.step_sort)
 
                 # 步骤切换时是否打开 URL
                 if case_step.switch_step_open_url and page_step.page and page_step.page.url:
@@ -237,7 +243,7 @@ class UIExecutor:
             self.variables[f'__last_result__'] = result
 
         # 更新元素使用计数
-        element.increment_usage_count()
+        await sync_to_async(element.increment_usage_count, thread_sensitive=True)()
 
         return {'message': f'{ope_key} 执行成功'}
 
@@ -387,10 +393,14 @@ class UIExecutor:
             raise
 
     async def _load_public_data(self, project_id):
-        """加载项目公共变量"""
+        """加载项目公共变量（ORM 调用经 sync_to_async 包装，避免异步上下文报错）"""
         from .models import UiPublicData
-        public_data = UiPublicData.objects.filter(project_id=project_id, is_enabled=True)
+
+        def _load():
+            return list(UiPublicData.objects.filter(project_id=project_id, is_enabled=True))
+
+        public_data = await sync_to_async(_load, thread_sensitive=True)()
         for item in public_data:
             self.variables[item.key] = item.value
-        if public_data.exists():
-            self._log(f"加载了 {public_data.count()} 个公共变量")
+        if public_data:
+            self._log(f"加载了 {len(public_data)} 个公共变量")

@@ -182,7 +182,8 @@ class UiElementViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         qs = UiElement.objects.select_related('page', 'page__module', 'created_by')
-        page_id = self.request.query_params.get('page')
+        # 注意：不能用 'page' 作为过滤参数名，会与 DRF 分页参数冲突
+        page_id = self.request.query_params.get('page_id')
         project_id = self.request.query_params.get('project')
         element_type = self.request.query_params.get('element_type')
         search = self.request.query_params.get('search')
@@ -278,7 +279,8 @@ class UiPageStepsViewSet(viewsets.ModelViewSet):
         qs = UiPageSteps.objects.select_related('page', 'module', 'created_by')
         project_id = self.request.query_params.get('project')
         module_id = self.request.query_params.get('module')
-        page_id = self.request.query_params.get('page')
+        # 注意：不能用 'page' 作为过滤参数名，会与 DRF 分页参数冲突
+        page_id = self.request.query_params.get('page_id')
         if project_id:
             qs = qs.filter(project_id=project_id)
         if module_id:
@@ -307,18 +309,24 @@ class UiPageStepsDetailedViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['post'])
     def batch_update(self, request):
         """批量更新步骤明细"""
-        ser = UiPageStepsDetailedBatchSerializer(data=request.data)
-        ser.is_valid(raise_exception=True)
-        details_data = ser.validated_data['details']
-
         page_step_id = request.data.get('page_step')
         if not page_step_id:
             return Response({'error': 'page_step参数必填'}, status=400)
+
+        # page_step 由顶层注入到每条明细后再校验，
+        # 否则序列化器的必填校验与"顶层传参"的设计互相矛盾，必然 400
+        payload = dict(request.data)
+        for d in payload.get('details') or []:
+            d['page_step'] = page_step_id
+        ser = UiPageStepsDetailedBatchSerializer(data=payload)
+        ser.is_valid(raise_exception=True)
+        details_data = ser.validated_data['details']
 
         # 删除旧步骤，创建新步骤
         UiPageStepsDetailed.objects.filter(page_step_id=page_step_id).delete()
         created = []
         for d in details_data:
+            d.pop('page_step', None)
             d['page_step_id'] = page_step_id
             obj = UiPageStepsDetailed.objects.create(**d)
             created.append(obj)
@@ -426,17 +434,22 @@ class UiCaseStepsDetailedViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['post'])
     def batch_update(self, request):
         """批量更新用例步骤"""
-        ser = UiCaseStepsDetailedBatchSerializer(data=request.data)
-        ser.is_valid(raise_exception=True)
-        steps_data = ser.validated_data['steps']
-
         test_case_id = request.data.get('test_case')
         if not test_case_id:
             return Response({'error': 'test_case参数必填'}, status=400)
 
+        # test_case 注入到每条步骤后再校验（与 page-steps-detailed 同理，避免必填冲突）
+        payload = dict(request.data)
+        for s in payload.get('steps') or []:
+            s['test_case'] = test_case_id
+        ser = UiCaseStepsDetailedBatchSerializer(data=payload)
+        ser.is_valid(raise_exception=True)
+        steps_data = ser.validated_data['steps']
+
         UiCaseStepsDetailed.objects.filter(test_case_id=test_case_id).delete()
         created = []
         for s in steps_data:
+            s.pop('test_case', None)
             s['test_case_id'] = test_case_id
             obj = UiCaseStepsDetailed.objects.create(**s)
             created.append(obj)

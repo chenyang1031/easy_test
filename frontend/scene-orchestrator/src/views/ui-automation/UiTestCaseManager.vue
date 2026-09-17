@@ -6,8 +6,8 @@
         <el-option label="P0" value="P0" /><el-option label="P1" value="P1" />
         <el-option label="P2" value="P2" /><el-option label="P3" value="P3" />
       </el-select>
-      <el-button type="primary" size="small" @click="showDialog = true">+ 新增用例</el-button>
-      <el-button type="success" size="small" :disabled="!selected.length" @click="batchRun">批量执行</el-button>
+      <el-button type="primary" size="small" @click="openCreate">+ 新增用例</el-button>
+      <el-button type="success" size="small" :disabled="!selected.length" @click="runWithEnvPicker(selected.map(c => c.id))">批量执行</el-button>
       <el-button type="danger" size="small" :disabled="!selected.length" @click="batchDelete">批量删除</el-button>
     </div>
     <el-table :data="cases" size="small" stripe v-loading="loading" empty-text="暂无用例" @selection-change="s => selected = s">
@@ -26,9 +26,10 @@
       <el-table-column prop="step_count" label="步骤" width="60" align="center" />
       <el-table-column prop="module_name" label="模块" width="120" />
       <el-table-column prop="creator_name" label="创建者" width="80" />
-      <el-table-column label="操作" width="200" align="right">
+      <el-table-column label="操作" width="240" align="right">
         <template #default="{ row }">
-          <el-button size="small" text type="success" @click="runCase(row)">执行</el-button>
+          <el-button size="small" text type="success" @click="runWithEnvPicker([row.id])">执行</el-button>
+          <el-button size="small" text type="warning" @click="openOrchestrate(row)">编排</el-button>
           <el-button size="small" text type="primary" @click="editCase(row)">编辑</el-button>
           <el-button size="small" text type="danger" @click="deleteCase(row.id)">删除</el-button>
         </template>
@@ -44,6 +45,17 @@
         <el-form-item label="级别">
           <el-select v-model="form.level" style="width: 100%"><el-option v-for="l in ['P0','P1','P2','P3']" :key="l" :label="l" :value="l" /></el-select>
         </el-form-item>
+        <el-form-item label="模块">
+          <el-tree-select
+            v-model="form.module"
+            :data="moduleTree"
+            :props="{ label: 'name', value: 'id', children: 'children' }"
+            check-strictly
+            placeholder="选择所属模块"
+            clearable
+            style="width: 100%"
+          />
+        </el-form-item>
         <el-form-item label="描述"><el-input v-model="form.description" type="textarea" /></el-form-item>
         <el-form-item label="前置SQL"><el-input v-model="form.front_sql" type="textarea" /></el-form-item>
         <el-form-item label="后置SQL"><el-input v-model="form.posterior_sql" type="textarea" /></el-form-item>
@@ -53,14 +65,76 @@
         <el-button type="primary" @click="saveCase" :loading="saving">保存</el-button>
       </template>
     </el-dialog>
+
+    <!-- 步骤编排弹窗 -->
+    <el-dialog v-model="orchVisible" :title="`步骤编排 - ${orchCase?.name || ''}`" width="760px" top="6vh" append-to-body>
+      <div class="d-flex gap-2 mb-2">
+        <el-select
+          v-model="addStepId"
+          size="small"
+          filterable
+          placeholder="选择要加入的页面步骤"
+          style="flex: 1"
+        >
+          <el-option v-for="s in availableSteps" :key="s.id" :label="`${s.page_name || '未绑定页面'} / ${s.name}`" :value="s.id" />
+        </el-select>
+        <el-button size="small" type="primary" :disabled="!addStepId" @click="addOrchStep">加入</el-button>
+        <el-button size="small" @click="loadPageSteps" :loading="stepsLoading">刷新</el-button>
+      </div>
+      <el-table :data="orchSteps" size="small" border empty-text="尚未编排任何步骤">
+        <el-table-column label="顺序" width="60" align="center">
+          <template #default="{ $index }">{{ $index + 1 }}</template>
+        </el-table-column>
+        <el-table-column prop="page_step_name" label="页面步骤" min-width="180" />
+        <el-table-column label="步骤切页" width="110" align="center">
+          <template #default="{ row }">
+            <el-checkbox v-model="row.switch_step_open_url" size="small" />
+          </template>
+        </el-table-column>
+        <el-table-column label="失败重试" width="100" align="center">
+          <template #default="{ row }">
+            <el-input-number v-model="row.error_retry" size="small" :min="0" :max="5" controls-position="right" style="width: 84px" />
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="130" align="center">
+          <template #default="{ $index }">
+            <el-button size="small" text @click="moveOrch($index, -1)">↑</el-button>
+            <el-button size="small" text @click="moveOrch($index, 1)">↓</el-button>
+            <el-button size="small" text type="danger" @click="orchSteps.splice($index, 1)">移除</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+      <p class="text-muted small mt-2 mb-0">「步骤切页」勾选后执行到此步骤时会先导航到该步骤所属页面的 URL；执行开始时始终先打开环境 base_url。</p>
+      <template #footer>
+        <el-button @click="orchVisible = false">取消</el-button>
+        <el-button type="primary" :loading="orchSaving" @click="saveOrchestration">保存编排</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 执行环境选择弹窗 -->
+    <el-dialog v-model="envPickerVisible" title="选择执行环境" width="460px" append-to-body>
+      <el-select v-model="pickedEnvId" placeholder="选择环境配置" style="width: 100%" size="default">
+        <el-option v-for="e in envs" :key="e.id" :label="`${e.name}${e.is_default ? '（默认）' : ''}`" :value="e.id" />
+      </el-select>
+      <p v-if="!envs.length" class="text-danger small mt-2 mb-0">当前项目还没有环境配置，请先到「环境配置」页签创建（需填写基础 URL、浏览器等）。</p>
+      <template #footer>
+        <el-button @click="envPickerVisible = false">取消</el-button>
+        <el-button type="primary" :disabled="!envs.length || !pickedEnvId" :loading="running" @click="confirmRun">开始执行</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, watch, onMounted } from 'vue'
-import { uiTestCaseApi, uiTriggerApi } from '../../api/uiAutomation'
+import { ref, computed, watch, onMounted } from 'vue'
+import { ElMessage } from 'element-plus'
+import { uiTestCaseApi, uiTriggerApi, uiPageStepApi, uiCaseStepApi, uiEnvApi } from '../../api/uiAutomation'
 
-const props = defineProps({ projectId: [Number, String], moduleId: [Number, String] })
+const props = defineProps({
+  projectId: [Number, String],
+  moduleId: [Number, String],
+  moduleTree: { type: Array, default: () => [] },
+})
 const emit = defineEmits(['refresh'])
 const cases = ref([])
 const loading = ref(false)
@@ -89,44 +163,37 @@ async function loadCases() {
   finally { loading.value = false }
 }
 
+function openCreate() {
+  editing.value = false
+  // 默认归到当前选中的模块，避免创建后按模块过滤时"消失"
+  form.value = { name: '', level: 'P2', module: props.moduleId || '', description: '', front_sql: '', posterior_sql: '' }
+  showDialog.value = true
+}
+
 function editCase(row) { editing.value = true; form.value = { ...row }; showDialog.value = true }
 
 async function saveCase() {
+  // 列表按模块过滤，未归属模块的用例选中模块后不可见——保存时规范化为 null 并提示
+  const payload = { ...form.value }
+  if (!payload.module && props.moduleId) payload.module = props.moduleId
+  if (!payload.module) payload.module = null
   saving.value = true
   try {
-    if (editing.value && form.value.id) { await uiTestCaseApi.update(form.value.id, form.value) }
-    else { await uiTestCaseApi.create({ ...form.value, project: props.projectId, module: props.moduleId }) }
+    if (editing.value && form.value.id) { await uiTestCaseApi.update(form.value.id, payload) }
+    else { await uiTestCaseApi.create({ ...payload, project: props.projectId }) }
     showDialog.value = false; editing.value = false
-    form.value = { name: '', level: 'P2', description: '', front_sql: '', posterior_sql: '' }
+    form.value = { name: '', level: 'P2', module: '', description: '', front_sql: '', posterior_sql: '' }
     loadCases()
-  } catch (e) { console.error(e) }
+  } catch (e) {
+    console.error(e)
+    ElMessage.error(e.message || '保存用例失败')
+  }
   finally { saving.value = false }
 }
 
 async function deleteCase(id) {
   if (!confirm('确定删除？')) return
   try { await uiTestCaseApi.delete(id); loadCases(); emit('refresh') } catch (e) { console.error(e) }
-}
-
-async function runCase(row) {
-  try {
-    const env = prompt('请输入环境配置ID:', '1')
-    if (!env) return
-    const r = await uiTestCaseApi.run(row.id, { environment: parseInt(env) })
-    alert(r.message || '执行已提交')
-    emit('refresh')
-  } catch (e) { alert('执行失败: ' + e.message) }
-}
-
-async function batchRun() {
-  try {
-    const env = prompt('请输入环境配置ID:', '1')
-    if (!env) return
-    const ids = selected.value.map(c => c.id)
-    const r = await uiTriggerApi.batch({ test_case_ids: ids, environment: parseInt(env) })
-    alert(r.message || '批量执行已提交')
-    emit('refresh')
-  } catch (e) { alert('批量执行失败: ' + e.message) }
 }
 
 async function batchDelete() {
@@ -136,6 +203,127 @@ async function batchDelete() {
     await uiTestCaseApi.batchDelete(ids)
     loadCases(); emit('refresh')
   } catch (e) { console.error(e) }
+}
+
+// ---- 步骤编排 ----
+const orchVisible = ref(false)
+const orchCase = ref(null)
+const orchSteps = ref([])
+const availableSteps = ref([])
+const stepsLoading = ref(false)
+const orchSaving = ref(false)
+const addStepId = ref(null)
+
+async function loadPageSteps() {
+  stepsLoading.value = true
+  try {
+    const data = await uiPageStepApi.list({ project: props.projectId })
+    availableSteps.value = data.results || data || []
+  } catch (e) { console.error(e) }
+  finally { stepsLoading.value = false }
+}
+
+async function openOrchestrate(row) {
+  orchCase.value = row
+  orchSteps.value = []
+  addStepId.value = null
+  orchVisible.value = true
+  await loadPageSteps()
+  try {
+    const data = await uiCaseStepApi.list({ test_case: row.id })
+    orchSteps.value = (data.results || data || []).map(s => ({
+      page_step: s.page_step,
+      page_step_name: s.page_step_name,
+      switch_step_open_url: !!s.switch_step_open_url,
+      error_retry: s.error_retry || 0,
+    }))
+  } catch (e) { console.error(e) }
+}
+
+function addOrchStep() {
+  const s = availableSteps.value.find(x => x.id === addStepId.value)
+  if (!s) return
+  if (orchSteps.value.some(x => x.page_step === s.id)) {
+    ElMessage.warning('该步骤已在编排中')
+    return
+  }
+  orchSteps.value.push({
+    page_step: s.id,
+    page_step_name: s.name,
+    switch_step_open_url: false,
+    error_retry: 0,
+  })
+  addStepId.value = null
+}
+
+function moveOrch(idx, dir) {
+  const target = idx + dir
+  if (target < 0 || target >= orchSteps.value.length) return
+  const arr = orchSteps.value
+  ;[arr[idx], arr[target]] = [arr[target], arr[idx]]
+}
+
+async function saveOrchestration() {
+  if (!orchCase.value) return
+  orchSaving.value = true
+  try {
+    await uiCaseStepApi.batchUpdate({
+      test_case: orchCase.value.id,
+      steps: orchSteps.value.map((s, i) => ({
+        page_step: s.page_step,
+        case_sort: (i + 1) * 10,
+        switch_step_open_url: !!s.switch_step_open_url,
+        error_retry: s.error_retry || 0,
+      })),
+    })
+    ElMessage.success('编排已保存')
+    orchVisible.value = false
+    loadCases()
+    emit('refresh')
+  } catch (e) {
+    ElMessage.error(e.message || '保存编排失败')
+  } finally {
+    orchSaving.value = false
+  }
+}
+
+// ---- 执行（环境选择替代原生 prompt）----
+const envPickerVisible = ref(false)
+const envs = ref([])
+const pickedEnvId = ref(null)
+const running = ref(false)
+const pendingRunIds = ref([])
+
+async function runWithEnvPicker(ids) {
+  pendingRunIds.value = ids
+  pickedEnvId.value = null
+  try {
+    const data = await uiEnvApi.list({ project: props.projectId })
+    envs.value = data.results || data || []
+    const def = envs.value.find(e => e.is_default)
+    if (def) pickedEnvId.value = def.id
+  } catch (e) { console.error(e) }
+  envPickerVisible.value = true
+}
+
+async function confirmRun() {
+  const ids = pendingRunIds.value
+  running.value = true
+  try {
+    if (ids.length === 1) {
+      const r = await uiTestCaseApi.run(ids[0], { environment: pickedEnvId.value })
+      ElMessage.success(r.message || '执行已提交，请到「执行记录」查看进度')
+    } else {
+      const r = await uiTriggerApi.batch({ test_case_ids: ids, environment: pickedEnvId.value })
+      ElMessage.success(r.message || '批量执行已提交')
+    }
+    envPickerVisible.value = false
+    emit('refresh')
+  } catch (e) {
+    ElMessage.error('执行失败: ' + (e.message || '未知错误'))
+  } finally {
+    running.value = false
+  }
 }
 
 watch(() => [props.projectId, props.moduleId], () => { page.value = 1; loadCases() })
