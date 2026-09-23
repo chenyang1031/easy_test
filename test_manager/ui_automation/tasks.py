@@ -46,6 +46,10 @@ def execute_ui_test_case(self, record_id, env_id):
         record.duration = (record.end_time - record.start_time).total_seconds()
         record.save()
 
+        # 回写用例状态：否则用例列表永远显示"待处理"，看不到最近一次执行结果
+        record.test_case.status = 'success' if result['success'] else 'failed'
+        record.test_case.save(update_fields=['status', 'updated_at'])
+
         # 更新批次统计
         _update_batch_stats(record.batch)
 

@@ -125,6 +125,14 @@ class UIExecutor:
             if test_case.posterior_sql:
                 await self._execute_sql(test_case.posterior_sql, resolver)
 
+            # 成功时同样保留最终状态截图，提供执行结果的视觉凭证
+            try:
+                success_shot = await self.engine.take_screenshot()
+                if success_shot:
+                    self.screenshots.append(success_shot)
+            except Exception:
+                pass
+
             trace_path = await self.engine.stop_trace()
             video_path = await self.engine.stop_video()
 
