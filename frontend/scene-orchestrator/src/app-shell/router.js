@@ -127,12 +127,10 @@ const routes = [
         meta: { title: '编辑环境' },
       },
 
-      // ===== 测试用例分组 =====
+      // ===== 测试用例分组（分组管理已并入用例页，重定向兼容旧链接） =====
       {
         path: 'test-case-groups',
-        name: 'tcgList',
-        component: () => import('../test-manager/views/TestCaseGroupList.vue'),
-        meta: { title: '测试用例分组' },
+        redirect: { name: 'tcList' },
       },
 
       // ===== 测试用例 =====
@@ -170,12 +168,10 @@ const routes = [
         meta: { title: '执行测试用例' },
       },
 
-      // ===== 测试套件分组 =====
+      // ===== 测试套件分组（分组管理已并入套件页，重定向兼容旧链接） =====
       {
         path: 'test-suite-groups',
-        name: 'tsgList',
-        component: () => import('../test-manager/views/TestSuiteGroupList.vue'),
-        meta: { title: '测试套件分组' },
+        redirect: { name: 'tsList' },
       },
 
       // ===== 测试套件 =====
