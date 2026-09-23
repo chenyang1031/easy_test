@@ -648,13 +648,24 @@ const router = createRouter({
 //  全局错误处理 — chunk 加载失败时自动刷新页面
 // =====================================================================
 router.onError((error) => {
-  if (
-    error.message.includes('Failed to fetch dynamically imported module') ||
-    error.message.includes('Importing a module script failed') ||
-    error.message.includes('error loading dynamically imported')
-  ) {
-    window.location.reload()
-  }
+  const msg = String(error?.message || '')
+  const isChunkError =
+    msg.includes('Failed to fetch dynamically imported module') ||
+    msg.includes('Importing a module script failed') ||
+    msg.includes('error loading dynamically imported') ||
+    msg.includes('Loading CSS chunk')
+  if (!isChunkError) return
+
+  // 构建产物更新后，旧页面缓存懒加载新分块会 404。
+  // 普通 reload 可能拿到被缓存的旧 index.html 导致反复失败：
+  // 带时间戳查询参数强制绕过 HTML 缓存；sessionStorage 防止无限刷新循环
+  const KEY = 'chunkErrorReloadAt'
+  const last = Number(sessionStorage.getItem(KEY) || 0)
+  if (Date.now() - last < 5000) return
+  sessionStorage.setItem(KEY, String(Date.now()))
+  window.location.replace(
+    window.location.pathname + '?_v=' + Date.now() + window.location.hash
+  )
 })
 
 // =====================================================================

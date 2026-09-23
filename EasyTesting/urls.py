@@ -18,17 +18,22 @@ from django.contrib import admin
 from django.urls import path, include
 from django.contrib.auth import views as auth_views
 from django.views.generic import TemplateView, RedirectView
+from django.views.decorators.cache import never_cache
 from test_manager import views, debug_views
 from test_manager import auth_views as custom_auth_views
 from django.conf import settings
 from django.conf.urls.static import static
+
+# SPA 入口禁用缓存：前端每次构建会更换 JS 分块文件名，
+# 若 index.html 被浏览器缓存，旧页面懒加载新分块会直接报错
+app_shell_view = never_cache(TemplateView.as_view(template_name='app_shell.html'))
 
 urlpatterns = [
     # 根路径重定向到 SPA 入口
     path('', RedirectView.as_view(url='/app/', permanent=False)),
 
     # 统一 SPA Shell 入口
-    path('app/', TemplateView.as_view(template_name='app_shell.html'), name='app-shell'),
+    path('app/', app_shell_view, name='app-shell'),
 
     path('admin/', admin.site.urls),
     path('api/', include('test_manager.api.urls')),

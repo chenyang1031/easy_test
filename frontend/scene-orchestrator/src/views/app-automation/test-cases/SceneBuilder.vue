@@ -147,6 +147,7 @@
                     </template>
                     <el-tabs v-model="paletteTab" stretch>
                         <el-tab-pane label="基础组件" name="base">
+                            <!-- vue-draggable-next 2.x 仅渲染默认插槽，勿用 #item（否则列表不显示） -->
                             <draggable
                                 class="palette-list"
                                 :list="componentPalette"
@@ -155,19 +156,17 @@
                                 :sort="false"
                                 item-key="type"
                             >
-                                <template #item="{ element }">
-                                    <div
-                                        class="palette-item"
-                                    >
-                                        <span class="palette-name">{{ element.name }}</span>
-                                        <span class="palette-type">{{ element.type }}</span>
-                                    </div>
-                                </template>
-                                <template #footer>
-                                    <div v-if="componentPalette.length === 0" class="palette-empty">
-                                        暂无基础组件
-                                    </div>
-                                </template>
+                                <div
+                                    v-for="element in componentPalette"
+                                    :key="element.type"
+                                    class="palette-item"
+                                >
+                                    <span class="palette-name">{{ element.name }}</span>
+                                    <span class="palette-type">{{ element.type }}</span>
+                                </div>
+                                <div v-if="componentPalette.length === 0" class="palette-empty">
+                                    暂无基础组件
+                                </div>
                             </draggable>
                         </el-tab-pane>
                         <el-tab-pane label="自定义组件" name="custom">
@@ -179,34 +178,32 @@
                                 :sort="false"
                                 item-key="id"
                             >
-                                <template #item="{ element }">
-                                    <div
-                                        class="palette-item"
-                                    >
-                                        <div class="palette-left">
-                                            <span class="palette-name">{{ element.name }}</span>
-                                            <span class="palette-type">{{ element.type }}</span>
-                                        </div>
-                                        <div class="palette-actions">
-                                            <el-button link size="small" @click.stop="openEditCustomComponent(element)">
-                                                编辑
-                                            </el-button>
-                                            <el-button
-                                                link
-                                                size="small"
-                                                style="color: #f56c6c"
-                                                @click.stop="deleteCustomComponent(element)"
-                                            >
-                                                删除
-                                            </el-button>
-                                        </div>
+                                <div
+                                    v-for="element in customComponentPalette"
+                                    :key="element.id"
+                                    class="palette-item"
+                                >
+                                    <div class="palette-left">
+                                        <span class="palette-name">{{ element.name }}</span>
+                                        <span class="palette-type">{{ element.type }}</span>
                                     </div>
-                                </template>
-                                <template #footer>
-                                    <div v-if="customComponentPalette.length === 0" class="palette-empty">
-                                        暂无自定义组件
+                                    <div class="palette-actions">
+                                        <el-button link size="small" @click.stop="openEditCustomComponent(element)">
+                                            编辑
+                                        </el-button>
+                                        <el-button
+                                            link
+                                            size="small"
+                                            style="color: #f56c6c"
+                                            @click.stop="deleteCustomComponent(element)"
+                                        >
+                                            删除
+                                        </el-button>
                                     </div>
-                                </template>
+                                </div>
+                                <div v-if="customComponentPalette.length === 0" class="palette-empty">
+                                    暂无自定义组件
+                                </div>
                             </draggable>
                         </el-tab-pane>
                     </el-tabs>
@@ -239,7 +236,7 @@
                         :animation="200"
                         item-key="id"
                     >
-                        <template #item="{ element, index }">
+                        <template v-for="(element, index) in scenarioSteps" :key="element.id">
                             <div class="scene-item-wrapper">
                                 <div
                                     class="scene-item"
