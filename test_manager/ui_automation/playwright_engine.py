@@ -158,8 +158,9 @@ class PlaywrightEngine:
 
         locator = locator_fn()
 
-        if index > 0:
-            locator = locator.nth(index)
+        # index=0 也要套 nth(0)：选择器匹配多个元素时（如多条表单校验提示），
+        # 不加 nth 会触发 Playwright 严格模式报错
+        locator = locator.nth(index)
 
         return locator
 

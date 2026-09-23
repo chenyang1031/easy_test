@@ -76,9 +76,11 @@ class UIExecutor:
 
             # 获取用例步骤（查询在线程池中物化为列表，协程内只访问预取数据）
             def _load_steps():
+                # page_step__page 必须预取：switch_step_open_url 分支会在
+                # 协程内读取 page.url，惰性查询会触发异步上下文报错
                 return list(
                     test_case.case_steps.select_related(
-                        'page_step'
+                        'page_step', 'page_step__page'
                     ).prefetch_related(
                         'page_step__details__element'
                     ).order_by('case_sort')
