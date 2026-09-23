@@ -173,6 +173,36 @@
               </div>
               <div class="action-label">执行记录</div>
             </div>
+            <div class="action-item" @click="$router.push('/app-automation/projects')">
+              <div class="action-icon bg-blue">
+                <el-icon><FolderOpened /></el-icon>
+              </div>
+              <div class="action-label">项目管理</div>
+            </div>
+            <div class="action-item" @click="$router.push('/app-automation/packages')">
+              <div class="action-icon bg-green">
+                <el-icon><Collection /></el-icon>
+              </div>
+              <div class="action-label">包名管理</div>
+            </div>
+            <div class="action-item" @click="$router.push('/app-automation/scheduled-tasks')">
+              <div class="action-icon bg-purple">
+                <el-icon><AlarmClock /></el-icon>
+              </div>
+              <div class="action-label">定时任务</div>
+            </div>
+            <div class="action-item" @click="$router.push('/app-automation/notification-logs')">
+              <div class="action-icon bg-orange">
+                <el-icon><Bell /></el-icon>
+              </div>
+              <div class="action-label">通知日志</div>
+            </div>
+            <div class="action-item" @click="$router.push('/app-automation/settings')">
+              <div class="action-icon bg-blue">
+                <el-icon><Setting /></el-icon>
+              </div>
+              <div class="action-label">设置</div>
+            </div>
           </div>
         </el-card>
       </el-col>
@@ -191,7 +221,12 @@ import {
   Lock, 
   Document, 
   Picture,
-  Aim
+  Aim,
+  FolderOpened,
+  Collection,
+  AlarmClock,
+  Bell,
+  Setting
 } from '@element-plus/icons-vue'
 
 const loading = ref(false)
