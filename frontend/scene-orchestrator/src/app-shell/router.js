@@ -508,8 +508,22 @@ const routes = [
       { path: 'ui-scheduled', redirect: { path: '/scheduled-tasks', query: { tab: 'ui' } } },
 
       // ===== APP 自动化 =====
+      // ===== APP 自动化工作台（统一入口，页签组织） =====
       {
-        path: 'app-automation/dashboard',
+        path: 'app-automation',
+        name: 'appWorkbench',
+        component: () => import('../views/app-automation/AppAutomationWorkbench.vue'),
+        meta: { title: 'APP自动化工作台' },
+      },
+      // 以下列表页已并入工作台页签，重定向兼容旧链接
+      { path: 'app-automation/dashboard', redirect: { path: '/app-automation', query: { tab: 'dashboard' } } },
+      { path: 'app-automation/scene-builder', redirect: { path: '/app-automation', query: { tab: 'scene-builder' } } },
+      { path: 'app-automation/test-cases', redirect: { path: '/app-automation', query: { tab: 'test-cases' } } },
+      { path: 'app-automation/test-suites', redirect: { path: '/app-automation', query: { tab: 'test-suites' } } },
+      { path: 'app-automation/executions', redirect: { path: '/app-automation', query: { tab: 'executions' } } },
+      { path: 'app-automation/reports', redirect: { path: '/app-automation', query: { tab: 'reports' } } },
+      {
+        path: 'app-automation/dashboard-legacy',
         name: 'appDashboard',
         component: () => import('../views/app-automation/dashboard/Dashboard.vue'),
         meta: { title: 'APP Dashboard' },
@@ -537,36 +551,6 @@ const routes = [
         name: 'appElementList',
         component: () => import('../views/app-automation/elements/ElementList.vue'),
         meta: { title: 'APP元素管理' },
-      },
-      {
-        path: 'app-automation/scene-builder',
-        name: 'appSceneBuilder',
-        component: () => import('../views/app-automation/test-cases/SceneBuilder.vue'),
-        meta: { title: 'APP用例编排' },
-      },
-      {
-        path: 'app-automation/test-cases',
-        name: 'appTestCaseList',
-        component: () => import('../views/app-automation/test-cases/TestCaseList.vue'),
-        meta: { title: 'APP测试用例' },
-      },
-      {
-        path: 'app-automation/test-suites',
-        name: 'appTestSuiteList',
-        component: () => import('../views/app-automation/suites/SuiteList.vue'),
-        meta: { title: 'APP测试套件' },
-      },
-      {
-        path: 'app-automation/executions',
-        name: 'appExecutionList',
-        component: () => import('../views/app-automation/executions/ExecutionList.vue'),
-        meta: { title: 'APP执行记录' },
-      },
-      {
-        path: 'app-automation/reports',
-        name: 'appReportList',
-        component: () => import('../views/app-automation/reports/ReportList.vue'),
-        meta: { title: 'APP测试报告' },
       },
       // APP 定时任务已并入统一定时任务页（调度与监控）
       { path: 'app-automation/scheduled-tasks', redirect: { path: '/scheduled-tasks', query: { tab: 'app' } } },

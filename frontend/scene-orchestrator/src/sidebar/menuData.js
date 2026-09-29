@@ -105,6 +105,8 @@ export function getMenuData({ isAuthenticated = false } = {}) {
       ],
     },
     // ========== APP自动化 ==========
+    // 工作台形态：单入口 + 页签（Dashboard/用例编排/用例/套件/执行/报告），
+    // 资源配置页（项目/设备/包名/元素等）从 Dashboard 快捷卡进入
     {
       type: 'group',
       id: 'app-automation',
@@ -112,27 +114,9 @@ export function getMenuData({ isAuthenticated = false } = {}) {
       icon: 'Phone',
       defaultExpanded: false,
       children: [
-        // 资源配置类页面(项目/设备/包名/元素/通知日志/设置)已从菜单降级，
-        // 统一从 Dashboard 的「快速操作」卡片进入
-        { type: 'link', label: 'Dashboard', icon: 'Odometer',
-          href: '/app/#/app-automation/dashboard',
-          matchBases: ['/app/'], matchHashes: ['/app-automation/dashboard', '/app-automation/projects', '/app-automation/devices', '/app-automation/packages', '/app-automation/elements', '/app-automation/notification-logs', '/app-automation/settings'] },
-        { type: 'link', label: '用例编排', icon: 'Connection',
-          href: '/app/#/app-automation/scene-builder',
-          matchBases: ['/app/'], matchHashes: ['/app-automation/scene-builder'] },
-        { type: 'link', label: '测试用例', icon: 'Document',
-          href: '/app/#/app-automation/test-cases',
-          matchBases: ['/app/'], matchHashes: ['/app-automation/test-cases'] },
-        { type: 'link', label: '测试套件', icon: 'Files',
-          href: '/app/#/app-automation/test-suites',
-          matchBases: ['/app/'], matchHashes: ['/app-automation/test-suites'] },
-        { type: 'link', label: '执行记录', icon: 'VideoPlay',
-          href: '/app/#/app-automation/executions',
-          matchBases: ['/app/'], matchHashes: ['/app-automation/executions'] },
-        { type: 'link', label: '测试报告', icon: 'DataAnalysis',
-          href: '/app/#/app-automation/reports',
-          matchBases: ['/app/'], matchHashes: ['/app-automation/reports'] },
-        // 定时任务已并入「调度与监控 → 定时任务」统一入口
+        { type: 'link', label: '自动化工作台', icon: 'LayoutSidebarInset',
+          href: '/app/#/app-automation',
+          matchBases: ['/app/'], matchHashes: ['/app-automation', '/app-automation/dashboard', '/app-automation/scene-builder', '/app-automation/test-cases', '/app-automation/test-suites', '/app-automation/executions', '/app-automation/reports', '/app-automation/projects', '/app-automation/devices', '/app-automation/packages', '/app-automation/elements', '/app-automation/notification-logs', '/app-automation/settings'] },
       ],
     },
     // ========== 数据支撑 ==========
