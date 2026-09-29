@@ -99,9 +99,7 @@ export function getMenuData({ isAuthenticated = false } = {}) {
         { type: 'link', label: 'AI智能用例', icon: 'Robot',
           href: '/app/#/ui-ai',
           matchBases: ['/app/'], matchHashes: ['/ui-ai'] },
-        { type: 'link', label: '定时任务', icon: 'Alarm',
-          href: '/app/#/ui-scheduled',
-          matchBases: ['/app/'], matchHashes: ['/ui-scheduled'] },
+        // 定时任务已并入「调度与监控 → 定时任务」统一入口
       ],
     },
     // ========== APP自动化 ==========
