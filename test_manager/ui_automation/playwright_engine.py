@@ -158,6 +158,14 @@ class PlaywrightEngine:
 
         locator = locator_fn()
 
+        # 文本类定位优先可见匹配：页面锚点文本常与侧边栏菜单等隐藏元素重名，
+        # 不加过滤会命中隐藏节点导致 wait_for(visible) 超时
+        if locator_type in ('text', 'label'):
+            try:
+                locator = locator.filter(visible=True)
+            except TypeError:
+                pass  # 旧版本 Playwright 不支持 visible 过滤，保持原定位
+
         # index=0 也要套 nth(0)：选择器匹配多个元素时（如多条表单校验提示），
         # 不加 nth 会触发 Playwright 严格模式报错
         locator = locator.nth(index)
