@@ -73,9 +73,14 @@
         <!-- 全局多标签栏：访问过的功能页自动成为标签，可切换/关闭 -->
         <TagsView />
         <router-view v-slot="{ Component }">
-          <transition name="fade-slide" mode="out-in">
+          <!-- 后台标签页/自动化驱动时，浏览器会强力节流 CSS 过渡和定时器
+               （连 setTimeout(0) 都可能延后一分钟），out-in 交换会卡在
+               leave 中间态导致视图冻结（路由已变、画面不动）。
+               页面不可见时完全跳过过渡直接渲染；可见时保留淡入动画 -->
+          <transition v-if="!pageHidden" name="fade-slide" mode="out-in" :duration="{ enter: 250, leave: 250 }">
             <component :is="Component" :key="$route.path" />
           </transition>
+          <component v-else :is="Component" :key="$route.path" />
         </router-view>
       </main>
     </div>
@@ -91,6 +96,12 @@ import { logoutApi } from '../../api/auth'
 import { clearVisitedTabs } from '../tabsStorage'
 
 const router = useRouter()
+
+// 页面可见性：后台标签页跳过路由过渡（见模板注释）
+const pageHidden = ref(typeof document !== 'undefined' && document.hidden)
+function onPageVisibilityChange() { pageHidden.value = document.hidden }
+onMounted(() => document.addEventListener('visibilitychange', onPageVisibilityChange))
+onUnmounted(() => document.removeEventListener('visibilitychange', onPageVisibilityChange))
 
 // ============ 状态 ============
 const isDark = ref(false)

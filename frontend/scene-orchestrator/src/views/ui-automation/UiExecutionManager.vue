@@ -51,6 +51,37 @@
         </el-descriptions>
         <h4 style="margin: 16px 0 8px;">执行记录</h4>
         <el-table :data="detail.execution_records || []" size="small" stripe>
+          <el-table-column type="expand">
+            <template #default="{ row }">
+              <div style="padding: 8px 16px 12px;">
+                <h5 style="margin: 4px 0 6px;">步骤结果</h5>
+                <el-table v-if="(row.step_results || []).length" :data="row.step_results" size="small" border>
+                  <el-table-column prop="step_sort" label="#" width="50" />
+                  <el-table-column prop="type" label="类型" width="90" />
+                  <el-table-column label="状态" width="80">
+                    <template #default="{ row: s }">
+                      <el-tag :type="s.status === 'passed' ? 'success' : s.status === 'failed' ? 'danger' : 'info'" size="small">
+                        {{ s.status === 'passed' ? '通过' : s.status === 'failed' ? '失败' : s.status }}
+                      </el-tag>
+                    </template>
+                  </el-table-column>
+                  <el-table-column label="结果" min-width="180" show-overflow-tooltip>
+                    <template #default="{ row: s }">{{ s.error || s.message || '-' }}</template>
+                  </el-table-column>
+                </el-table>
+                <p v-else class="empty-inline" style="margin: 4px 0;">无步骤明细</p>
+                <template v-if="(row.screenshots || []).length">
+                  <h5 style="margin: 10px 0 6px;">执行截图（点击放大）</h5>
+                  <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <el-image v-for="(img, i) in row.screenshots" :key="i" :src="img"
+                              :preview-src-list="row.screenshots" :initial-index="i"
+                              fit="cover" preview-teleported
+                              style="width: 180px; height: 100px; border-radius: 4px; border: 1px solid #ebeef5; cursor: zoom-in;" />
+                  </div>
+                </template>
+              </div>
+            </template>
+          </el-table-column>
           <el-table-column prop="test_case_name" label="用例" min-width="150" />
           <el-table-column label="状态" width="80">
             <template #default="{ row }">

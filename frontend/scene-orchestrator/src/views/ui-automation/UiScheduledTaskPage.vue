@@ -43,6 +43,16 @@
     <el-dialog v-model="showDialog" :title="editing ? '编辑任务' : '新增任务'" width="650px">
       <el-form :model="form" label-width="100px">
         <el-form-item label="任务名称"><el-input v-model="form.name" /></el-form-item>
+        <el-form-item label="执行环境" required>
+          <el-select v-model="form.environment" placeholder="选择执行环境" style="width: 100%">
+            <el-option v-for="e in environments" :key="e.id" :label="e.name" :value="e.id" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="测试用例" required>
+          <el-select v-model="form.test_cases" multiple filterable placeholder="选择要执行的用例" style="width: 100%">
+            <el-option v-for="c in cases" :key="c.id" :label="c.name" :value="c.id" />
+          </el-select>
+        </el-form-item>
         <el-form-item label="触发类型">
           <el-select v-model="form.trigger_type" style="width: 100%">
             <el-option label="Cron 表达式" value="cron" /><el-option label="固定间隔" value="interval" /><el-option label="单次执行" value="once" />
@@ -72,8 +82,9 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { uiScheduledTaskApi } from '../../api/uiAutomation'
+import { ref, onMounted, watch } from 'vue'
+import { ElMessage } from 'element-plus'
+import { uiScheduledTaskApi, uiTestCaseApi, uiEnvApi } from '../../api/uiAutomation'
 import { http } from '../../api/http'
 
 const projects = ref([])
@@ -83,13 +94,31 @@ const loading = ref(false)
 const showDialog = ref(false)
 const saving = ref(false)
 const editing = ref(false)
-const form = ref({ name: '', trigger_type: 'cron', cron_expression: '', interval_seconds: 3600, browser: 'chromium', headless: true, notify_on_failure: true, notify_on_success: false })
+const cases = ref([])
+const environments = ref([])
+const emptyForm = () => ({ name: '', trigger_type: 'cron', cron_expression: '', interval_seconds: 3600, browser: 'chromium', headless: true, notify_on_failure: true, notify_on_success: false, environment: null, test_cases: [] })
+const form = ref(emptyForm())
 
 async function loadProjects() {
   try { const data = await http.get('/api/v1/projects/'); projects.value = data.results || data || []
     if (projects.value.length && !selectedProject.value) { selectedProject.value = projects.value[0].id; loadTasks() }
   } catch (e) { console.error(e) }
 }
+
+async function loadCasesEnvs() {
+  if (!selectedProject.value) return
+  try {
+    const [c, e] = await Promise.all([
+      uiTestCaseApi.list({ project: selectedProject.value, page_size: 200 }),
+      uiEnvApi.list({ project: selectedProject.value }),
+    ])
+    cases.value = c.results || c || []
+    environments.value = e.results || e || []
+  } catch (err) { console.error(err) }
+}
+
+watch(selectedProject, loadCasesEnvs)
+watch(showDialog, (v) => { if (v) loadCasesEnvs() })
 
 async function loadTasks() {
   if (!selectedProject.value) return; loading.value = true
@@ -100,14 +129,17 @@ async function loadTasks() {
 function editTask(row) { editing.value = true; form.value = { ...row }; showDialog.value = true }
 
 async function saveTask() {
+  if (!form.value.name?.trim()) { ElMessage.warning('请填写任务名称'); return }
+  if (!form.value.environment) { ElMessage.warning('请选择执行环境'); return }
+  if (!(form.value.test_cases || []).length) { ElMessage.warning('请至少选择一个测试用例'); return }
   saving.value = true
   try {
     if (editing.value && form.value.id) { await uiScheduledTaskApi.update(form.value.id, form.value) }
     else { await uiScheduledTaskApi.create({ ...form.value, project: selectedProject.value }) }
     showDialog.value = false; editing.value = false
-    form.value = { name: '', trigger_type: 'cron', cron_expression: '', interval_seconds: 3600, browser: 'chromium', headless: true, notify_on_failure: true, notify_on_success: false }
+    form.value = emptyForm()
     loadTasks()
-  } catch (e) { console.error(e) } finally { saving.value = false }
+  } catch (e) { console.error(e); ElMessage.error(e?.message || '保存失败') } finally { saving.value = false }
 }
 
 async function toggleTask(row) {
@@ -116,8 +148,8 @@ async function toggleTask(row) {
 }
 
 async function runNow(row) {
-  try { const r = await uiScheduledTaskApi.runNow(row.id); alert(r.message || '已提交执行') }
-  catch (e) { alert('执行失败: ' + e.message) }
+  try { const r = await uiScheduledTaskApi.runNow(row.id); ElMessage.success(r.message || '已提交执行') }
+  catch (e) { ElMessage.error('执行失败: ' + e.message) }
 }
 
 async function deleteTask(id) { if (!confirm('确定删除？')) return; try { await uiScheduledTaskApi.delete(id); loadTasks() } catch (e) { console.error(e) } }

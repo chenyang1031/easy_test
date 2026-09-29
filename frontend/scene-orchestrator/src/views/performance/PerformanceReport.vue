@@ -65,7 +65,7 @@
         </el-collapse-item>
         <el-collapse-item title="错误分类" name="err">
           <div ref="pieChartRef" class="echart-medium" />
-          <p v-if="!pieHasData" class="empty-inline">暂无数据</p>
+          <p v-if="!pieHasData" class="empty-inline">无错误请求（本次压测全部成功，无错误分类数据）</p>
         </el-collapse-item>
         <el-collapse-item title="业务断言结果" name="assert">
           <el-table v-if="assertionRows.length" :data="assertionRows" border size="small" stripe>
