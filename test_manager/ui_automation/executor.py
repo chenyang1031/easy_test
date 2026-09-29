@@ -183,6 +183,34 @@ class UIExecutor:
         finally:
             await self.engine.close()
 
+    def _sync_token_to_api_env(self, origin, result):
+        """把 OCR 登录拿到的 token 回写到接口测试环境变量。
+
+        匹配规则：同项目下 base_url 与登录目标同源（协议+主机+端口一致）的
+        第一个 Environment；找不到则静默跳过（UI 环境可能没有对应接口环境）。
+        """
+        from test_manager.models import Environment
+
+        envs = list(Environment.objects.filter(project_id=self.env.project_id))
+        target = next(
+            (e for e in envs
+             if (e.base_url or '').rstrip('/').startswith(origin + '/')
+             or (e.base_url or '').rstrip('/') == origin),
+            None,
+        )
+        if target is None:
+            self._log(f"Token 回写：未找到 base_url 同源于 {origin} 的接口环境，跳过")
+            return
+
+        variables = dict(target.variables or {})
+        variables['authorization'] = result.authorization
+        client_id = (result.raw.get('data') or {}).get('client_id')
+        if client_id:
+            variables['clientid'] = client_id
+        target.variables = variables
+        target.save(update_fields=['variables', 'updated_at'])
+        self._log(f"Token 已回写接口环境「{target.name}」(id={target.pk}) 的 authorization/clientid")
+
     async def _auto_login_if_configured(self):
         """项目公共变量配置 app_username/app_password 时，自动登录目标系统并注入 Token。
 
@@ -466,7 +494,11 @@ class UIExecutor:
             raise RuntimeError('环境开启了自动登录但未配置登录密码')
 
         def _do_login():
-            return captcha_login(origin, username, password, verbose=False)
+            # log_fn 把每次 OCR 识读/重试过程写进执行日志，便于观察识别成功率
+            return captcha_login(
+                origin, username, password, verbose=True,
+                log_fn=lambda m: self._log(f"[自动登录] {m}"),
+            )
 
         try:
             result = await sync_to_async(_do_login, thread_sensitive=True)()
@@ -487,6 +519,13 @@ class UIExecutor:
         await self.engine._page.reload()
         await self.engine._page.wait_for_load_state('domcontentloaded')
         self._log(f"自动登录成功，token 已注入 sessionStorage: {username}@{origin}")
+
+        # Token 回写接口测试环境：同项目、base_url 同源的 Environment，
+        # 更新 variables.authorization/clientid —— 接口场景与 UI 共用新鲜 token
+        try:
+            await sync_to_async(self._sync_token_to_api_env, thread_sensitive=True)(origin, result)
+        except Exception as exc:
+            self._log(f"Token 回写接口环境失败（不影响本次执行）: {exc}")
 
     async def _load_public_data(self, project_id):
         """加载项目公共变量（ORM 调用经 sync_to_async 包装，避免异步上下文报错）"""

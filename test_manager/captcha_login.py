@@ -249,7 +249,7 @@ def _extract_token(body: dict):
     return None, None
 
 
-def login(base_url, username, password, retries=3, timeout=15, verbose=True):
+def login(base_url, username, password, retries=3, timeout=15, verbose=True, log_fn=None):
     """验证码自动登录。
 
     验证码识读错误会自动换新验证码重试；账号密码错误立即抛出不再重试。
@@ -260,6 +260,7 @@ def login(base_url, username, password, retries=3, timeout=15, verbose=True):
         CaptchaLoginError: kind=captcha/credentials/network/other
     """
     base_url = base_url.rstrip('/')
+    _emit = log_fn if callable(log_fn) else print
     session = _new_session()
     last_body = {}
     last_err = None
@@ -268,7 +269,7 @@ def login(base_url, username, password, retries=3, timeout=15, verbose=True):
         try:
             cap_uuid, code = _fetch_and_solve(session, base_url, timeout=timeout, verbose=verbose)
             if verbose and cap_uuid:
-                print(f'[captcha_login] 第{attempt}次 OCR 识读验证码: {code}')
+                _emit(f'[captcha_login] 第{attempt}次 OCR 识读验证码: {code}')
             payload = {
                 'username': username,
                 'password': password,
@@ -287,7 +288,7 @@ def login(base_url, username, password, retries=3, timeout=15, verbose=True):
                 token, token_type = _extract_token(result)
                 if token:
                     if verbose:
-                        print(f'[captcha_login] 登录成功，Token 前 20 字符: {token[:20]}...')
+                        _emit(f'[captcha_login] 登录成功，Token 前 20 字符: {token[:20]}...')
                     return LoginResult(token=token, token_type=token_type or 'Bearer', raw=result)
                 raise CaptchaLoginError(f'登录响应 200 但未找到 token 字段: {json.dumps(result)[:200]}', 'other')
 
@@ -298,11 +299,11 @@ def login(base_url, username, password, retries=3, timeout=15, verbose=True):
                 raise CaptchaLoginError(f'账号或密码错误: {msg}', 'credentials')
             if any(w in msg for w in CAPTCHA_WORDS):
                 if verbose:
-                    print(f'[captcha_login] 验证码被拒（{msg}），换新验证码重试')
+                    _emit(f'[captcha_login] 验证码被拒（{msg}），换新验证码重试')
                 continue
             # 未知业务错误：多半与验证码无关，重试一次后放弃
             if verbose:
-                print(f'[captcha_login] 登录返回: code={result.get("code")} msg={msg}')
+                _emit(f'[captcha_login] 登录返回: code={result.get("code")} msg={msg}')
             last_err = CaptchaLoginError(f'登录失败: {msg or result}', 'other')
         except CaptchaLoginError:
             raise
