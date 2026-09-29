@@ -35,8 +35,16 @@
         </template>
       </el-table-column>
     </el-table>
-    <div class="pagination" v-if="total > pageSize">
-      <el-pagination :current-page="page" :page-size="pageSize" :total="total" layout="prev, pager, next" @current-change="p => { page = p; loadCases() }" />
+    <div class="pagination" v-if="total > 0">
+      <el-pagination
+        :current-page="page"
+        :page-size="pageSize"
+        :total="total"
+        :page-sizes="[10, 20, 50, 100]"
+        layout="total, sizes, prev, pager, next, jumper"
+        @current-change="p => { page = p; loadCases() }"
+        @size-change="s => { pageSize = s; page = 1; loadCases() }"
+      />
     </div>
 
     <el-dialog v-model="showDialog" :title="editing ? '编辑用例' : '新增用例'" width="600px">
@@ -143,7 +151,7 @@ const levelFilter = ref('')
 const selected = ref([])
 const total = ref(0)
 const page = ref(1)
-const pageSize = 20
+const pageSize = ref(20)
 const showDialog = ref(false)
 const saving = ref(false)
 const editing = ref(false)
@@ -152,7 +160,7 @@ const form = ref({ name: '', level: 'P2', description: '', front_sql: '', poster
 async function loadCases() {
   loading.value = true
   try {
-    const params = { project: props.projectId, page: page.value }
+    const params = { project: props.projectId, page: page.value, page_size: pageSize.value }
     if (props.moduleId) params.module = props.moduleId
     if (search.value) params.search = search.value
     if (levelFilter.value) params.level = levelFilter.value

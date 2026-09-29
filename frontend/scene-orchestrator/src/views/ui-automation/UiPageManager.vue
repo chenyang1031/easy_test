@@ -18,13 +18,15 @@
       </el-table-column>
     </el-table>
 
-    <div class="pagination" v-if="total > pageSize">
+    <div class="pagination" v-if="total > 0">
       <el-pagination
         :current-page="page"
         :page-size="pageSize"
         :total="total"
-        layout="prev, pager, next, jumper"
+        :page-sizes="[10, 20, 50, 100]"
+        layout="total, sizes, prev, pager, next, jumper"
         @current-change="p => { page = p; loadPages() }"
+        @size-change="s => { pageSize = s; page = 1; loadPages() }"
       />
     </div>
 
