@@ -4,19 +4,32 @@
     <div class="page-header">
       <div class="page-header-left">
         <h2 class="page-title">定时任务</h2>
-        <span class="page-subtitle" v-if="store.total !== null">共 {{ store.total }} 个任务</span>
+        <span class="page-subtitle">接口 / UI / APP 自动化统一调度入口</span>
       </div>
       <div class="page-header-right">
         <el-button @click="$router.push('/task-monitor')">
           <el-icon><Monitor /></el-icon> 任务监控
         </el-button>
-        <el-button type="primary" @click="$router.push('/scheduled-tasks/create')">
+        <el-button v-if="taskTab === 'api'" type="primary" @click="$router.push('/scheduled-tasks/create')">
           <el-icon><Plus /></el-icon> 新增定时任务
         </el-button>
       </div>
     </div>
 
-    <div class="panel-card">
+    <!-- 类型页签：三类定时任务统一管理 -->
+    <el-tabs v-model="taskTab" class="task-type-tabs">
+      <el-tab-pane label="接口测试" name="api" />
+
+      <el-tab-pane label="UI自动化" name="ui" lazy>
+        <UiScheduledTaskPage v-if="taskTab === 'ui'" />
+      </el-tab-pane>
+
+      <el-tab-pane label="APP自动化" name="app" lazy>
+        <AppScheduledTasks v-if="taskTab === 'app'" />
+      </el-tab-pane>
+    </el-tabs>
+
+    <div class="panel-card" v-show="taskTab === 'api'">
       <!-- 筛选栏 -->
       <div class="filter-bar">
         <el-row :gutter="12" class="filter-row">
@@ -186,7 +199,9 @@
 
 <script setup>
 import { ref, onMounted, watch } from "vue";
-import { useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
+import UiScheduledTaskPage from "../ui-automation/UiScheduledTaskPage.vue";
+import AppScheduledTasks from "../app-automation/scheduled-tasks/ScheduledTasks.vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import {
   Plus, Search, Loading, Clock, Monitor,
@@ -194,7 +209,14 @@ import {
 } from "@element-plus/icons-vue";
 import { useScheduledTaskStore } from "../../test-manager/stores/scheduledTask";
 
+const route = useRoute();
 const router = useRouter();
+
+// 三类定时任务统一入口；支持 ?tab=ui|app 直达对应页签
+const taskTab = ref(['ui', 'app'].includes(route.query.tab) ? route.query.tab : 'api');
+watch(() => route.query.tab, (v) => {
+  if (['api', 'ui', 'app'].includes(v)) taskTab.value = v
+});
 const store = useScheduledTaskStore();
 
 const search = ref("");

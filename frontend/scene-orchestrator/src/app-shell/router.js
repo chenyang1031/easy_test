@@ -504,12 +504,8 @@ const routes = [
         component: () => import('../views/ui-automation/UiAICasePage.vue'),
         meta: { title: 'AI智能用例' },
       },
-      {
-        path: 'ui-scheduled',
-        name: 'uiScheduled',
-        component: () => import('../views/ui-automation/UiScheduledTaskPage.vue'),
-        meta: { title: 'UI定时任务' },
-      },
+      // UI 定时任务已并入统一定时任务页（调度与监控）
+      { path: 'ui-scheduled', redirect: { path: '/scheduled-tasks', query: { tab: 'ui' } } },
 
       // ===== APP 自动化 =====
       {
@@ -572,12 +568,8 @@ const routes = [
         component: () => import('../views/app-automation/reports/ReportList.vue'),
         meta: { title: 'APP测试报告' },
       },
-      {
-        path: 'app-automation/scheduled-tasks',
-        name: 'appScheduledTasks',
-        component: () => import('../views/app-automation/scheduled-tasks/ScheduledTasks.vue'),
-        meta: { title: 'APP定时任务' },
-      },
+      // APP 定时任务已并入统一定时任务页（调度与监控）
+      { path: 'app-automation/scheduled-tasks', redirect: { path: '/scheduled-tasks', query: { tab: 'app' } } },
       {
         path: 'app-automation/notification-logs',
         name: 'appNotificationLogs',

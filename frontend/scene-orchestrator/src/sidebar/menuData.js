@@ -132,9 +132,7 @@ export function getMenuData({ isAuthenticated = false } = {}) {
         { type: 'link', label: '测试报告', icon: 'DataAnalysis',
           href: '/app/#/app-automation/reports',
           matchBases: ['/app/'], matchHashes: ['/app-automation/reports'] },
-        { type: 'link', label: '定时任务', icon: 'AlarmClock',
-          href: '/app/#/app-automation/scheduled-tasks',
-          matchBases: ['/app/'], matchHashes: ['/app-automation/scheduled-tasks'] },
+        // 定时任务已并入「调度与监控 → 定时任务」统一入口
       ],
     },
     // ========== 数据支撑 ==========
@@ -187,7 +185,8 @@ export function getMenuData({ isAuthenticated = false } = {}) {
       defaultExpanded: false,
       children: [
         { type: 'link', label: '定时任务', icon: 'ClockFilled',
-          href: '/app/#/scheduled-tasks', matchBases: ['/app/'], matchHashes: ['/scheduled-tasks'] },
+          href: '/app/#/scheduled-tasks',
+          matchBases: ['/app/'], matchHashes: ['/scheduled-tasks', '/scheduled-tasks/create', '/ui-scheduled', '/app-automation/scheduled-tasks'] },
         { type: 'link', label: '定时任务监控', icon: 'ClockHistory',
           href: '/app/#/task-monitor', matchBases: ['/app/'], matchHashes: ['/task-monitor'] },
         { type: 'link', label: '执行日志', icon: 'ClipboardData',
