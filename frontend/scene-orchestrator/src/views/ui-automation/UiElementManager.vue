@@ -31,6 +31,16 @@
       </el-table-column>
     </el-table>
 
+    <div class="pagination" v-if="total > pageSize">
+      <el-pagination
+        :current-page="page"
+        :page-size="pageSize"
+        :total="total"
+        layout="prev, pager, next, jumper"
+        @current-change="p => { page = p; loadElements() }"
+      />
+    </div>
+
     <el-dialog v-model="showDialog" :title="editing ? '编辑元素' : '新增元素'" width="600px">
       <el-form :model="form" label-width="90px">
         <el-form-item label="名称"><el-input v-model="form.name" /></el-form-item>
@@ -66,6 +76,9 @@ import { ElMessage } from 'element-plus'
 import { uiElementApi, uiPageApi } from '../../api/uiAutomation'
 
 const props = defineProps({ projectId: [Number, String], moduleId: [Number, String], pages: { type: Array, default: () => [] } })
+const page = ref(1)
+const pageSize = ref(20)
+const total = ref(0)
 const elements = ref([])
 const loading = ref(false)
 const search = ref('')
@@ -90,12 +103,14 @@ async function loadPageOptions() {
 async function loadElements() {
   loading.value = true
   try {
-    const params = { project: props.projectId }
+    const params = { project: props.projectId, page: page.value, page_size: pageSize.value }
     if (props.moduleId) params.module = props.moduleId
     if (search.value) params.search = search.value
     if (typeFilter.value) params.element_type = typeFilter.value
     const data = await uiElementApi.list(params)
     elements.value = data.results || data || []
+    total.value = data.count ?? elements.value.length
+    if (!elements.value.length && page.value > 1) { page.value -= 1; loadElements(); return }
   } catch (e) { console.error(e) }
   finally { loading.value = false }
 }
@@ -143,4 +158,6 @@ onMounted(loadElements)
 
 <style scoped>
 .toolbar { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+
+.pagination { margin-top: 12px; display: flex; justify-content: flex-end; }
 </style>

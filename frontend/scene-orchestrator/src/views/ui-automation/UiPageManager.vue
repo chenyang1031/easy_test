@@ -18,6 +18,16 @@
       </el-table-column>
     </el-table>
 
+    <div class="pagination" v-if="total > pageSize">
+      <el-pagination
+        :current-page="page"
+        :page-size="pageSize"
+        :total="total"
+        layout="prev, pager, next, jumper"
+        @current-change="p => { page = p; loadPages() }"
+      />
+    </div>
+
     <el-dialog v-model="showDialog" :title="editing ? '编辑页面' : '新增页面'" width="500px">
       <el-form :model="form" label-width="80px">
         <el-form-item label="名称"><el-input v-model="form.name" /></el-form-item>
@@ -61,6 +71,9 @@ const props = defineProps({
   moduleId: [Number, String],
   moduleTree: { type: Array, default: () => [] }
 })
+const page = ref(1)
+const pageSize = ref(20)
+const total = ref(0)
 const pages = ref([])
 const loading = ref(false)
 const search = ref('')
@@ -74,10 +87,12 @@ const moduleTreeOptions = computed(() => props.moduleTree || [])
 async function loadPages() {
   loading.value = true
   try {
-    const params = { project: props.projectId }
+    const params = { project: props.projectId, page: page.value, page_size: pageSize.value }
     if (props.moduleId) params.module = props.moduleId
     const data = await uiPageApi.list(params)
     pages.value = data.results || data || []
+    total.value = data.count ?? pages.value.length
+    if (!pages.value.length && page.value > 1) { page.value -= 1; loadPages(); return }
   } catch (e) { console.error(e) }
   finally { loading.value = false }
 }
@@ -136,4 +151,6 @@ onMounted(loadPages)
 
 <style scoped>
 .toolbar { display: flex; justify-content: space-between; margin-bottom: 12px; }
+
+.pagination { margin-top: 12px; display: flex; justify-content: flex-end; }
 </style>

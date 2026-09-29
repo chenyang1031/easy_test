@@ -39,6 +39,16 @@
       </el-table-column>
     </el-table>
 
+    <div class="pagination" v-if="total > pageSize">
+      <el-pagination
+        :current-page="page"
+        :page-size="pageSize"
+        :total="total"
+        layout="prev, pager, next, jumper"
+        @current-change="p => { page = p; loadRecords() }"
+      />
+    </div>
+
     <el-drawer v-model="showDetail" title="执行详情" size="600px">
       <div v-if="detail">
         <el-descriptions :column="2" size="small" border>
@@ -105,6 +115,9 @@ import { ref, watch, onMounted } from 'vue'
 import { uiBatchApi } from '../../api/uiAutomation'
 
 const props = defineProps({ projectId: [Number, String] })
+const page = ref(1)
+const pageSize = ref(20)
+const total = ref(0)
 const records = ref([])
 const loading = ref(false)
 const statusFilter = ref('')
@@ -114,10 +127,12 @@ const detail = ref(null)
 async function loadRecords() {
   loading.value = true
   try {
-    const params = { project: props.projectId }
+    const params = { project: props.projectId, page: page.value, page_size: pageSize.value }
     if (statusFilter.value !== '') params.status = statusFilter.value
     const data = await uiBatchApi.list(params)
     records.value = data.results || data || []
+    total.value = data.count ?? records.value.length
+    if (!records.value.length && page.value > 1) { page.value -= 1; loadRecords(); return }
   } catch (e) { console.error(e) }
   finally { loading.value = false }
 }
@@ -133,4 +148,6 @@ onMounted(loadRecords)
 
 <style scoped>
 .toolbar { display: flex; gap: 8px; margin-bottom: 12px; }
+
+.pagination { margin-top: 12px; display: flex; justify-content: flex-end; }
 </style>

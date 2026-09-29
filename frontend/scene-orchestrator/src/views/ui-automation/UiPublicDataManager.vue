@@ -21,6 +21,16 @@
       </el-table-column>
     </el-table>
 
+    <div class="pagination" v-if="total > pageSize">
+      <el-pagination
+        :current-page="page"
+        :page-size="pageSize"
+        :total="total"
+        layout="prev, pager, next, jumper"
+        @current-change="p => { page = p; loadItems() }"
+      />
+    </div>
+
     <el-dialog v-model="showDialog" :title="editing ? '编辑变量' : '新增变量'" width="500px">
       <el-form :model="form" label-width="80px">
         <el-form-item label="名称"><el-input v-model="form.name" /></el-form-item>
@@ -48,6 +58,9 @@ import { ref, watch, onMounted } from 'vue'
 import { uiPublicDataApi } from '../../api/uiAutomation'
 
 const props = defineProps({ projectId: [Number, String] })
+const page = ref(1)
+const pageSize = ref(20)
+const total = ref(0)
 const items = ref([])
 const loading = ref(false)
 const showDialog = ref(false)
@@ -57,7 +70,12 @@ const form = ref({ name: '', key: '', value: '', data_type: 0, is_enabled: true,
 
 async function loadItems() {
   loading.value = true
-  try { const data = await uiPublicDataApi.list({ project: props.projectId }); items.value = data.results || data || [] }
+  try {
+    const data = await uiPublicDataApi.list({ project: props.projectId, page: page.value, page_size: pageSize.value })
+    items.value = data.results || data || []
+    total.value = data.count ?? items.value.length
+    if (!items.value.length && page.value > 1) { page.value -= 1; loadItems(); return }
+  }
   catch (e) { console.error(e) } finally { loading.value = false }
 }
 
@@ -82,4 +100,6 @@ onMounted(loadItems)
 
 <style scoped>
 .toolbar { display: flex; justify-content: flex-end; margin-bottom: 12px; }
+
+.pagination { margin-top: 12px; display: flex; justify-content: flex-end; }
 </style>

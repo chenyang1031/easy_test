@@ -26,6 +26,16 @@
       </el-table-column>
     </el-table>
 
+    <div class="pagination" v-if="total > pageSize">
+      <el-pagination
+        :current-page="page"
+        :page-size="pageSize"
+        :total="total"
+        layout="prev, pager, next, jumper"
+        @current-change="p => { page = p; loadEnvs() }"
+      />
+    </div>
+
     <el-dialog v-model="showDialog" :title="editing ? '编辑环境' : '新增环境'" width="600px">
       <el-form :model="form" label-width="90px">
         <el-form-item label="名称"><el-input v-model="form.name" /></el-form-item>
@@ -54,6 +64,9 @@ import { ref, watch, onMounted } from 'vue'
 import { uiEnvApi } from '../../api/uiAutomation'
 
 const props = defineProps({ projectId: [Number, String] })
+const page = ref(1)
+const pageSize = ref(20)
+const total = ref(0)
 const envs = ref([])
 const loading = ref(false)
 const showDialog = ref(false)
@@ -63,7 +76,12 @@ const form = ref({ name: '', base_url: '', browser: 'chromium', headless: true, 
 
 async function loadEnvs() {
   loading.value = true
-  try { const data = await uiEnvApi.list({ project: props.projectId }); envs.value = data.results || data || [] }
+  try {
+    const data = await uiEnvApi.list({ project: props.projectId, page: page.value, page_size: pageSize.value })
+    envs.value = data.results || data || []
+    total.value = data.count ?? envs.value.length
+    if (!envs.value.length && page.value > 1) { page.value -= 1; loadEnvs(); return }
+  }
   catch (e) { console.error(e) } finally { loading.value = false }
 }
 
@@ -88,4 +106,6 @@ onMounted(loadEnvs)
 
 <style scoped>
 .toolbar { display: flex; justify-content: flex-end; margin-bottom: 12px; }
+
+.pagination { margin-top: 12px; display: flex; justify-content: flex-end; }
 </style>
