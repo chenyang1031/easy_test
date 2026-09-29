@@ -195,8 +195,18 @@ class PlaywrightEngine:
     # ============================================================
 
     async def click(self, locator, force=False):
-        """点击元素"""
-        await locator.click(force=force)
+        """点击元素。
+
+        非 force 点击因遮挡/动画/命中目标校验失败时（Element Plus 弹层、
+        过渡动画期间常见），自动降级 force 点击重试一次。
+        """
+        if force:
+            await locator.click(force=True)
+            return
+        try:
+            await locator.click()
+        except Exception:
+            await locator.click(force=True)
 
     async def fill(self, locator, value):
         """填充输入框"""
@@ -251,8 +261,20 @@ class PlaywrightEngine:
         await self._page.keyboard.press(key)
 
     async def navigate(self, url):
-        """页面导航"""
+        """页面导航。
+
+        SPA（hash 路由）下，同 URL 或仅 hash 变化的 goto 属于同文档导航：
+        不会重载页面、Vue 路由不一定切换视图，sessionStorage 也不会被重新
+        读取（自动登录注入 Token 后必须整页刷新才能生效），因此这类导航
+        在 goto 后统一强制 reload。
+        """
+        from urllib.parse import urlsplit
+        cur = urlsplit(self._page.url)
+        tgt = urlsplit(url)
+        same_document = (cur.scheme, cur.netloc, cur.path) == (tgt.scheme, tgt.netloc, tgt.path)
         await self._page.goto(url, wait_until='domcontentloaded')
+        if same_document:
+            await self._page.reload(wait_until='domcontentloaded')
 
     async def wait_for_navigation(self, timeout=30000):
         """等待页面导航完成"""

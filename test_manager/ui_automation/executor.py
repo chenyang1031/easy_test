@@ -74,6 +74,9 @@ class UIExecutor:
             if test_case.front_custom:
                 self.variables.update(test_case.front_custom)
 
+            # 目标系统需登录时自动登录（图片验证码 OCR + Token 注入）
+            await self._auto_login_if_configured()
+
             # 获取用例步骤（查询在线程池中物化为列表，协程内只访问预取数据）
             def _load_steps():
                 # page_step__page 必须预取：switch_step_open_url 分支会在
@@ -91,6 +94,9 @@ class UIExecutor:
             for case_step in case_steps:
                 page_step = case_step.page_step
                 details = sorted(page_step.details.all(), key=lambda d: d.step_sort)
+                if not details:
+                    # 空步骤若静默跳过会让用例「假成功」，必须显式失败
+                    raise ValueError(f"页面步骤「{page_step.name}」没有配置任何明细，请先在步骤管理中添加")
 
                 # 步骤切换时是否打开 URL
                 if case_step.switch_step_open_url and page_step.page and page_step.page.url:
@@ -171,6 +177,36 @@ class UIExecutor:
 
         finally:
             await self.engine.close()
+
+    async def _auto_login_if_configured(self):
+        """项目公共变量配置 app_username/app_password 时，自动登录目标系统并注入 Token。
+
+        解决目标系统图片验证码导致 UI 自动化无法登录的问题：API 层完成
+        验证码 OCR + 加密登录（test_manager.captcha_login），再把 Token 写入
+        目标系统前端 sessionStorage['Admin-Token'] 并刷新页面。
+        公共变量 app_login_base 可覆盖登录地址（如内网不通时走外网映射）；
+        登录失败的 Token 存于变量 app_token 供步骤引用。
+        """
+        username = self.variables.get('app_username')
+        password = self.variables.get('app_password')
+        if not (username and password) or not self.env.base_url:
+            return
+
+        from test_manager.captcha_login import CaptchaLoginError, login
+
+        base = (self.variables.get('app_login_base') or self.env.base_url).rstrip('/')
+        try:
+            result = await asyncio.to_thread(login, base, username, password)
+        except CaptchaLoginError as e:
+            self._log(f"自动登录失败[{e.kind}]: {e}；按未登录状态继续执行")
+            return
+
+        self.variables['app_token'] = result.token
+        await self.engine.execute_js(
+            f"sessionStorage.setItem('Admin-Token', {json.dumps(result.token)});"
+        )
+        await self.engine.navigate(self.env.base_url)
+        self._log("自动登录成功（验证码OCR），Token 已注入 sessionStorage['Admin-Token']")
 
     async def _execute_step_detail(self, detail, resolver, retry_count=0):
         """执行单个步骤明细，支持重试"""

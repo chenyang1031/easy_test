@@ -852,10 +852,10 @@ class UiScheduledTaskViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'])
     def run_now(self, request, pk=None):
-        """立即执行"""
+        """立即执行（手动触发不受调度暂停限制）"""
         task = self.get_object()
         from .tasks import run_ui_scheduled_task
-        run_ui_scheduled_task.delay(task.id)
+        run_ui_scheduled_task.delay(task.id, force=True)
         return Response({'message': '任务已提交执行'})
 
     @action(detail=True, methods=['post'])

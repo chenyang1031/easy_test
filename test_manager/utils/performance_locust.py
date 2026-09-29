@@ -16,6 +16,7 @@
 """
 import json
 import logging
+import re
 import time
 import warnings
 from urllib.parse import urlparse
@@ -167,6 +168,34 @@ def _sanitize_headers_for_http(headers: dict) -> dict:
     return result
 
 
+def _resolve_env_placeholders(value, env_variables):
+    """递归解析模板中的 {{env.xxx}} 占位符。
+
+    环境对整个压测进程固定，在启动时一次性解析；未命中环境变量的占位符保留
+    原文，交由后续 CSV 占位符替换处理。
+    """
+    if isinstance(value, dict):
+        return {k: _resolve_env_placeholders(v, env_variables) for k, v in value.items()}
+    if isinstance(value, list):
+        return [_resolve_env_placeholders(v, env_variables) for v in value]
+    if not isinstance(value, str) or "{{" not in value or not env_variables:
+        return value
+
+    lowered = {k.lower(): v for k, v in env_variables.items()}
+
+    def _sub(m):
+        key = m.group(1).strip()
+        if key.lower().startswith("env."):
+            name = key[4:].strip()
+            if name in env_variables:
+                return str(env_variables[name])
+            if name.lower() in lowered:
+                return str(lowered[name.lower()])
+        return m.group(0)
+
+    return re.sub(r"\{\{\s*([^{}]+?)\s*\}\}", _sub, value)
+
+
 class ErrorClassificationCounters:
     """Locust 多协程下错误分类计数（gevent 兼容）。"""
 
@@ -255,13 +284,36 @@ def run_locust_test(task_id: int) -> bool:
         interface = task.interface
         request_method = (interface.method or "GET").upper()
         request_url = interface.url or ""
-        request_headers_template = _normalize_headers(interface.request_headers)
         request_params_template = interface.request_params or {}
         request_body_template = interface.request_body or {}
         request_body_format = getattr(interface, "request_body_format", "json") or "json"
 
         env_obj = task.environment
         base_url = (env_obj.base_url or "").strip().rstrip("/")
+
+        # 环境变量兜底：接口资产未配置 Authorization/clientId 时注入环境凭证。
+        # 否则压测请求裸奔——目标系统对未认证请求常返回 HTTP 200 + 业务code 401，
+        # 表现为「HTTP 全成功、断言全失败」。
+        env_variables = env_obj.variables if isinstance(env_obj.variables, dict) else {}
+        request_headers_template = _normalize_headers(interface.request_headers)
+        header_names = {k.lower() for k in request_headers_template}
+        if "authorization" not in header_names:
+            auth_value = next(
+                (v for k, v in env_variables.items() if k.lower() == "authorization"), None)
+            if auth_value:
+                request_headers_template["Authorization"] = str(auth_value)
+        if "clientid" not in header_names:
+            client_id = next(
+                (v for k, v in env_variables.items() if k.lower() == "clientid"), None)
+            if client_id:
+                request_headers_template["clientId"] = str(client_id)
+        # {{env.xxx}} 占位符（headers/params/body）启动时一次性解析
+        request_headers_template = {
+            k: _resolve_env_placeholders(v, env_variables)
+            for k, v in request_headers_template.items()
+        }
+        request_params_template = _resolve_env_placeholders(request_params_template, env_variables)
+        request_body_template = _resolve_env_placeholders(request_body_template, env_variables)
 
         extra_config = task.extra_config or {}
         timeout = int(extra_config.get("timeout", 30))

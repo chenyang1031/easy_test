@@ -198,12 +198,13 @@ def run_ai_browser_task(self, record_id):
 
 
 @shared_task(bind=True, max_retries=1)
-def run_ui_scheduled_task(self, task_id):
+def run_ui_scheduled_task(self, task_id, force=False):
     """
     执行 UI 定时任务
 
     Args:
         task_id: UiScheduledTask ID
+        force: 手动「立即执行」时为 True，绕过调度暂停检查
     """
     from .models import UiScheduledTask, UiBatchExecutionRecord, UiExecutionRecord
 
@@ -213,7 +214,7 @@ def run_ui_scheduled_task(self, task_id):
         logger.error(f"定时任务 {task_id} 不存在")
         return {'status': 'error', 'message': '任务不存在'}
 
-    if not task.is_active:
+    if not task.is_active and not force:
         return {'status': 'skipped', 'message': '任务已暂停'}
 
     test_cases = task.test_cases.all()
