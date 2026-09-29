@@ -742,6 +742,21 @@ class UiEnvironmentConfig(models.Model):
     viewport_height = models.PositiveIntegerField(default=1080, verbose_name='视口高度')
     timeout = models.PositiveIntegerField(default=30, verbose_name='超时(秒)')
 
+    # 自动登录：执行前用账号密码走验证码 OCR 登录目标系统，
+    # 把 token 注入浏览器 sessionStorage，免去手工维护 token
+    auto_login = models.BooleanField(
+        default=False, verbose_name='自动登录',
+        db_comment='执行前验证码OCR自动登录并注入token',
+    )
+    login_username = models.CharField(
+        max_length=100, blank=True, default='apiautotest',
+        verbose_name='登录账号', db_comment='目标系统登录账号',
+    )
+    login_password = models.CharField(
+        max_length=200, blank=True, default='',
+        verbose_name='登录密码', db_comment='目标系统登录密码（内网测试账号）',
+    )
+
     # 数据库集成（WHartTest）
     db_status = models.BooleanField(default=False, verbose_name='启用数据库')
     db_type = models.CharField(

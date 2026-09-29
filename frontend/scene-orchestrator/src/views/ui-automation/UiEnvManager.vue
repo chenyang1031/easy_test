@@ -51,6 +51,14 @@
         <el-form-item label="视口宽度"><el-input-number v-model="form.viewport_width" :min="320" :max="3840" /></el-form-item>
         <el-form-item label="视口高度"><el-input-number v-model="form.viewport_height" :min="240" :max="2160" /></el-form-item>
         <el-form-item label="超时(秒)"><el-input-number v-model="form.timeout" :min="5" :max="120" /></el-form-item>
+        <el-form-item label="自动登录">
+          <el-switch v-model="form.auto_login" />
+          <div class="form-help" style="width:100%">执行前用账号密码走验证码OCR自动登录并注入登录态，免去手工维护token</div>
+        </el-form-item>
+        <template v-if="form.auto_login">
+          <el-form-item label="登录账号"><el-input v-model="form.login_username" placeholder="apiautotest" /></el-form-item>
+          <el-form-item label="登录密码"><el-input v-model="form.login_password" type="password" show-password placeholder="目标系统登录密码" /></el-form-item>
+        </template>
         <el-form-item label="默认环境"><el-switch v-model="form.is_default" /></el-form-item>
       </el-form>
       <template #footer>
@@ -74,7 +82,7 @@ const loading = ref(false)
 const showDialog = ref(false)
 const saving = ref(false)
 const editing = ref(false)
-const form = ref({ name: '', base_url: '', browser: 'chromium', headless: true, viewport_width: 1920, viewport_height: 1080, timeout: 30, is_default: false })
+const form = ref({ name: '', base_url: '', browser: 'chromium', headless: true, viewport_width: 1920, viewport_height: 1080, timeout: 30, is_default: false, auto_login: false, login_username: 'apiautotest', login_password: '' })
 
 async function loadEnvs() {
   loading.value = true
@@ -95,7 +103,7 @@ async function saveEnv() {
     if (editing.value && form.value.id) { await uiEnvApi.update(form.value.id, form.value) }
     else { await uiEnvApi.create({ ...form.value, project: props.projectId }) }
     showDialog.value = false; editing.value = false
-    form.value = { name: '', base_url: '', browser: 'chromium', headless: true, viewport_width: 1920, viewport_height: 1080, timeout: 30, is_default: false }
+    form.value = { name: '', base_url: '', browser: 'chromium', headless: true, viewport_width: 1920, viewport_height: 1080, timeout: 30, is_default: false, auto_login: false, login_username: 'apiautotest', login_password: '' }
     loadEnvs()
   } catch (e) { console.error(e) } finally { saving.value = false }
 }

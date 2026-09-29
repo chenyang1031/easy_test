@@ -386,6 +386,7 @@ class UiEnvironmentConfigSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'project', 'name', 'base_url', 'is_default',
             'browser', 'headless', 'viewport_width', 'viewport_height', 'timeout',
+            'auto_login', 'login_username', 'login_password',
             'db_status', 'db_type', 'mysql_config', 'db2_config',
             'creator_name', 'created_by', 'created_at', 'updated_at',
         ]

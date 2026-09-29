@@ -58,6 +58,11 @@ class UIExecutor:
             await self.engine.start()
             await self.engine.start_trace(name=f"case_{test_case.id}_{uuid.uuid4().hex[:8]}")
 
+            # 自动登录：验证码 OCR 登录目标系统后把 token 注入浏览器，
+            # 后续页面以登录态打开（免手工维护 token）
+            if getattr(self.env, 'auto_login', False) and self.env.base_url:
+                await self._auto_login()
+
             # 导航到基础 URL
             if self.env.base_url:
                 await self.engine.navigate(self.env.base_url)
@@ -187,6 +192,11 @@ class UIExecutor:
         公共变量 app_login_base 可覆盖登录地址（如内网不通时走外网映射）；
         登录失败的 Token 存于变量 app_token 供步骤引用。
         """
+        # 环境已开启 auto_login 时由 _auto_login() 统一处理，
+        # 避免同一执行内 OCR 登录两次（浪费且易触发目标系统限流）
+        if getattr(self.env, 'auto_login', False):
+            return
+
         username = self.variables.get('app_username')
         password = self.variables.get('app_password')
         if not (username and password) or not self.env.base_url:
@@ -437,6 +447,46 @@ class UIExecutor:
         except Exception as e:
             self._log(f"Python 代码执行失败: {e}")
             raise
+
+    async def _auto_login(self):
+        """验证码 OCR 自动登录目标系统，token 写入浏览器 sessionStorage。
+
+        目标系统为前端 SPA：登录态 = sessionStorage['Admin-Token']。
+        先打开目标域任意页面（登录页）使 sessionStorage 可写，注入后再
+        由调用方导航业务页面，路由守卫读到 token 即视为已登录。
+        登录失败抛出异常终止用例（避免带着无效登录态空跑）。
+        """
+        from urllib.parse import urlparse
+        from test_manager.captcha_login import login as captcha_login, CaptchaLoginError
+
+        origin = urlparse(self.env.base_url).scheme + '://' + urlparse(self.env.base_url).netloc
+        username = getattr(self.env, 'login_username', '') or 'apiautotest'
+        password = getattr(self.env, 'login_password', '') or ''
+        if not password:
+            raise RuntimeError('环境开启了自动登录但未配置登录密码')
+
+        def _do_login():
+            return captcha_login(origin, username, password, verbose=False)
+
+        try:
+            result = await sync_to_async(_do_login, thread_sensitive=True)()
+        except CaptchaLoginError as exc:
+            self._log(f"自动登录失败: {exc}")
+            raise RuntimeError(f'自动登录失败: {exc}') from exc
+
+        # 先到目标域（登录页）再写 sessionStorage——它按 tab+域 隔离。
+        # 写入后必须 reload：SPA 是 hash 路由，hash 跳转不重载页面，
+        # 登录守卫依赖的内存态不会重建，会被弹回登录页；reload 让
+        # Vue 应用带 token 重新初始化，登录页随即自动跳转业务首页
+        await self.engine.navigate(self.env.base_url)
+        await self.engine._page.wait_for_load_state('domcontentloaded')
+        await self.engine._page.evaluate(
+            "([k, v]) => sessionStorage.setItem(k, v)",
+            ['Admin-Token', result.token],
+        )
+        await self.engine._page.reload()
+        await self.engine._page.wait_for_load_state('domcontentloaded')
+        self._log(f"自动登录成功，token 已注入 sessionStorage: {username}@{origin}")
 
     async def _load_public_data(self, project_id):
         """加载项目公共变量（ORM 调用经 sync_to_async 包装，避免异步上下文报错）"""
