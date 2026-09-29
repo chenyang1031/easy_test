@@ -120,11 +120,41 @@
     </el-dialog>
 
     <!-- 执行环境选择弹窗 -->
-    <el-dialog v-model="envPickerVisible" title="选择执行环境" width="460px" append-to-body>
+    <el-dialog v-model="envPickerVisible" title="选择执行环境" width="520px" append-to-body>
       <el-select v-model="pickedEnvId" placeholder="选择环境配置" style="width: 100%" size="default">
         <el-option v-for="e in envs" :key="e.id" :label="`${e.name}${e.is_default ? '（默认）' : ''}`" :value="e.id" />
       </el-select>
       <p v-if="!envs.length" class="text-danger small mt-2 mb-0">当前项目还没有环境配置，请先到「环境配置」页签创建（需填写基础 URL、浏览器等）。</p>
+
+      <!-- 批量执行时可把当前用例集合固化为定时任务，之后按计划自动重跑 -->
+      <el-divider v-if="pendingRunIds.length > 1" class="my-3" />
+      <template v-if="pendingRunIds.length > 1">
+        <div class="d-flex align-items-center gap-2">
+          <el-switch v-model="alsoCreateSchedule" />
+          <span class="small">同时创建为定时任务（共 {{ pendingRunIds.length }} 个用例）</span>
+        </div>
+        <template v-if="alsoCreateSchedule">
+          <el-input v-model="scheduleForm.name" size="small" class="mt-2" placeholder="任务名称">
+            <template #append>
+              <el-button @click="scheduleForm.name = defaultScheduleName()">默认名</el-button>
+            </template>
+          </el-input>
+          <div class="d-flex gap-2 mt-2">
+            <el-select v-model="scheduleForm.trigger_type" size="small" style="width: 130px">
+              <el-option label="Cron表达式" value="cron" />
+              <el-option label="固定间隔" value="interval" />
+              <el-option label="单次执行" value="once" />
+            </el-select>
+            <el-input v-if="scheduleForm.trigger_type === 'cron'" v-model="scheduleForm.cron_expression"
+                      size="small" placeholder="分 时 日 月 周，如 0 2 * * *（每天2点）" />
+            <el-input v-else-if="scheduleForm.trigger_type === 'interval'" v-model.number="scheduleForm.interval_seconds"
+                      size="small" type="number" placeholder="间隔秒数，如 3600" />
+            <el-date-picker v-else v-model="scheduleForm.run_at" type="datetime" size="small"
+                            placeholder="选择执行时间" style="width: 100%" />
+          </div>
+          <p class="text-muted small mt-1 mb-0">创建后可在「调度与监控 → 定时任务 → UI自动化」管理</p>
+        </template>
+      </template>
       <template #footer>
         <el-button @click="envPickerVisible = false">取消</el-button>
         <el-button type="primary" :disabled="!envs.length || !pickedEnvId" :loading="running" @click="confirmRun">开始执行</el-button>
@@ -136,7 +166,7 @@
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { uiTestCaseApi, uiTriggerApi, uiPageStepApi, uiCaseStepApi, uiEnvApi } from '../../api/uiAutomation'
+import { uiTestCaseApi, uiTriggerApi, uiPageStepApi, uiCaseStepApi, uiEnvApi, uiScheduledTaskApi } from '../../api/uiAutomation'
 
 const props = defineProps({
   projectId: [Number, String],
@@ -301,10 +331,43 @@ const envs = ref([])
 const pickedEnvId = ref(null)
 const running = ref(false)
 const pendingRunIds = ref([])
+const alsoCreateSchedule = ref(false)
+const scheduleForm = ref({ name: '', trigger_type: 'cron', cron_expression: '0 2 * * *', interval_seconds: 3600, run_at: null })
+
+function defaultScheduleName() {
+  const d = new Date()
+  const pad = n => String(n).padStart(2, '0')
+  return `UI批量-${pendingRunIds.value.length}用例-${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}`
+}
+
+async function createScheduleFromSelection() {
+  const f = scheduleForm.value
+  if (!f.name.trim()) { ElMessage.warning('请填写定时任务名称'); return false }
+  if (f.trigger_type === 'cron' && !f.cron_expression.trim()) { ElMessage.warning('请填写Cron表达式'); return false }
+  if (f.trigger_type === 'interval' && (!f.interval_seconds || f.interval_seconds < 30)) { ElMessage.warning('间隔秒数需不小于30'); return false }
+  if (f.trigger_type === 'once' && !f.run_at) { ElMessage.warning('请选择单次执行时间'); return false }
+  const payload = {
+    project: Number(props.projectId),
+    name: f.name.trim(),
+    task_type: 'test_case',
+    trigger_type: f.trigger_type,
+    test_cases: pendingRunIds.value,
+    environment: pickedEnvId.value,
+    is_active: true,
+  }
+  if (f.trigger_type === 'cron') payload.cron_expression = f.cron_expression.trim()
+  if (f.trigger_type === 'interval') payload.interval_seconds = Number(f.interval_seconds)
+  if (f.trigger_type === 'once') payload.run_at = f.run_at.toISOString ? f.run_at.toISOString() : f.run_at
+  await uiScheduledTaskApi.create(payload)
+  ElMessage.success(`定时任务「${payload.name}」已创建`)
+  return true
+}
 
 async function runWithEnvPicker(ids) {
   pendingRunIds.value = ids
   pickedEnvId.value = null
+  alsoCreateSchedule.value = false
+  scheduleForm.value = { name: '', trigger_type: 'cron', cron_expression: '0 2 * * *', interval_seconds: 3600, run_at: null }
   try {
     const data = await uiEnvApi.list({ project: props.projectId })
     envs.value = data.results || data || []
@@ -318,6 +381,10 @@ async function confirmRun() {
   const ids = pendingRunIds.value
   running.value = true
   try {
+    if (alsoCreateSchedule.value && ids.length > 1) {
+      const ok = await createScheduleFromSelection()
+      if (!ok) { running.value = false; return }
+    }
     if (ids.length === 1) {
       const r = await uiTestCaseApi.run(ids[0], { environment: pickedEnvId.value })
       ElMessage.success(r.message || '执行已提交，请到「执行记录」查看进度')
