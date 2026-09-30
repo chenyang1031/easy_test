@@ -679,6 +679,7 @@ class UiTriggerBatchViewSet(viewsets.ViewSet):
             total_cases=test_cases.count(),
             status=1,
             trigger_type=data.get('trigger_type', 'manual'),
+            environment_id=env_id,
             start_time=timezone.now(),
             created_by=request.user,
         )

@@ -94,20 +94,10 @@ def execute_ui_test_batch(self, batch_id):
         batch.save()
         return {'status': 'no_pending_records'}
 
-    # 取第一条记录的环境（批量执行统一使用同一环境）
-    # 环境信息在触发时传入，这里从 batch 关联获取
-    # 简化处理：使用默认环境
-    env = None
-    try:
-        first_record = pending_records.first()
-        # 尝试从环境配置获取，这里简化为使用默认环境
-        env = UiEnvironmentConfig.objects.filter(
-            project=batch.project, is_default=True
-        ).first()
-        if not env:
-            env = UiEnvironmentConfig.objects.filter(project=batch.project).first()
-    except Exception:
-        pass
+    # 环境：优先用触发时绑定的批次环境，未绑定时回落默认环境
+    env = batch.environment or UiEnvironmentConfig.objects.filter(
+        project=batch.project, is_default=True
+    ).first() or UiEnvironmentConfig.objects.filter(project=batch.project).first()
 
     if not env:
         # 没有环境配置，标记所有记录为失败
@@ -234,6 +224,8 @@ def run_ui_scheduled_task(self, task_id, force=False):
         total_cases=test_cases.count(),
         status=1,
         trigger_type='scheduled',
+        environment=env,
+        scheduled_task=task,
         start_time=timezone.now(),
         created_by=task.created_by,
     )
@@ -285,6 +277,13 @@ def _update_batch_stats(batch):
             batch.status = 4  # 部分成功
 
     batch.save()
+
+    # 回写关联定时任务的成功/失败统计
+    task = batch.scheduled_task
+    if task is not None and completed >= total:
+        task.successful_runs = passed
+        task.failed_runs = failed
+        task.save(update_fields=['successful_runs', 'failed_runs'])
 
 
 @shared_task

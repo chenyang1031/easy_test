@@ -639,6 +639,16 @@ class UiBatchExecutionRecord(models.Model):
         related_name='ui_batch_records', verbose_name='项目'
     )
     name = models.CharField(max_length=200, verbose_name='批次名称')
+    environment = models.ForeignKey(
+        'UiEnvironmentConfig', on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='batch_records',
+        verbose_name='执行环境'
+    )
+    scheduled_task = models.ForeignKey(
+        'UiScheduledTask', on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='batches',
+        verbose_name='关联定时任务'
+    )
     total_cases = models.PositiveIntegerField(default=0, verbose_name='总用例数')
     passed_cases = models.PositiveIntegerField(default=0, verbose_name='通过数')
     failed_cases = models.PositiveIntegerField(default=0, verbose_name='失败数')
