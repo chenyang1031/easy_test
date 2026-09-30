@@ -39,43 +39,6 @@
               <el-option v-for="project in projects" :key="project.id" :label="project.name" :value="String(project.id)" />
             </el-select>
           </div>
-          <div class="filter-item">
-            <label class="filter-label">运行环境</label>
-            <el-select
-              v-model="selectedEnvironmentId"
-              placeholder="请选择运行环境"
-              size="small"
-              class="filter-control"
-              :disabled="!selectedPlatformProjectId"
-              @change="onEnvironmentChange"
-            >
-              <el-option label="请选择运行环境" value="" />
-              <el-option
-                v-for="env in environments"
-                :key="env.id"
-                :label="env.name"
-                :value="String(env.id)"
-              >
-                <div class="env-option">
-                  <span>{{ env.name }}</span>
-                  <el-tooltip placement="left" :show-after="200">
-                    <template #content>
-                      <div class="env-tooltip">
-                        <div><strong>域名：</strong>{{ env.base_url || '-' }}</div>
-                        <div v-if="envVariablesPreview(env)"><strong>变量：</strong>{{ envVariablesPreview(env) }}</div>
-                      </div>
-                    </template>
-                    <span class="env-option-hint text-muted ms-1">ⓘ</span>
-                  </el-tooltip>
-                </div>
-              </el-option>
-            </el-select>
-            <div v-if="selectedPlatformProjectId && !environments.length && !envLoading" class="env-empty-hint">
-              <span class="text-muted small">请先在</span>
-              <a :href="envListUrl" target="_blank" class="small">「环境」页面</a>
-              <span class="text-muted small">创建环境配置</span>
-            </div>
-          </div>
           <div class="filter-item filter-item--search">
             <label class="filter-label filter-label--short">搜索</label>
             <input v-model="keyword" class="form-control form-control-sm filter-control" placeholder="搜索场景名称（回车或点右侧搜索）" @keyup.enter="queryScenes" />
@@ -283,7 +246,7 @@
                     <button
                       class="btn btn-sm btn-primary me-1"
                       :disabled="isExecuteDisabled(item)"
-                      @click="runScene(item.id)"
+                      @click="openExecEnvDialog(item.id)"
                     >
                       执行
                     </button>
@@ -375,9 +338,56 @@
           <el-radio value="parallel">并发执行</el-radio>
         </el-radio-group>
       </div>
+      <div class="mb-3">
+        <label class="small text-muted d-block mb-1">运行环境</label>
+        <el-select v-model="batchEnvId" placeholder="选择运行环境" style="width: 100%" size="default">
+          <el-option v-for="e in environments" :key="e.id" :label="e.name" :value="e.id" />
+        </el-select>
+        <p v-if="!environments.length" class="text-danger small mt-1 mb-0">当前项目还没有环境，请先在「环境」页面创建。</p>
+      </div>
+      <el-divider class="my-3" />
+      <div class="d-flex align-items-center gap-2">
+        <el-switch v-model="alsoCreateSchedule" />
+        <span class="small">同时创建为定时任务（共 {{ selectedIds.length }} 个场景）</span>
+      </div>
+      <template v-if="alsoCreateSchedule">
+        <el-input v-model="scheduleForm.name" size="small" class="mt-2" placeholder="任务名称">
+          <template #append>
+            <el-button @click="scheduleForm.name = defaultScheduleName()">默认名</el-button>
+          </template>
+        </el-input>
+        <div class="d-flex gap-2 mt-2">
+          <el-select v-model="scheduleForm.schedule_type" size="small" style="width: 130px">
+            <el-option label="每日执行" value="daily" />
+            <el-option label="每周执行" value="weekly" />
+            <el-option label="Cron表达式" value="cron" />
+            <el-option label="单次执行" value="once" />
+          </el-select>
+          <el-time-picker v-if="['daily','weekly','monthly'].includes(scheduleForm.schedule_type)"
+                          v-model="scheduleForm.scheduled_time" size="small" placeholder="执行时间"
+                          style="width: 130px" format="HH:mm" />
+          <el-input v-if="scheduleForm.schedule_type === 'cron'" v-model="scheduleForm.cron_expression"
+                    size="small" placeholder="分 时 日 月 周，如 0 2 * * *" />
+          <el-date-picker v-if="scheduleForm.schedule_type === 'once'" v-model="scheduleForm.scheduled_date"
+                          type="date" size="small" placeholder="执行日期" style="width: 100%" />
+        </div>
+        <p class="text-muted small mt-1 mb-0">创建后可在「调度与监控 → 定时任务 → 接口测试」管理</p>
+      </template>
       <template #footer>
         <button class="btn btn-sm btn-outline-secondary" @click="batchConfirmVisible = false">取消</button>
-        <button class="btn btn-sm btn-primary" @click="confirmBatchExecute">确认执行</button>
+        <button class="btn btn-sm btn-primary" :disabled="!batchEnvId" @click="confirmBatchExecute">确认执行</button>
+      </template>
+    </el-dialog>
+
+    <!-- 单场景执行环境选择弹窗 -->
+    <el-dialog v-model="execEnvDialogVisible" title="选择运行环境" width="460px" append-to-body>
+      <el-select v-model="execEnvPickedId" placeholder="选择运行环境" style="width: 100%" size="default">
+        <el-option v-for="e in environments" :key="e.id" :label="e.name" :value="e.id" />
+      </el-select>
+      <p v-if="!environments.length" class="text-danger small mt-2 mb-0">当前项目还没有环境，请先在「环境」页面创建。</p>
+      <template #footer>
+        <el-button @click="execEnvDialogVisible = false">取消</el-button>
+        <el-button type="primary" :disabled="!environments.length || !execEnvPickedId" @click="confirmExecWithEnv">开始执行</el-button>
       </template>
     </el-dialog>
 
@@ -496,7 +506,16 @@ const projectsLoading = ref(true);
 const selectedPlatformProjectId = ref("");
 const selectedApiProjectId = ref("");
 const environments = ref([]);
-const selectedEnvironmentId = ref("");
+const selectedEnvironmentId = ref("");  // 记忆环境(localStorage),作为执行弹窗默认值
+const batchEnvId = ref(null);           // 批量执行弹窗所选环境
+const execEnvDialogVisible = ref(false);
+const execEnvPickedId = ref(null);
+const execEnvPendingSceneId = ref(null);
+const alsoCreateSchedule = ref(false);
+const scheduleForm = ref({
+  name: '', schedule_type: 'daily', scheduled_time: null,
+  cron_expression: '0 2 * * *', scheduled_date: null,
+});
 const envLoading = ref(false);
 const keyword = ref("");
 const activeFilter = ref("");
@@ -582,18 +601,16 @@ const selectedLogDetail = computed(() => {
 });
 
 const canBatchExecute = computed(() => {
-  return !!selectedEnvironmentId.value && selectedIds.value.length > 0 && !batchRunning.value;
+  return selectedIds.value.length > 0 && !batchRunning.value;
 });
 
 const batchExecuteTooltip = computed(() => {
-  if (!selectedEnvironmentId.value) return "请先选择运行环境";
   if (!selectedIds.value.length) return "请选择要执行的场景";
   return "";
 });
 
 function getExecuteTooltip(item) {
   if (rowRunningMap.value.has(item.id)) return "";
-  if (!selectedEnvironmentId.value) return "请先选择运行环境";
   const nodeCount = item.node_count || 0;
   if (nodeCount === 0) return "场景无有效节点，无法执行";
   return "";
@@ -601,7 +618,6 @@ function getExecuteTooltip(item) {
 
 function isExecuteDisabled(item) {
   if (rowRunningMap.value.has(item.id)) return true;
-  if (!selectedEnvironmentId.value) return true;
   if ((item.node_count || 0) === 0) return true;
   return false;
 }
@@ -678,13 +694,17 @@ function envVariablesPreview(env) {
   return entries.map(([k, v]) => `${k}=${String(v).slice(0, 20)}`).join("; ");
 }
 
-function onEnvironmentChange() {
+function rememberEnv(envId) {
   const projectId = selectedPlatformProjectId.value;
-  if (projectId && selectedEnvironmentId.value) {
+  if (projectId && envId) {
     try {
-      localStorage.setItem(`scene_env_${projectId}`, selectedEnvironmentId.value);
+      localStorage.setItem(`scene_env_${projectId}`, String(envId));
     } catch (_) {}
   }
+}
+
+function onEnvironmentChange() {
+  rememberEnv(selectedEnvironmentId.value);
 }
 
 function toggleSelect(id) {
@@ -846,6 +866,23 @@ function goDesigner(id) {
   router.push({ name: "scene-designer", params: { id } });
 }
 
+// 单场景执行：弹环境选择（默认记忆环境），确认后执行
+function openExecEnvDialog(id) {
+  execEnvPendingSceneId.value = id;
+  execEnvPickedId.value = selectedEnvironmentId.value || null;
+  execEnvDialogVisible.value = true;
+}
+
+function confirmExecWithEnv() {
+  const id = execEnvPendingSceneId.value;
+  const envId = execEnvPickedId.value;
+  if (!id || !envId) return;
+  rememberEnv(envId);
+  selectedEnvironmentId.value = String(envId);
+  execEnvDialogVisible.value = false;
+  runScene(id);
+}
+
 async function runScene(id) {
   if (!selectedEnvironmentId.value) {
     ElMessage.warning("请先选择运行环境");
@@ -903,10 +940,8 @@ async function openNodePopover(item) {
 
 function openBatchExecuteConfirm() {
   if (!selectedIds.value.length) return;
-  if (!selectedEnvironmentId.value) {
-    ElMessage.warning("请先选择运行环境");
-    return;
-  }
+  // 环境在弹窗内选择，默认记忆环境
+  batchEnvId.value = selectedEnvironmentId.value ? Number(selectedEnvironmentId.value) : null;
   batchConfirmVisible.value = true;
 }
 
@@ -941,11 +976,41 @@ async function confirmBatchDelete() {
 async function confirmBatchExecute() {
   batchConfirmVisible.value = false;
   const ids = [...selectedIds.value];
+  const envId = Number(batchEnvId.value);
+  rememberEnv(envId);
+  selectedEnvironmentId.value = String(envId);
+
+  // 可选:把这批场景固化为定时任务（多场景 M2M,触发时走批量链路）
+  if (alsoCreateSchedule.value) {
+    const f = scheduleForm.value;
+    if (!f.name.trim()) { ElMessage.warning("请填写定时任务名称"); return; }
+    if (f.schedule_type === "cron" && !f.cron_expression.trim()) { ElMessage.warning("请填写Cron表达式"); return; }
+    if (f.schedule_type === "once" && !f.scheduled_date) { ElMessage.warning("请选择单次执行日期"); return; }
+    try {
+      await sceneBatchApi.createScheduledTask({
+        name: f.name.trim(),
+        schedule_type: f.schedule_type,
+        cron_expression: f.schedule_type === "cron" ? f.cron_expression.trim() : "",
+        scheduled_time: f.schedule_type !== "once" && f.scheduled_time
+          ? (f.scheduled_time.length ? f.scheduled_time : `${String(f.scheduled_time.getHours()).padStart(2, "0")}:${String(f.scheduled_time.getMinutes()).padStart(2, "0")}`)
+          : "",
+        scheduled_date: f.schedule_type === "once" && f.scheduled_date
+          ? (f.scheduled_date.length ? f.scheduled_date.slice(0, 10) : f.scheduled_date.toISOString().slice(0, 10))
+          : "",
+        test_scenes: ids,
+        environment: envId,
+        is_enabled: true,
+      });
+      ElMessage.success(`定时任务「${f.name.trim()}」已创建`);
+    } catch (e) {
+      ElMessage.error("定时任务创建失败: " + (e?.message || "未知错误"));
+      return;
+    }
+  }
+
   batchRunning.value = true;
   batchProgress.value = { total: ids.length, completed: 0, succeeded: 0, partial: 0, failed: 0, details: [] };
   rowRunningMap.value = new Set([...rowRunningMap.value, ...ids]);
-
-  const envId = Number(selectedEnvironmentId.value);
   const TERMINAL = new Set(["success", "failed", "partial_success", "stopped"]);
   // 轮询兜底上限：30 分钟
   const MAX_POLL_MS = 30 * 60 * 1000;

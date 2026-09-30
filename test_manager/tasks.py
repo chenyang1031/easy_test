@@ -81,6 +81,10 @@ def execute_scheduled_test_suite(self, scheduled_task_id):
         )
         logger.info(f"创建执行日志: ID={execution_log.id}")
 
+        # ── 多场景定时任务分支（批量执行固化为定时任务） ──
+        if scheduled_task.test_scenes.exists():
+            return _run_scheduled_scene_multi(scheduled_task, execution_log)
+
         # ── 场景编排分支 ──
         if scheduled_task.test_scene:
             return _run_scheduled_scene(scheduled_task, execution_log)
@@ -181,6 +185,35 @@ def execute_scheduled_test_suite(self, scheduled_task_id):
         logger.error(error_msg)
         logger.error(traceback.format_exc())
         return {"success": False, "error": error_msg}
+
+
+def _run_scheduled_scene_multi(scheduled_task, execution_log):
+    """多场景定时任务：创建批次走批量执行链路，复用其统计/停止/日志能力"""
+    from test_manager.models import SceneBatchExecution
+    from test_manager.utils.scene_batch_schedule import start_scene_batch
+
+    scenes = [s for s in scheduled_task.test_scenes.all() if not s.is_deleted]
+    if not scenes:
+        execution_log.status = 'failed'
+        execution_log.error_message = '定时任务未关联有效场景'
+        execution_log.end_time = timezone.now()
+        execution_log.save()
+        return
+
+    batch = SceneBatchExecution.objects.create(
+        name=f"定时任务: {scheduled_task.name}",
+        project=scenes[0].project,
+        environment_id=scheduled_task.environment_id,
+        execute_mode='serial',
+        total_scenes=len(scenes),
+        status=SceneBatchExecution.STATUS_RUNNING,
+        created_by=scheduled_task.created_by,
+    )
+    execution_log.status = 'success'
+    execution_log.error_message = f'已创建批量执行批次 #{batch.id}（{len(scenes)} 个场景），结果见场景执行列表'
+    execution_log.end_time = timezone.now()
+    execution_log.save()
+    start_scene_batch(batch.id, [s.id for s in scenes])
 
 
 def _run_scheduled_scene(scheduled_task, execution_log):

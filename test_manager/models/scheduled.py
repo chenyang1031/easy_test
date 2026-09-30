@@ -31,6 +31,9 @@ class ScheduledTask(models.Model):
     test_scene = models.ForeignKey(TestScene, on_delete=models.CASCADE, related_name='scheduled_tasks',
                                     verbose_name="测试场景", db_comment="测试场景",
                                    null=True, blank=True)
+    # 多场景定时任务（批量执行固化为定时任务时使用）；为空时回落到 test_scene 单场景
+    test_scenes = models.ManyToManyField(TestScene, blank=True, related_name='scheduled_task_batches',
+                                         verbose_name="测试场景列表")
     environment = models.ForeignKey(Environment, on_delete=models.CASCADE, related_name='scheduled_tasks',
                                     verbose_name="执行环境", db_comment="执行环境",null=True, blank=True)
 

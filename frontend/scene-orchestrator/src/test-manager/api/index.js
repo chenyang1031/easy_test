@@ -168,6 +168,8 @@ export const sceneBatchApi = {
   get: (id) => request(`/api/v1/scene-batch-executions/${id}/`),
   stop: (id) => request(`/api/v1/scene-batch-executions/${id}/stop/`, { method: 'POST' }),
   remove: (id) => request(`/api/v1/scene-batch-executions/${id}/`, { method: 'DELETE' }),
+  // 多场景定时任务（批量执行固化）：绑定 ScheduledTask.test_scenes M2M
+  createScheduledTask: (data) => request('/api/v1/scheduled-tasks/', { method: 'POST', body: JSON.stringify(data) }),
 }
 
 // ========== 文件上传 ==========
