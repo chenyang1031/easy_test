@@ -207,6 +207,7 @@ def _run_scheduled_scene_multi(scheduled_task, execution_log):
         execute_mode='serial',
         total_scenes=len(scenes),
         status=SceneBatchExecution.STATUS_RUNNING,
+        scheduled_task=scheduled_task,
         created_by=scheduled_task.created_by,
     )
     execution_log.status = 'success'
@@ -318,6 +319,15 @@ def _run_scheduled_scene(scheduled_task, execution_log):
         total_nodes = len(node_results)
         passed_nodes = sum(1 for n in node_results if n.get('status') == 'success')
         failed_nodes = sum(1 for n in node_results if n.get('status') == 'failed')
+
+        # 回写定时任务统计（每次调度 +1）
+        scheduled_task.total_runs = (scheduled_task.total_runs or 0) + 1
+        if is_success:
+            scheduled_task.successful_runs = (scheduled_task.successful_runs or 0) + 1
+        else:
+            scheduled_task.failed_runs = (scheduled_task.failed_runs or 0) + 1
+        scheduled_task.save(update_fields=[
+            'total_runs', 'successful_runs', 'failed_runs', 'updated_at'])
 
         execution_log.total_test_cases = total_nodes
         execution_log.passed_test_cases = passed_nodes

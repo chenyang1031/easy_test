@@ -281,6 +281,13 @@ def _update_batch_stats(batch):
     # 回写关联定时任务的成功/失败统计
     task = batch.scheduled_task
     if task is not None and completed >= total:
+        task.successful_runs = passed
+        task.failed_runs = failed
+        task.save(update_fields=['successful_runs', 'failed_runs'])
+
+    # 回写关联定时任务的成功/失败统计
+    task = batch.scheduled_task
+    if task is not None and completed >= total:
         task.successful_runs = (task.successful_runs or 0) + passed
         task.failed_runs = (task.failed_runs or 0) + failed
         task.save(update_fields=['successful_runs', 'failed_runs'])

@@ -442,6 +442,11 @@ class SceneBatchExecution(models.Model):
         db_comment="外部请求停止批次，调度线程在每个场景启动前读取",
     )
     error_message = models.TextField(blank=True, default="", verbose_name="错误信息", db_comment="错误信息")
+    scheduled_task = models.ForeignKey(
+        'ScheduledTask', on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='scene_batches',
+        verbose_name="关联定时任务", db_comment="定时任务触发的批次回链",
+    )
     started_at = models.DateTimeField(auto_now_add=True, verbose_name="开始时间", db_comment="开始时间")
     finished_at = models.DateTimeField(null=True, blank=True, verbose_name="结束时间", db_comment="结束时间")
     created_by = models.ForeignKey(
