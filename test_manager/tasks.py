@@ -216,6 +216,53 @@ def _run_scheduled_scene_multi(scheduled_task, execution_log):
     start_scene_batch(batch.id, [s.id for s in scenes])
 
 
+def _scene_execution_has_auth_failure(scene_execution):
+    """场景执行结果里是否存在 401/认证失败 类节点"""
+    for n in (scene_execution.node_results or []):
+        reason = str(n.get('reason', ''))
+        if '401' in reason or '认证失败' in reason:
+            return True
+    return False
+
+
+def _refresh_env_token_via_captcha_login(env):
+    """验证码 OCR 登录 env.base_url 对应系统，刷新接口环境 variables 里的 token。
+
+    凭证优先取同源 UI 环境的自动登录配置；刷新成功返回 True。
+    """
+    from urllib.parse import urlparse
+    from test_manager.captcha_login import login as captcha_login
+    from test_manager.ui_automation.models import UiEnvironmentConfig
+
+    base = (env.base_url or '').rstrip('/')
+    if not base:
+        return False
+    parsed = urlparse(base)
+    origin = f'{parsed.scheme}://{parsed.netloc}'
+
+    username, password = None, None
+    for ui_env in UiEnvironmentConfig.objects.exclude(login_password=''):
+        p2 = urlparse((ui_env.base_url or '').rstrip('/'))
+        if f'{p2.scheme}://{p2.netloc}' == origin and ui_env.login_username:
+            username = ui_env.login_username
+            password = ui_env.login_password
+            break
+    if not password:
+        logger.warning(f"同源 UI 环境未配置自动登录凭证，无法刷新 token: {origin}")
+        return False
+
+    result = captcha_login(base, username, password, verbose=False)
+    variables = dict(env.variables or {})
+    variables['authorization'] = result.authorization
+    client_id = (result.raw.get('data') or {}).get('client_id')
+    if client_id:
+        variables['clientid'] = client_id
+    env.variables = variables
+    env.save(update_fields=['variables', 'updated_at'])
+    logger.info(f"已通过验证码 OCR 刷新环境「{env.name}」的 token")
+    return True
+
+
 def _run_scheduled_scene(scheduled_task, execution_log):
     """执行定时任务的场景编排分支"""
     from test_manager.api.scene_engine import execute_scene
@@ -238,6 +285,21 @@ def _run_scheduled_scene(scheduled_task, execution_log):
             operator=scheduled_task.created_by,
             runtime_config_override=runtime_config_override,
         )
+
+        # token 失效（401/认证失败）→ 验证码 OCR 重新登录刷新环境 token 后重试一次
+        if _scene_execution_has_auth_failure(scene_execution) and scheduled_task.environment:
+            logger.warning(f"场景执行遇到认证失败，尝试 OCR 重新登录后重试: {scheduled_task.test_scene.name}")
+            try:
+                refreshed = _refresh_env_token_via_captcha_login(scheduled_task.environment)
+            except Exception as exc:
+                logger.warning(f"自动登录刷新 token 异常: {exc}")
+                refreshed = False
+            if refreshed:
+                scene_execution = execute_scene(
+                    scene=scheduled_task.test_scene,
+                    operator=scheduled_task.created_by,
+                    runtime_config_override=runtime_config_override,
+                )
 
         # 判断执行结果
         is_success = scene_execution.status in (
