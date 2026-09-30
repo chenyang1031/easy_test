@@ -281,8 +281,8 @@ def _update_batch_stats(batch):
     # 回写关联定时任务的成功/失败统计
     task = batch.scheduled_task
     if task is not None and completed >= total:
-        task.successful_runs = passed
-        task.failed_runs = failed
+        task.successful_runs = (task.successful_runs or 0) + passed
+        task.failed_runs = (task.failed_runs or 0) + failed
         task.save(update_fields=['successful_runs', 'failed_runs'])
 
 
@@ -338,3 +338,22 @@ def check_ui_scheduled_tasks():
                 logger.info(f"触发 UI 定时任务: {task.name} (ID={task.id})")
             except Exception as e:
                 logger.error(f"触发定时任务失败: {e}")
+
+        # 计算并持久化下次执行时间，供定时任务/监控页展示
+        try:
+            next_run = None
+            if task.trigger_type == 'once':
+                next_run = task.run_at if task.total_runs == 0 else None
+            elif task.trigger_type == 'interval' and task.interval_seconds:
+                from datetime import timedelta
+                base = task.last_run_at or timezone.now()
+                next_run = base + timedelta(seconds=task.interval_seconds)
+            elif task.trigger_type == 'cron' and task.cron_expression:
+                from croniter import croniter
+                base = task.last_run_at or timezone.now()
+                next_run = croniter(task.cron_expression, base).get_next(type(base))
+            if next_run and task.next_run_at != next_run:
+                task.next_run_at = next_run
+                task.save(update_fields=['next_run_at'])
+        except Exception as e:
+            logger.debug(f"计算下次执行时间失败: {task.name}: {e}")

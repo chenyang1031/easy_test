@@ -260,7 +260,10 @@ class TaskMonitorView(APIView):
             for task in db_tasks:
                 tasks_data.append({
                     "id": task.id,
+                    "task_type": "接口测试",
                     "name": task.name,
+                    "target": (task.test_suite.name if task.test_suite else None)
+                              or (task.test_scene.name if task.test_scene else None),
                     "test_suite_name": task.test_suite.name if task.test_suite else None,
                     "test_scene_name": task.test_scene.name if task.test_scene else None,
                     "schedule_type": task.schedule_type,
@@ -278,6 +281,58 @@ class TaskMonitorView(APIView):
                     "success_rate": task.success_rate,
                     "celery_synced": bool(task.celery_task_id),
                     "celery_task_id": task.celery_task_id,
+                })
+
+            # ── UI 自动化定时任务（轮询触发，非 Celery Beat 注册） ──
+            from test_manager.ui_automation.models import UiScheduledTask
+            ui_trigger_display = {"cron": "CRON", "interval": "固定间隔", "once": "单次"}
+            for task in UiScheduledTask.objects.filter(is_active=True).select_related("environment"):
+                tasks_data.append({
+                    "id": task.id,
+                    "task_type": "UI自动化",
+                    "name": task.name,
+                    "target": f"{task.test_cases.count()} 个用例",
+                    "schedule_type": task.trigger_type,
+                    "schedule_type_display": ui_trigger_display.get(task.trigger_type, task.trigger_type),
+                    "next_run_time": (
+                        timezone.localtime(task.next_run_at).strftime("%Y-%m-%d %H:%M:%S")
+                        if task.next_run_at else None
+                    ),
+                    "last_run_time": (
+                        timezone.localtime(task.last_run_at).strftime("%Y-%m-%d %H:%M:%S")
+                        if task.last_run_at else None
+                    ),
+                    "success_rate": (
+                        round(task.successful_runs / task.total_runs * 100, 1)
+                        if task.total_runs else None
+                    ),
+                    "celery_synced": None,
+                })
+
+            # ── APP 自动化定时任务 ──
+            from test_manager.app_automation.models import AppScheduledTask
+            app_trigger_display = {"cron": "CRON", "interval": "固定间隔", "once": "单次"}
+            # APP 任务 status 语义不同：非 COMPLETED（未结束）都纳入监控
+            for task in AppScheduledTask.objects.exclude(status='COMPLETED'):
+                tasks_data.append({
+                    "id": task.id,
+                    "task_type": "APP自动化",
+                    "name": task.name,
+                    "target": (task.get_task_type_display()
+                               if hasattr(task, "get_task_type_display") else None),
+                    "schedule_type": task.trigger_type,
+                    "schedule_type_display": app_trigger_display.get(task.trigger_type, task.trigger_type),
+                    "next_run_time": (
+                        timezone.localtime(task.next_run_time).strftime("%Y-%m-%d %H:%M:%S")
+                        if getattr(task, "next_run_time", None) else None
+                    ),
+                    "last_run_time": (
+                        timezone.localtime(task.last_run_time).strftime("%Y-%m-%d %H:%M:%S")
+                        if getattr(task, "last_run_time", None) else None
+                    ),
+                    "success_rate": (task.success_rate
+                                     if hasattr(task, "success_rate") else None),
+                    "celery_synced": None,
                 })
 
             return Response({

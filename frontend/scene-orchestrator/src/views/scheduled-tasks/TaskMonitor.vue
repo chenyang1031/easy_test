@@ -92,15 +92,25 @@
       <el-empty v-else-if="monitorData.tasks?.length === 0" description="暂无活动任务" :image-size="80" />
 
       <el-table v-else :data="monitorData.tasks || []" stripe size="small" class="data-table">
-        <el-table-column label="任务名称" min-width="160" show-overflow-tooltip>
+        <el-table-column label="类型" width="96" align="center">
           <template #default="{ row }">
-            <router-link :to="`/scheduled-tasks/${row.id}`" class="name-link">
-              {{ row.name }}
-            </router-link>
+            <el-tag :type="{ '接口测试': 'primary', 'UI自动化': 'warning', 'APP自动化': 'success' }[row.task_type] || 'info'"
+                    size="small" effect="light">
+              {{ row.task_type || '接口测试' }}
+            </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="测试套件" min-width="120" show-overflow-tooltip>
-          <template #default="{ row }">{{ row.test_suite_name || '-' }}</template>
+        <el-table-column label="任务名称" min-width="160" show-overflow-tooltip>
+          <template #default="{ row }">
+            <router-link v-if="row.task_type === '接口测试' || !row.task_type"
+                         :to="`/scheduled-tasks/${row.id}`" class="name-link">
+              {{ row.name }}
+            </router-link>
+            <span v-else>{{ row.name }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="测试对象" min-width="120" show-overflow-tooltip>
+          <template #default="{ row }">{{ row.target || row.test_suite_name || row.test_scene_name || '-' }}</template>
         </el-table-column>
         <el-table-column label="调度类型" width="100">
           <template #default="{ row }">{{ row.schedule_type_display }}</template>
@@ -112,9 +122,10 @@
         </el-table-column>
         <el-table-column label="Celery同步" width="100" align="center">
           <template #default="{ row }">
-            <el-tag :type="row.celery_synced ? 'success' : 'warning'" size="small">
+            <el-tag v-if="row.celery_synced !== null" :type="row.celery_synced ? 'success' : 'warning'" size="small">
               {{ row.celery_synced ? '已同步' : '未同步' }}
             </el-tag>
+            <span v-else class="text-muted">-</span>
           </template>
         </el-table-column>
         <el-table-column label="最后执行" width="150">
@@ -129,12 +140,15 @@
         </el-table-column>
         <el-table-column label="操作" width="160" fixed="right">
           <template #default="{ row }">
+            <template v-if="row.task_type === '接口测试' || !row.task_type">
             <el-button size="small" text type="success" @click="handleRunNow(row.id)">
               <el-icon><CaretRight /></el-icon> 执行
             </el-button>
             <el-button size="small" text type="primary" @click="handleResync(row.id)">
               <el-icon><Connection /></el-icon> 同步
             </el-button>
+            </template>
+            <span v-else class="text-muted small">-</span>
           </template>
         </el-table-column>
       </el-table>
