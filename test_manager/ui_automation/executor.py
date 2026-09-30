@@ -294,7 +294,7 @@ class UIExecutor:
         locators = element.get_all_locators()
         iframe_locator = element.iframe_locator if element.is_iframe else None
 
-        locator = await self.engine.locate_with_fallback(locators, wait_time=element.wait_time)
+        locator = await self.engine.locate_with_fallback(locators, wait_time=element.wait_time or self.env.timeout)
 
         ope_key = detail.ope_key
         ope_value = resolver.resolve(detail.ope_value)
@@ -338,7 +338,7 @@ class UIExecutor:
             raise ValueError("断言操作缺少关联元素")
 
         locators = element.get_all_locators()
-        locator = await self.engine.locate_with_fallback(locators, wait_time=element.wait_time)
+        locator = await self.engine.locate_with_fallback(locators, wait_time=element.wait_time or self.env.timeout)
 
         ope_key = detail.ope_key
         expected = resolver.resolve(detail.ope_value)

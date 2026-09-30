@@ -230,7 +230,8 @@ class UiElement(models.Model):
 
     # 元素属性
     wait_time = models.PositiveSmallIntegerField(
-        default=5, verbose_name='等待时间(秒)'
+        default=15, verbose_name='等待时间(秒)',
+        db_comment='定位等待时间（秒）；夜间/首次登录后页面初始化较慢，不宜过短',
     )
     is_visible = models.BooleanField(default=True, verbose_name='是否可见')
     is_enabled = models.BooleanField(default=True, verbose_name='是否可用')
