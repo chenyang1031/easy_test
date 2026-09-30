@@ -265,12 +265,14 @@ class TaskMonitorView(APIView):
                     "test_scene_name": task.test_scene.name if task.test_scene else None,
                     "schedule_type": task.schedule_type,
                     "schedule_type_display": task.get_schedule_type_display(),
+                    # strftime 直接格式化会输出 UTC，与定时任务列表（前端转本地时间）差 8 小时；
+                    # 统一转 Asia/Shanghai 本地时间
                     "next_run_time": (
-                        task.next_run_time.strftime("%Y-%m-%d %H:%M:%S")
+                        timezone.localtime(task.next_run_time).strftime("%Y-%m-%d %H:%M:%S")
                         if task.next_run_time else None
                     ),
                     "last_run_time": (
-                        task.last_run_time.strftime("%Y-%m-%d %H:%M:%S")
+                        timezone.localtime(task.last_run_time).strftime("%Y-%m-%d %H:%M:%S")
                         if task.last_run_time else None
                     ),
                     "success_rate": task.success_rate,
