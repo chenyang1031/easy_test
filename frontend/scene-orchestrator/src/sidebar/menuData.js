@@ -46,12 +46,10 @@ export function getMenuData({ isAuthenticated = false } = {}) {
       icon: 'Connection',
       defaultExpanded: false,
       children: [
+        // 文档导入已并入 API 资产管理（页签），AI批量生成入口亦在资产页
         { type: 'link', label: 'API资产管理', icon: 'Connection',
           href: '/app/#/api-assets',
-          matchPaths: ['/api-asset-manager/', '/api-assets/'], matchBases: ['/app/', '/api-asset-manager/'], matchHashes: ['/api-assets'] },
-        { type: 'link', label: '文档导入资产', icon: 'FileEarmarkArrowUpFilled',
-          href: '/app/#/ai/document-import',
-          matchPaths: ['/ai-document-import/'], matchBases: ['/app/'], matchHashes: ['/ai/document-import'] },
+          matchPaths: ['/api-asset-manager/', '/api-assets/', '/ai-document-import/'], matchBases: ['/app/', '/api-asset-manager/'], matchHashes: ['/api-assets', '/ai/document-import'] },
         { type: 'link', label: '测试用例', icon: 'BriefcaseFilled',
           href: '/app/#/test-cases',
           matchPaths: ['/test-cases/'], matchBases: ['/app/', '/test-cases-vue/'], matchHashes: ['/test-cases'] },

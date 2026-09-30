@@ -454,13 +454,8 @@ const routes = [
         meta: { title: 'AI 大模型管理' },
       },
 
-      // ===== 文档导入 API 资产 =====
-      {
-        path: 'ai/document-import',
-        name: 'aiDocumentImport',
-        component: () => import('../document-import/App.vue'),
-        meta: { title: '文档导入 API 资产' },
-      },
+      // 文档导入已并入 API 资产管理页签，重定向兼容旧链接
+      { path: 'ai/document-import', redirect: { path: '/api-assets', query: { tab: 'document-import' } } },
 
       // ===== 用户设置（MainLayout 内）=====
       {

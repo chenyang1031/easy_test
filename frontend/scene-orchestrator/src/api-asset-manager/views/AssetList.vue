@@ -22,8 +22,16 @@
       </div>
     </div>
 
+    <!-- 类型页签：资产列表 / 文档导入（文档导入原为独立页面，已并入） -->
+    <el-tabs v-model="pageTab" class="asset-page-tabs">
+      <el-tab-pane label="资产列表" name="assets" />
+      <el-tab-pane label="文档导入" name="document-import" lazy>
+        <DocumentGenList v-if="pageTab === 'document-import'" />
+      </el-tab-pane>
+    </el-tabs>
+
     <!-- 主体三栏布局 -->
-    <div class="manager-body" v-if="store.currentProjectId">
+    <div class="manager-body" v-if="store.currentProjectId && pageTab === 'assets'">
       <!-- 左侧：分组导航 -->
       <div class="panel-left">
         <div class="panel-card">
@@ -117,8 +125,9 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import DocumentGenList from '../../document-import/components/DocumentGenList.vue'
 import { Upload, Download, MagicStick, Search, Plus, Refresh, Delete } from '@element-plus/icons-vue'
 import { useApiAssetStore } from '../stores/apiAsset.js'
 import { apiAssetApi } from '../api/index.js'
@@ -132,7 +141,14 @@ import BatchToolbar from '../components/BatchToolbar.vue'
 import ImportModal from '../components/ImportModal.vue'
 import AIGenerateModal from '../components/AIGenerateModal.vue'
 
+const route = useRoute()
 const router = useRouter()
+
+// 页签：资产列表 / 文档导入（?tab=document-import 直达）
+const pageTab = ref(route.query.tab === 'document-import' ? 'document-import' : 'assets')
+watch(() => route.query.tab, (v) => {
+  if (['assets', 'document-import'].includes(v)) pageTab.value = v
+})
 const store = useApiAssetStore()
 
 const showImportModal = ref(false)
