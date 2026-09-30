@@ -129,7 +129,8 @@ const detail = ref(null)
 async function loadRecords() {
   loading.value = true
   try {
-    const params = { project: props.projectId, page: page.value, page_size: pageSize.value }
+    const params = { page: page.value, page_size: pageSize.value }
+    if (props.projectId) params.project = props.projectId
     if (statusFilter.value !== '') params.status = statusFilter.value
     const data = await uiBatchApi.list(params)
     records.value = data.results || data || []

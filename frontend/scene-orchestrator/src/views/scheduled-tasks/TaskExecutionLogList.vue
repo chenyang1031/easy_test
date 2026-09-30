@@ -72,6 +72,8 @@
     </el-row>
 
     <!-- 筛选栏 -->
+    <el-tabs v-model="logTab" class="log-type-tabs">
+      <el-tab-pane label="接口定时任务" name="api">
     <div class="panel-card filter-card">
       <el-row :gutter="12" align="middle">
         <el-col :xs="24" :sm="6" :md="5">
@@ -232,8 +234,19 @@
           />
         </div>
       </template>
+      </div>
+
+      </el-tab-pane>
+
+      <el-tab-pane label="UI自动化" name="ui" lazy>
+        <UiExecutionManager />
+      </el-tab-pane>
+
+      <el-tab-pane label="APP自动化" name="app" lazy>
+        <AppExecutionList />
+      </el-tab-pane>
+    </el-tabs>
     </div>
-  </div>
 </template>
 
 <script setup>
@@ -245,9 +258,14 @@ import {
   Refresh, Search, List, CircleCheckFilled, CircleCloseFilled, Clock,
 } from "@element-plus/icons-vue";
 import { taskExecutionLogApi } from "../../api/scheduledTask";
+import UiExecutionManager from "../ui-automation/UiExecutionManager.vue";
+import AppExecutionList from "../app-automation/executions/ExecutionList.vue";
 
 const route = useRoute();
 const router = useRouter();
+
+// 三类执行日志统一入口；支持 ?tab=ui|app 直达
+const logTab = ref(["ui", "app"].includes(route.query.tab) ? route.query.tab : "api");
 
 // 数据
 const logs = ref([]);
